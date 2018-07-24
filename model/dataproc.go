@@ -24,7 +24,7 @@ func New(baseInfo *ClusterBase, projectId string, region string, preemptibleRati
 	}
 }
 
-// <-- start interface `Cluster` implementation -->
+// <-- start implementation of `Scalable` interface -->
 
 /**
 * Scale up the cluster, i.e. add new nodes to increase size
@@ -42,4 +42,4 @@ func (c *DataprocCluster) ScaleDown(nodes int) {
 
 }
 
-// <-- end interface `Cluster` implementation -->
+// <-- end implementation of `Scalable` interface -->
