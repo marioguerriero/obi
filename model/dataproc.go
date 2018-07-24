@@ -7,6 +7,14 @@ type DataprocCluster struct {
 	preemptiveNodesRatio int8
 }
 
+/**
+* Constructor of DataprocCluster
+* @param baseInfo is the base object for a cluster
+* @param projectId is the project ID in the GCP environment
+* @param region is the geo-region where the cluster was deployed (e.g. europe-west-1)
+* @param preemptibleRatio in the percentage of preemptible VMs that has to be present inside the cluster
+* return the pointer to the new DataprocCluster instance
+ */
 func New(baseInfo *ClusterBase, projectId string, region string, preemptibleRatio int8) *DataprocCluster {
 	return &DataprocCluster{
 		baseInfo,

@@ -62,6 +62,11 @@ func (as *Autoscaler) Stop() {
 	quit <- struct{}{}
 }
 
+/*
+* goroutine which apply the scaling policy at each time interval. It will be stop when an empty object is inserted in
+* the `quit` channel
+* @param as is the autoscaler
+ */
 func autoscalerRoutine(as *Autoscaler) {
 	for {
 		select {

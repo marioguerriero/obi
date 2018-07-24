@@ -13,7 +13,10 @@ type ConcurrentSliceItem struct {
 	Value interface{}
 }
 
-// Appends an item to the concurrent slice
+/**
+* Append a new item to the slice in a thread-safe fashion
+* @param item is the item to append
+ */
 func (cs *ConcurrentSlice) Append(item interface{}) {
 	cs.Lock()
 	defer cs.Unlock()
@@ -21,9 +24,10 @@ func (cs *ConcurrentSlice) Append(item interface{}) {
 	cs.items = append(cs.items, item)
 }
 
-// Iterates over the items in the concurrent slice
-// Each item is sent over a channel, so that
-// we can iterate over the slice using the builtin range keyword
+/**
+* Get the iterator for the elements in the slice
+* return a channel containing the items
+ */
 func (cs *ConcurrentSlice) Iter() <-chan ConcurrentSliceItem {
 	c := make(chan ConcurrentSliceItem)
 
