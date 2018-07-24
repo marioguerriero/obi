@@ -5,13 +5,14 @@ import (
 	u "obi/utils"
 )
 
-
+// enum for scaling algorithms types
 type ScalingAlgorithm int
 const (
 	ThroughputBased ScalingAlgorithm = iota
 	WorkloadBased
 )
 
+// Autoscaler class with properties
 type Autoscaler struct {
 	algorithm ScalingAlgorithm
 	clusterPool *u.ConcurrentSlice
