@@ -1,6 +1,9 @@
 package autoscaler
 
-import . "obi/model"
+import (
+	"time"
+	u "obi/utils"
+)
 
 
 type ScalingAlgorithm int
@@ -11,12 +14,16 @@ const (
 
 type Autoscaler struct {
 	algorithm ScalingAlgorithm
-	clusterPool *[]Cluster
+	clusterPool *u.ConcurrentSlice
 	timeout int16
 	sustainedTimeout int16
 }
-//
+
+// singleton instance
 var autoscalerInstance *Autoscaler
+
+// channel to interrupt the autoscaler routine
+var quit chan struct{}
 
 /**
 * Get the singleton instance of autoscaler
@@ -27,7 +34,7 @@ var autoscalerInstance *Autoscaler
 * @param pool is the pointer to the array of active clusters
 * return the pointer to the instance
  */
-func New(algorithm ScalingAlgorithm, timeout int16, sustainedTimeout int16, pool *[]Cluster) *Autoscaler {
+func New(algorithm ScalingAlgorithm, timeout int16, sustainedTimeout int16, pool *u.ConcurrentSlice) *Autoscaler {
 	if autoscalerInstance == nil {
 		autoscalerInstance = &Autoscaler{
 			algorithm,
@@ -43,6 +50,8 @@ func New(algorithm ScalingAlgorithm, timeout int16, sustainedTimeout int16, pool
 * Start the execution of the autoscaler
  */
 func (as *Autoscaler) Start() {
+	quit = make(chan struct{})
+	go autoscalerRoutine(as)
 
 }
 
@@ -50,5 +59,21 @@ func (as *Autoscaler) Start() {
 * Stop the execution of the autoscaler
  */
 func (as *Autoscaler) Stop() {
+	quit <- struct{}{}
+}
 
+func autoscalerRoutine(as *Autoscaler) {
+	for {
+		select {
+		case <-quit:
+			break
+		default:
+			if as.algorithm == WorkloadBased {
+				// do something
+			} else if as.algorithm == ThroughputBased {
+				// do something
+			}
+			time.Sleep(time.Duration(as.timeout) * time.Second)
+		}
+	}
 }
