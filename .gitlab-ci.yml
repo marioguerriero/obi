@@ -12,7 +12,7 @@ golint-analysis:
   stage: coding-styles-analysis
   image: eu.gcr.io/dhg-data-intelligence-ops/golint:alpine-3.7
   script:
-  - chmod +x golint-checker.sh && ./golint-checker.sh .
+  - chmod +x golint-checker.sh && ./golint-checker.sh ./...
 
 sonar-analysis:
   stage: code-quality-analysis
