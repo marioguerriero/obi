@@ -1,9 +1,9 @@
 package model
 
-// Extended cluster class of Google Dataproc
+// DataprocCluster is the extended cluster struct of Google Dataproc
 type DataprocCluster struct {
 	*ClusterBase
-	projectId string
+	projectID string
 	region string
 	preemptiveNodesRatio int8
 }

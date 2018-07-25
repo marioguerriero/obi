@@ -26,14 +26,14 @@ var autoscalerInstance *Autoscaler
 // channel to interrupt the autoscaler routine
 var quit chan struct{}
 
-// Get the singleton instance of autoscaler
+// GetInstance if for getting the singleton instance of the autoscaler
 // @param algorithm is the algorithm to follow during scaling policy execution
 // @param timeoutInterval is the time interval to wait before triggering the scaling-check action again
 // @param sustain// edTimeoutInterval is the time interval to wait before triggering the scaling action again, when a
 // 	`scale-up` or `scale-down` was triggered
 // @param pool is the pointer to the array of active clusters
 // return the pointer to the instance
-func New(algorithm ScalingAlgorithm, timeout int16, sustainedTimeout int16, pool *u.ConcurrentSlice) *Autoscaler {
+func GetInstance(algorithm ScalingAlgorithm, timeout int16, sustainedTimeout int16, pool *u.ConcurrentSlice) *Autoscaler {
 	if autoscalerInstance == nil {
 		autoscalerInstance = &Autoscaler{
 			algorithm,
