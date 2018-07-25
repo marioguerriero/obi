@@ -15,10 +15,10 @@ type DataprocCluster struct {
 * @param preemptibleRatio in the percentage of preemptible VMs that has to be present inside the cluster
 * return the pointer to the new DataprocCluster instance
  */
-func NewDataprocCluster(baseInfo *ClusterBase, projectId string, region string, preemptibleRatio int8) *DataprocCluster {
+func NewDataprocCluster(baseInfo *ClusterBase, projectID string, region string, preemptibleRatio int8) *DataprocCluster {
 	return &DataprocCluster{
 		baseInfo,
-		projectId,
+		projectID,
 		region,
 		preemptibleRatio,
 	}
@@ -27,7 +27,7 @@ func NewDataprocCluster(baseInfo *ClusterBase, projectId string, region string, 
 // <-- start implementation of `Scalable` interface -->
 
 /**
-* Scale up the cluster, i.e. add new nodes to increase size
+* ScaleUp is for scaling up the cluster, i.e. add new nodes to increase size
 * @param nodes is the number of nodes to add
  */
 func (c *DataprocCluster) ScaleUp(nodes int) {
@@ -35,7 +35,7 @@ func (c *DataprocCluster) ScaleUp(nodes int) {
 }
 
 /**
-* Scale down the cluster, i.e. remove nodes to decrease size
+* ScaleDown is for scaling down the cluster, i.e. remove nodes to decrease size
 * @param nodes is the number of nodes to remove
  */
 func (c *DataprocCluster) ScaleDown(nodes int) {

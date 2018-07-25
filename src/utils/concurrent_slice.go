@@ -2,19 +2,20 @@ package utils
 
 import "sync"
 
-// Slice type that can be safely shared between goroutines
+// ConcurrentSlice is a wrapper for a slice can be safely shared between goroutines
 type ConcurrentSlice struct {
 	sync.RWMutex
 	items []interface{}
 }
 
+// ConcurrentSliceItem is a wrapper for a slice item
 type ConcurrentSliceItem struct {
 	Index int
 	Value interface{}
 }
 
 /**
-* Append a new item to the slice in a thread-safe fashion
+* Append is for adding a new item to the slice in a thread-safe fashion
 * @param item is the item to append
  */
 func (cs *ConcurrentSlice) Append(item interface{}) {
@@ -25,7 +26,7 @@ func (cs *ConcurrentSlice) Append(item interface{}) {
 }
 
 /**
-* Get the iterator for the elements in the slice
+* Iter is for getting the iterator for the elements in the slice
 * return a channel containing the items
  */
 func (cs *ConcurrentSlice) Iter() <-chan ConcurrentSliceItem {
