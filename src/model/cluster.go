@@ -22,16 +22,15 @@ type ClusterBase struct {
 	MetricsSnapshot
 }
 
-/**
-* Constructor of ClusterBase
-* @param clusterName is the name of the cluster
-* @param rmYarnURL is the address and port which YARN Resource Manager listen to
-* return the pointer to the ClusterBase instance
- */
-func NewClusterBase(clusterName string, rmYarnUrl string) *ClusterBase {
+
+// Constructor of ClusterBase
+// @param clusterName is the name of the cluster
+// @param rmYarnURL is the address and port which YARN Resource Manager listen to
+// return the pointer to the ClusterBase instance
+func NewClusterBase(clusterName string, rmYarnURL string) *ClusterBase {
 	return &ClusterBase{
 		clusterName,
-		rmYarnUrl,
+		rmYarnURL,
 		MetricsSnapshot{
 			PendingContainers:   -1,
 			AllocatedContainers: -1,
