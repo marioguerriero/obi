@@ -2,7 +2,7 @@ package autoscaler
 
 import (
 	"time"
-	u "obi/src/utils"
+	u "utils"
 )
 
 // enum for scaling algorithms types

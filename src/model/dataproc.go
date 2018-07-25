@@ -15,7 +15,7 @@ type DataprocCluster struct {
 * @param preemptibleRatio in the percentage of preemptible VMs that has to be present inside the cluster
 * return the pointer to the new DataprocCluster instance
  */
-func New(baseInfo *ClusterBase, projectId string, region string, preemptibleRatio int8) *DataprocCluster {
+func NewDataprocCluster(baseInfo *ClusterBase, projectId string, region string, preemptibleRatio int8) *DataprocCluster {
 	return &DataprocCluster{
 		baseInfo,
 		projectId,
