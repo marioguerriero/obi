@@ -31,7 +31,7 @@ var quit chan struct{}
 // GetInstance if for getting the singleton instance of the autoscaler
 // @param algorithm is the algorithm to follow during scaling policy execution
 // @param timeoutInterval is the time interval to wait before triggering the scaling-check action again
-// @param sustain// edTimeoutInterval is the time interval to wait before triggering the scaling action again, when a
+// @param sustainedTimeoutInterval is the time interval to wait before triggering the scaling action again, when a
 // 	`scale-up` or `scale-down` was triggered
 // @param pool is the pointer to the array of active clusters
 // return the pointer to the instance

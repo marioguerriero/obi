@@ -1,5 +1,10 @@
 package model
 
+import (
+	"google.golang.org/genproto/googleapis/cloud/dataproc/v1"
+	"google.golang.org/genproto/protobuf/field_mask"
+)
+
 // DataprocCluster is the extended cluster struct of Google Dataproc
 type DataprocCluster struct {
 	*ClusterBase
@@ -28,7 +33,15 @@ func NewDataprocCluster(baseInfo *ClusterBase, projectID string, region string, 
 // ScaleUp is for scaling up the cluster, i.e. add new nodes to increase size
 // @param nodes is the number of nodes to add
 func (c *DataprocCluster) ScaleUp(nodes int) {
-
+	request := dataproc.UpdateClusterRequest{
+		c.projectID,
+		c.region,
+		c.name,
+		nil,
+		&field_mask.FieldMask{
+			
+		}
+	}
 }
 
 

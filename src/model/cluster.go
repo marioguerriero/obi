@@ -31,12 +31,6 @@ func NewClusterBase(clusterName string, rmYarnURL string) *ClusterBase {
 	return &ClusterBase{
 		clusterName,
 		rmYarnURL,
-		MetricsSnapshot{
-			PendingContainers:   -1,
-			AllocatedContainers: -1,
-			PendingMemory:       -1,
-			AvailableMemory:     -1,
-			PendingVCores:       -1,
-		},
+		MetricsSnapshot{},
 	}
 }
