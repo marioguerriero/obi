@@ -1,8 +1,10 @@
 package model
 
 import (
-	"google.golang.org/genproto/googleapis/cloud/dataproc/v1"
+	dataprocpb "google.golang.org/genproto/googleapis/cloud/dataproc/v1"
+	"cloud.google.com/go/dataproc/apiv1"
 	"google.golang.org/genproto/protobuf/field_mask"
+	"context"
 )
 
 // DataprocCluster is the extended cluster struct of Google Dataproc
@@ -33,15 +35,39 @@ func NewDataprocCluster(baseInfo *ClusterBase, projectID string, region string, 
 // ScaleUp is for scaling up the cluster, i.e. add new nodes to increase size
 // @param nodes is the number of nodes to add
 func (c *DataprocCluster) ScaleUp(nodes int) {
-	request := dataproc.UpdateClusterRequest{
-		c.projectID,
-		c.region,
-		c.name,
-		nil,
-		&field_mask.FieldMask{
-			
-		}
+	ctx := context.Background()
+	controller, err := dataproc.NewClusterControllerClient(ctx)
+	if err != nil {
+		// TODO: Handle error.
 	}
+
+	req := &dataprocpb.UpdateClusterRequest{
+		ProjectId:   c.projectID,
+		Region:      c.region,
+		ClusterName: c.name,
+		Cluster: &dataprocpb.Cluster{
+			Config: &dataprocpb.ClusterConfig{
+				SecondaryWorkerConfig: &dataprocpb.InstanceGroupConfig{
+					NumInstances: 10,
+				},
+			},
+		},
+		UpdateMask:  &field_mask.FieldMask{
+			Paths: []string{"config.secondary_worker_config.num_instances"},
+		},
+	}
+
+	op, err := controller.UpdateCluster(ctx, req)
+	if err != nil {
+		// TODO: Handle error.
+	}
+
+	resp, err := op.Wait(ctx)
+	if err != nil {
+		// TODO: Handle error.
+	}
+	// TODO: Use resp.
+	_ = resp
 }
 
 

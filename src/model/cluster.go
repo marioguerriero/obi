@@ -19,6 +19,7 @@ type Scalable interface {
 type ClusterBase struct {
 	name string
 	resourceManagerURI string
+	nodes int16
 	MetricsSnapshot
 }
 
@@ -31,6 +32,7 @@ func NewClusterBase(clusterName string, rmYarnURL string) *ClusterBase {
 	return &ClusterBase{
 		clusterName,
 		rmYarnURL,
+		0,
 		MetricsSnapshot{},
 	}
 }
