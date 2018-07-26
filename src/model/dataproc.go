@@ -5,13 +5,12 @@ import (
 	"cloud.google.com/go/dataproc/apiv1"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"context"
-	"autoscaler"
+	"github.com/golang/glog"
 )
 
 // DataprocCluster is the extended cluster struct of Google Dataproc
 type DataprocCluster struct {
 	*ClusterBase
-	*autoscaler.Autoscaler
 	ProjectID string
 	Region string
 	PreemptiveNodesRatio int8
@@ -23,10 +22,9 @@ type DataprocCluster struct {
 // @param region is the geo-region where the cluster was deployed (e.g. europe-west-1)
 // @param preemptibleRatio in the percentage of preemptible VMs that has to be present inside the cluster
 // return the pointer to the new DataprocCluster instance
-func NewDataprocCluster(baseInfo *ClusterBase, projectID string, region string, preemptibleRatio int8, autoscaler *autoscaler.Autoscaler) *DataprocCluster {
+func NewDataprocCluster(baseInfo *ClusterBase, projectID string, region string, preemptibleRatio int8) *DataprocCluster {
 	return &DataprocCluster{
 		baseInfo,
-		autoscaler,
 		projectID,
 		region,
 		preemptibleRatio,
@@ -43,15 +41,15 @@ func (c *DataprocCluster) Scale(nodes int16, toAdd bool) {
 
 	ctx := context.Background()
 	controller, err := dataproc.NewClusterControllerClient(ctx)
+	if err != nil {
+		glog.Error("'NewClusterControllerClient' method call failed")
+		return
+	}
 
 	if toAdd {
 		newSize = int32(c.Nodes + nodes)
 	} else {
 		newSize = int32(c.Nodes - nodes)
-	}
-
-	if err != nil {
-		// TODO: log error.
 	}
 
 	req := &dataprocpb.UpdateClusterRequest{
@@ -72,15 +70,22 @@ func (c *DataprocCluster) Scale(nodes int16, toAdd bool) {
 
 	op, err := controller.UpdateCluster(ctx, req)
 	if err != nil {
-		// TODO: log error.
+		glog.Error("'UpdateCluster' method call failed")
+		return
 	}
 
 	_, err = op.Wait(ctx)
 	if err != nil {
-		// TODO: log error.
+		glog.Error("'Wait' method call for UpdateCluster operation failed")
+		return
 	} else {
-		// TODO: log success.
+		glog.Infof("Scaling completed. The new size of cluster '%s' is %d", c.Name, newSize)
 	}
+}
+
+// Status is for getting the last metrics about the cluster
+func (c *DataprocCluster) Status() MetricsSnapshot {
+	return c.GetMetricsSnapshot()
 }
 
 // <-- end implementation of `Scalable` interface -->

@@ -2,13 +2,14 @@ package autoscaler
 
 import (
 	"time"
+	"model"
 )
 
 // ScalingAlgorithm is the enum type to specify different scaling algorithms
 type ScalingAlgorithm int
 const (
 	// ThroughputBased scales the cluster to meet Time Of Completion constraints
-	ThroughputBased ScalingAlgorithm = iota
+	BacklogBased ScalingAlgorithm = iota
 	// WorkloadBased scales the cluster when the resource utilization is too high
 	WorkloadBased
 )
@@ -18,8 +19,8 @@ type Autoscaler struct {
 	Algorithm ScalingAlgorithm
 	Timeout int16
 	SustainedTimeout int16
-	YarnURL string
 	quit chan struct{}
+	managedCluster model.Scalable
 }
 
 // New is the constructor of Autoscaler struct
@@ -27,16 +28,15 @@ type Autoscaler struct {
 // @param timeoutInterval is the time interval to wait before triggering the scaling-check action again
 // @param sustainedTimeoutInterval is the time interval to wait before triggering the scaling action again, when a
 // 	`scale-up` or `scale-down` was triggered
-// @param pool is the pointer to the array of active clusters
-// @param yarnURL is the address and port which YARN Resource Manager listen to
+// @param cluster is the scalable cluster to be managed
 // return the pointer to the instance
-func New(algorithm ScalingAlgorithm, timeout int16, sustainedTimeout int16, yarnURL string) *Autoscaler {
+func New(algorithm ScalingAlgorithm, timeout int16, sustainedTimeout int16, cluster model.Scalable) *Autoscaler {
 	return &Autoscaler{
 		algorithm,
 		timeout,
 		sustainedTimeout,
-		yarnURL,
 		make(chan struct{}),
+		cluster,
 	}
 }
 
@@ -55,17 +55,38 @@ func (as *Autoscaler) StopMonitoringScale() {
 // the `quit` channel
 // @param as is the autoscaler
 func autoscalerRoutine(as *Autoscaler) {
+	var shouldScaleUp, shouldScaleDown bool
 	for {
 		select {
 		case <-as.quit:
 			break
 		default:
-			if as.Algorithm == WorkloadBased {
-				// do something
-			} else if as.Algorithm == ThroughputBased {
-				// do something
+			shouldScaleUp, shouldScaleDown = applyPolicy(as.managedCluster.Status(), as.Algorithm)
+
+			var nodes int16 = 1
+			for shouldScaleUp && nodes < 128 {
+				as.managedCluster.Scale(nodes, false)
+				time.Sleep(time.Duration(as.SustainedTimeout) * time.Second)
+				shouldScaleUp, shouldScaleDown = applyPolicy(as.managedCluster.Status(), as.Algorithm)
+				nodes = nodes << 1
+			}
+
+			for shouldScaleDown {
+				as.managedCluster.Scale(1, true)
+				time.Sleep(time.Duration(as.SustainedTimeout) * time.Second)
+				_, shouldScaleDown = applyPolicy(as.managedCluster.Status(), as.Algorithm)
 			}
 			time.Sleep(time.Duration(as.Timeout) * time.Second)
 		}
 	}
 }
+
+func applyPolicy(currentStatus model.MetricsSnapshot, algorithm ScalingAlgorithm) (bool, bool) {
+	if algorithm == BacklogBased {
+
+	} else {
+		// workload based policy
+	}
+	return true, true
+}
+
