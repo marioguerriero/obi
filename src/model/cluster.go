@@ -1,7 +1,5 @@
 package model
 
-import "autoscaler"
-
 // MetricsSnapshot is the struct composing an any type cluster to save last snapshot about metrics
 type MetricsSnapshot struct {
 	PendingContainers int32
@@ -13,7 +11,7 @@ type MetricsSnapshot struct {
 
 // Scalable is the interface that must be implemented from a scalable cluster
 type Scalable interface {
-	Scale(int16, autoscaler.ScalingDirection)
+	Scale(int16, bool)
 }
 
 // ClusterBase is the base class for any type of cluster
@@ -26,11 +24,12 @@ type ClusterBase struct {
 
 // NewClusterBase is the constructor of ClusterBase struct
 // @param clusterName is the name of the cluster
+// @param size is the number of nodes in the cluster
 // return the pointer to the ClusterBase instance
-func NewClusterBase(clusterName string) *ClusterBase {
+func NewClusterBase(clusterName string, size int16) *ClusterBase {
 	return &ClusterBase{
 		clusterName,
-		0,
+		size,
 		MetricsSnapshot{},
 	}
 }

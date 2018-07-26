@@ -4,21 +4,13 @@ import (
 	"time"
 )
 
-// ScalingAlgorithm is the enum type tos specify different scaling algorithms
+// ScalingAlgorithm is the enum type to specify different scaling algorithms
 type ScalingAlgorithm int
 const (
 	// ThroughputBased scales the cluster to meet Time Of Completion constraints
 	ThroughputBased ScalingAlgorithm = iota
 	// WorkloadBased scales the cluster when the resource utilization is too high
 	WorkloadBased
-)
-
-type ScalingDirection int
-const (
-	// Up means scale up the cluster
-	Up ScalingDirection = iota
-	// Down means scale down the cluster
-	Down
 )
 
 // Autoscaler class with properties
