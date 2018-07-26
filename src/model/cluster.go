@@ -21,7 +21,7 @@ type Scalable interface {
 type ClusterBase struct {
 	Name string
 	Nodes int16
-	status MetricsSnapshot // not available outside package - get and set must be used
+	status MetricsSnapshot // not available outside package to prevent race conditions- get and set must be used
 	sync.Mutex
 }
 
@@ -49,9 +49,9 @@ func (c *ClusterBase) GetMetricsSnapshot() MetricsSnapshot {
 
 // SetMetricsSnapshot is the setter of status field inside ClusterBase
 // thread-safe
-func (c *ClusterBase) SetMetricsSnapshot(m MetricsSnapshot) {
+func (c *ClusterBase) SetMetricsSnapshot(newStatus MetricsSnapshot) {
 	c.Lock()
 	defer c.Unlock()
 
-	c.status = m
+	c.status = newStatus
 }

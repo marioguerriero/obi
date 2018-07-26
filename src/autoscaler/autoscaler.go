@@ -82,10 +82,11 @@ func autoscalerRoutine(as *Autoscaler) {
 }
 
 func applyPolicy(currentStatus model.MetricsSnapshot, algorithm ScalingAlgorithm) (bool, bool) {
-	if algorithm == BacklogBased {
-
-	} else {
-		// workload based policy
+	switch algorithm {
+	case WorkloadBased:
+		// do something
+	case BacklogBased:
+		// do something
 	}
 	return true, true
 }
