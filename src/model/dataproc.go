@@ -23,7 +23,7 @@ type DataprocCluster struct {
 // @param region is the geo-region where the cluster was deployed (e.g. europe-west-1)
 // @param preemptibleRatio in the percentage of preemptible VMs that has to be present inside the cluster
 // return the pointer to the new DataprocCluster instance
-func NewDataprocCluster(baseInfo *ClusterBase, projectID string, region string, preemptibleRatio int8) *DataprocCluster {
+func NewDataprocCluster(baseInfo *ClusterBase, projectID string, region string, preemptibleRatio int8, autoscaler *autoscaler.Autoscaler) *DataprocCluster {
 	return &DataprocCluster{
 		baseInfo,
 		autoscaler,
@@ -35,13 +35,23 @@ func NewDataprocCluster(baseInfo *ClusterBase, projectID string, region string, 
 
 // <-- start implementation of `Scalable` interface -->
 
-// ScaleUp is for scaling up the cluster, i.e. add new nodes to increase size
+// Scale is for scaling up the cluster, i.e. add new nodes to increase size
 // @param nodes is the number of nodes to add
-func (c *DataprocCluster) ScaleUp(nodes int) {
+// @param direction is for specifying if there is the need to add o remove nodes
+func (c *DataprocCluster) Scale(nodes int16, direction autoscaler.ScalingDirection) {
+	var newSize int32
+
 	ctx := context.Background()
 	controller, err := dataproc.NewClusterControllerClient(ctx)
+
+	if direction == autoscaler.Up {
+		newSize = int32(c.Nodes + nodes)
+	} else {
+		newSize = int32(c.Nodes - nodes)
+	}
+
 	if err != nil {
-		// TODO: Handle error.
+		// TODO: log error.
 	}
 
 	req := &dataprocpb.UpdateClusterRequest{
@@ -51,7 +61,7 @@ func (c *DataprocCluster) ScaleUp(nodes int) {
 		Cluster: &dataprocpb.Cluster{
 			Config: &dataprocpb.ClusterConfig{
 				SecondaryWorkerConfig: &dataprocpb.InstanceGroupConfig{
-					NumInstances: 10,
+					NumInstances: newSize,
 				},
 			},
 		},
@@ -62,22 +72,15 @@ func (c *DataprocCluster) ScaleUp(nodes int) {
 
 	op, err := controller.UpdateCluster(ctx, req)
 	if err != nil {
-		// TODO: Handle error.
+		// TODO: log error.
 	}
 
-	resp, err := op.Wait(ctx)
+	_, err = op.Wait(ctx)
 	if err != nil {
-		// TODO: Handle error.
+		// TODO: log error.
+	} else {
+		// TODO: log success.
 	}
-	// TODO: Use resp.
-	_ = resp
-}
-
-
-// ScaleDown is for scaling down the cluster, i.e. remove nodes to decrease size
-// @param nodes is the number of nodes to remove
-func (c *DataprocCluster) ScaleDown(nodes int) {
-
 }
 
 // <-- end implementation of `Scalable` interface -->

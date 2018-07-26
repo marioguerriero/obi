@@ -13,11 +13,19 @@ const (
 	WorkloadBased
 )
 
+type ScalingDirection int
+const (
+	// Up means scale up the cluster
+	Up ScalingDirection = iota
+	// Down means scale down the cluster
+	Down
+)
+
 // Autoscaler class with properties
 type Autoscaler struct {
-	algorithm ScalingAlgorithm
-	timeout int16
-	sustainedTimeout int16
+	Algorithm ScalingAlgorithm
+	Timeout int16
+	SustainedTimeout int16
 	YarnURL string
 	quit chan struct{}
 }
@@ -41,12 +49,12 @@ func New(algorithm ScalingAlgorithm, timeout int16, sustainedTimeout int16, yarn
 }
 
 
-// Start the execution of the autoscaler
+// StartMonitoringScale starts the execution of the autoscaler
 func (as *Autoscaler) StartMonitoringScale() {
 	go autoscalerRoutine(as)
 }
 
-// Stop the execution of the autoscaler
+// StopMonitoringScale stops the execution of the autoscaler
 func (as *Autoscaler) StopMonitoringScale() {
 	as.quit <- struct{}{}
 }
@@ -60,12 +68,12 @@ func autoscalerRoutine(as *Autoscaler) {
 		case <-as.quit:
 			break
 		default:
-			if as.algorithm == WorkloadBased {
+			if as.Algorithm == WorkloadBased {
 				// do something
-			} else if as.algorithm == ThroughputBased {
+			} else if as.Algorithm == ThroughputBased {
 				// do something
 			}
-			time.Sleep(time.Duration(as.timeout) * time.Second)
+			time.Sleep(time.Duration(as.Timeout) * time.Second)
 		}
 	}
 }
