@@ -2,7 +2,6 @@ package autoscaler
 
 import (
 	"time"
-	u "utils"
 )
 
 // ScalingAlgorithm is the enum type tos specify different scaling algorithms
@@ -17,47 +16,39 @@ const (
 // Autoscaler class with properties
 type Autoscaler struct {
 	algorithm ScalingAlgorithm
-	clusterPool *u.ConcurrentSlice
 	timeout int16
 	sustainedTimeout int16
+	YarnURL string
+	quit chan struct{}
 }
 
-// singleton instance
-var autoscalerInstance *Autoscaler
-
-// channel to interrupt the autoscaler routine
-var quit chan struct{}
-
-// GetInstance if for getting the singleton instance of the autoscaler
+// New is the constructor of Autoscaler struct
 // @param algorithm is the algorithm to follow during scaling policy execution
 // @param timeoutInterval is the time interval to wait before triggering the scaling-check action again
 // @param sustainedTimeoutInterval is the time interval to wait before triggering the scaling action again, when a
 // 	`scale-up` or `scale-down` was triggered
 // @param pool is the pointer to the array of active clusters
+// @param yarnURL is the address and port which YARN Resource Manager listen to
 // return the pointer to the instance
-func GetInstance(algorithm ScalingAlgorithm, timeout int16, sustainedTimeout int16, pool *u.ConcurrentSlice) *Autoscaler {
-	if autoscalerInstance == nil {
-		autoscalerInstance = &Autoscaler{
-			algorithm,
-			pool,
-			timeout,
-			sustainedTimeout,
-		}
+func New(algorithm ScalingAlgorithm, timeout int16, sustainedTimeout int16, yarnURL string) *Autoscaler {
+	return &Autoscaler{
+		algorithm,
+		timeout,
+		sustainedTimeout,
+		yarnURL,
+		make(chan struct{}),
 	}
-	return autoscalerInstance
 }
 
 
 // Start the execution of the autoscaler
-func (as *Autoscaler) Start() {
-	quit = make(chan struct{})
+func (as *Autoscaler) StartMonitoringScale() {
 	go autoscalerRoutine(as)
-
 }
 
 // Stop the execution of the autoscaler
-func (as *Autoscaler) Stop() {
-	quit <- struct{}{}
+func (as *Autoscaler) StopMonitoringScale() {
+	as.quit <- struct{}{}
 }
 
 // goroutine which apply the scaling policy at each time interval. It will be stop when an empty object is inserted in
@@ -66,7 +57,7 @@ func (as *Autoscaler) Stop() {
 func autoscalerRoutine(as *Autoscaler) {
 	for {
 		select {
-		case <-quit:
+		case <-as.quit:
 			break
 		default:
 			if as.algorithm == WorkloadBased {

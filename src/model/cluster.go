@@ -18,7 +18,6 @@ type Scalable interface {
 // ClusterBase is the base class for any type of cluster
 type ClusterBase struct {
 	name string
-	resourceManagerURI string
 	nodes int16
 	MetricsSnapshot
 }
@@ -26,12 +25,10 @@ type ClusterBase struct {
 
 // NewClusterBase is the constructor of ClusterBase struct
 // @param clusterName is the name of the cluster
-// @param rmYarnURL is the address and port which YARN Resource Manager listen to
 // return the pointer to the ClusterBase instance
-func NewClusterBase(clusterName string, rmYarnURL string) *ClusterBase {
+func NewClusterBase(clusterName string) *ClusterBase {
 	return &ClusterBase{
 		clusterName,
-		rmYarnURL,
 		0,
 		MetricsSnapshot{},
 	}
