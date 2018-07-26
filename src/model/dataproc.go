@@ -12,9 +12,9 @@ import (
 type DataprocCluster struct {
 	*ClusterBase
 	*autoscaler.Autoscaler
-	projectID string
-	region string
-	preemptiveNodesRatio int8
+	ProjectID string
+	Region string
+	PreemptiveNodesRatio int8
 }
 
 // NewDataprocCluster is the constructor of DataprocCluster struct
@@ -22,9 +22,8 @@ type DataprocCluster struct {
 // @param projectId is the project ID in the GCP environment
 // @param region is the geo-region where the cluster was deployed (e.g. europe-west-1)
 // @param preemptibleRatio in the percentage of preemptible VMs that has to be present inside the cluster
-// @param autoscaler is autoscaler struct which will take care about the size of the cluster
 // return the pointer to the new DataprocCluster instance
-func NewDataprocCluster(baseInfo *ClusterBase, projectID string, region string, preemptibleRatio int8, autoscaler *autoscaler.Autoscaler) *DataprocCluster {
+func NewDataprocCluster(baseInfo *ClusterBase, projectID string, region string, preemptibleRatio int8) *DataprocCluster {
 	return &DataprocCluster{
 		baseInfo,
 		autoscaler,
@@ -46,9 +45,9 @@ func (c *DataprocCluster) ScaleUp(nodes int) {
 	}
 
 	req := &dataprocpb.UpdateClusterRequest{
-		ProjectId:   c.projectID,
-		Region:      c.region,
-		ClusterName: c.name,
+		ProjectId:   c.ProjectID,
+		Region:      c.Region,
+		ClusterName: c.Name,
 		Cluster: &dataprocpb.Cluster{
 			Config: &dataprocpb.ClusterConfig{
 				SecondaryWorkerConfig: &dataprocpb.InstanceGroupConfig{

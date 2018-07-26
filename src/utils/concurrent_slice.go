@@ -41,5 +41,3 @@ func (cs *ConcurrentSlice) Iter() <-chan ConcurrentSliceItem {
 
 	return c
 }
-
-
