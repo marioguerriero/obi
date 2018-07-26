@@ -78,9 +78,8 @@ func (c *DataprocCluster) Scale(nodes int16, toAdd bool) {
 	if err != nil {
 		glog.Error("'Wait' method call for UpdateCluster operation failed")
 		return
-	} else {
-		glog.Infof("Scaling completed. The new size of cluster '%s' is %d", c.Name, newSize)
 	}
+	glog.Infof("Scaling completed. The new size of cluster '%s' is %d", c.Name, newSize)
 }
 
 // Status is for getting the last metrics about the cluster

@@ -8,7 +8,7 @@ import (
 // ScalingAlgorithm is the enum type to specify different scaling algorithms
 type ScalingAlgorithm int
 const (
-	// ThroughputBased scales the cluster to meet Time Of Completion constraints
+	// BacklogBased scales the cluster to meet Time Of Completion constraints
 	BacklogBased ScalingAlgorithm = iota
 	// WorkloadBased scales the cluster when the resource utilization is too high
 	WorkloadBased
