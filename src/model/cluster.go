@@ -17,9 +17,9 @@ type Scalable interface {
 
 // ClusterBase is the base class for any type of cluster
 type ClusterBase struct {
-	name string
-	resourceManagerURI string
-	nodes int16
+	Name string
+	ResourceManagerURI string
+	Nodes int16
 	MetricsSnapshot
 }
 

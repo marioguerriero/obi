@@ -10,9 +10,9 @@ import (
 // DataprocCluster is the extended cluster struct of Google Dataproc
 type DataprocCluster struct {
 	*ClusterBase
-	projectID string
-	region string
-	preemptiveNodesRatio int8
+	ProjectID string
+	Region string
+	PreemptiveNodesRatio int8
 }
 
 // NewDataprocCluster is the constructor of DataprocCluster struct
@@ -42,9 +42,9 @@ func (c *DataprocCluster) ScaleUp(nodes int) {
 	}
 
 	req := &dataprocpb.UpdateClusterRequest{
-		ProjectId:   c.projectID,
-		Region:      c.region,
-		ClusterName: c.name,
+		ProjectId:   c.ProjectID,
+		Region:      c.Region,
+		ClusterName: c.Name,
 		Cluster: &dataprocpb.Cluster{
 			Config: &dataprocpb.ClusterConfig{
 				SecondaryWorkerConfig: &dataprocpb.InstanceGroupConfig{
