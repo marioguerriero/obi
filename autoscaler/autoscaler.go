@@ -2,7 +2,7 @@ package autoscaler
 
 import (
 	"time"
-	"model"
+	"obi/model"
 )
 
 // ScalingAlgorithm is the enum type to specify different scaling algorithms
@@ -81,7 +81,7 @@ func autoscalerRoutine(as *Autoscaler) {
 	}
 }
 
-func applyPolicy(currentStatus model.MetricsSnapshot, algorithm ScalingAlgorithm) (bool, bool) {
+func applyPolicy(currentStatus model.Metrics, algorithm ScalingAlgorithm) (bool, bool) {
 	switch algorithm {
 	case WorkloadBased:
 		// do something

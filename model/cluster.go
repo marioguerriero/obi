@@ -2,26 +2,17 @@ package model
 
 import "sync"
 
-// MetricsSnapshot is the struct composing an any type cluster to save last snapshot about metrics
-type MetricsSnapshot struct {
-	PendingContainers int32
-	AllocatedContainers int32
-	PendingMemory int32
-	AvailableMemory int32
-	PendingVCores int32
-}
-
 // Scalable is the interface that must be implemented from a scalable cluster
 type Scalable interface {
 	Scale(nodes int16, down bool)
-	Status() MetricsSnapshot
+	Status() Metrics
 }
 
 // ClusterBase is the base class for any type of cluster
 type ClusterBase struct {
 	Name string
 	Nodes int16
-	status MetricsSnapshot // not available outside package to prevent race conditions- get and set must be used
+	status Metrics // not available outside package to prevent race conditions- get and set must be used
 	sync.Mutex
 }
 
@@ -39,7 +30,7 @@ func NewClusterBase(clusterName string, size int16) *ClusterBase {
 
 // GetMetricsSnapshot is the getter of status field inside ClusterBase
 // thread-safe
-func (c *ClusterBase) GetMetricsSnapshot() MetricsSnapshot {
+func (c *ClusterBase) GetMetricsSnapshot() Metrics {
 	c.Lock()
 	defer c.Unlock()
 
@@ -49,7 +40,7 @@ func (c *ClusterBase) GetMetricsSnapshot() MetricsSnapshot {
 
 // SetMetricsSnapshot is the setter of status field inside ClusterBase
 // thread-safe
-func (c *ClusterBase) SetMetricsSnapshot(newStatus MetricsSnapshot) {
+func (c *ClusterBase) SetMetricsSnapshot(newStatus Metrics) {
 	c.Lock()
 	defer c.Unlock()
 

@@ -1,4 +1,4 @@
-package model
+package platforms
 
 import (
 	dataprocpb "google.golang.org/genproto/googleapis/cloud/dataproc/v1"
@@ -6,13 +6,15 @@ import (
 	"google.golang.org/genproto/protobuf/field_mask"
 	"context"
 	"github.com/golang/glog"
+	m "obi/model"
 )
 
 // DataprocCluster is the extended cluster struct of Google Dataproc
 type DataprocCluster struct {
-	*ClusterBase
+	*m.ClusterBase
 	ProjectID string
 	Region string
+	PreemptibleNodes int16
 	PreemptiveNodesRatio int8
 }
 
@@ -22,11 +24,12 @@ type DataprocCluster struct {
 // @param region is the geo-region where the cluster was deployed (e.g. europe-west-1)
 // @param preemptibleRatio in the percentage of preemptible VMs that has to be present inside the cluster
 // return the pointer to the new DataprocCluster instance
-func NewDataprocCluster(baseInfo *ClusterBase, projectID string, region string, preemptibleRatio int8) *DataprocCluster {
+func NewDataprocCluster(baseInfo *m.ClusterBase, projectID string, region string, preemptibleNodes int16, preemptibleRatio int8) *DataprocCluster {
 	return &DataprocCluster{
 		baseInfo,
 		projectID,
 		region,
+		preemptibleNodes,
 		preemptibleRatio,
 	}
 }
@@ -58,13 +61,19 @@ func (c *DataprocCluster) Scale(nodes int16, toAdd bool) {
 		ClusterName: c.Name,
 		Cluster: &dataprocpb.Cluster{
 			Config: &dataprocpb.ClusterConfig{
+				WorkerConfig: &dataprocpb.InstanceGroupConfig{
+					NumInstances: newSize,
+				},
 				SecondaryWorkerConfig: &dataprocpb.InstanceGroupConfig{
 					NumInstances: newSize,
 				},
 			},
 		},
 		UpdateMask:  &field_mask.FieldMask{
-			Paths: []string{"config.secondary_worker_config.num_instances"},
+			Paths: []string{
+				"config.worker_config.num_instances",
+				"config.secondary_worker_config.num_instances",
+			},
 		},
 	}
 
@@ -83,7 +92,7 @@ func (c *DataprocCluster) Scale(nodes int16, toAdd bool) {
 }
 
 // Status is for getting the last metrics about the cluster
-func (c *DataprocCluster) Status() MetricsSnapshot {
+func (c *DataprocCluster) Status() m.Metrics {
 	return c.GetMetricsSnapshot()
 }
 
