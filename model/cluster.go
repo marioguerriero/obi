@@ -16,6 +16,10 @@ type ClusterBase struct {
 	sync.Mutex
 }
 
+type ClusterBaseInterface interface {
+	SubmitJob()
+}
+
 
 // NewClusterBase is the constructor of ClusterBase struct
 // @param clusterName is the name of the cluster

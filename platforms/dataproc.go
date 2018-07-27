@@ -25,6 +25,11 @@ type DataprocCluster struct {
 // @param preemptibleRatio in the percentage of preemptible VMs that has to be present inside the cluster
 // return the pointer to the new DataprocCluster instance
 func NewDataprocCluster(baseInfo *m.ClusterBase, projectID string, region string, preemptibleNodes int16, preemptibleRatio int8) *DataprocCluster {
+
+	// TO DO: create cluster using by Dataproc rRPC
+
+	glog.Infof("New Dataproc cluster '%s' created", baseInfo.Name)
+
 	return &DataprocCluster{
 		baseInfo,
 		projectID,
@@ -97,3 +102,12 @@ func (c *DataprocCluster) Status() m.Metrics {
 }
 
 // <-- end implementation of `Scalable` interface -->
+
+// <-- start implementation of `ClusterBaseInterface` interface -->
+
+// SubmitJob is for sending a new job to Dataproc
+func (c *DataprocCluster) SubmitJob() {
+
+}
+
+// <-- end implementation of `ClusterBaseInterface` interface -->
