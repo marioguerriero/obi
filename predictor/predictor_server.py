@@ -1,6 +1,6 @@
 from flask import Flask
 
-from .config import *
+from .config import APP_NAME
 
 app = Flask(APP_NAME)
 
