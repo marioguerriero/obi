@@ -5,14 +5,21 @@ variables:
   PROJECT_NAME: obi
 
 stages:
-  - coding-styles-analysis
+  - coding-styles-analysis-go
+  - coding-styles-analysis-python
   - code-quality-analysis
 
 golint-analysis:
-  stage: coding-styles-analysis
+  stage: coding-styles-analysis-go
   image: eu.gcr.io/dhg-data-intelligence-ops/golint:alpine-3.7
   script:
   - chmod +x golint-checker.sh && ./golint-checker.sh ./...
+
+pylama-analysis:
+  stage: coding-styles-analysis-python
+  image: eu.gcr.io/$GCP_PROJECT_ID/pylama-runner:alpine-3.6
+  script:
+  - chmod +x pylama-checker.sh && ./pylama-checker.sh .
 
 sonar-analysis:
   stage: code-quality-analysis
