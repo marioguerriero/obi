@@ -16,6 +16,7 @@ type ClusterBase struct {
 	sync.Mutex
 }
 
+// ClusterBaseInterface defines the primitive methods that must be implemented for any type of cluster
 type ClusterBaseInterface interface {
 	SubmitJob()
 }
