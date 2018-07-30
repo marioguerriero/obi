@@ -471,30 +471,15 @@ def _get_csv_update_input_size(backend, date=None, day_diff=0):
     storage_client = storage.Client()
     bucket = storage_client.bucket('dhg-backend')
 
-    for b in bucket.list_blobs(prefix=id_md5_changes_prefix):
-        existed_file_list.append('gs://dhg-backend/' + b.name)
-        count += 1
-        size += b.size
-
-    for b in bucket.list_blobs(prefix=unique_prefix):
-        existed_file_list.append('gs://dhg-backend/' + b.name)
-        count += 1
-        size += b.size
-
-    for b in bucket.list_blobs(prefix=unique_full_prefix):
-        existed_file_list.append('gs://dhg-backend/' + b.name)
-        count += 1
-        size += b.size
-
-    for b in bucket.list_blobs(prefix=updated_prefix):
-        existed_file_list.append('gs://dhg-backend/' + b.name)
-        count += 1
-        size += b.size
-
-    for b in bucket.list_blobs(prefix=single_prefix):
-        existed_file_list.append('gs://dhg-backend/' + b.name)
-        count += 1
-        size += b.size
+    prefixes = [
+        id_md5_changes_prefix, unique_prefix, unique_full_prefix,
+        updated_prefix, single_prefix
+    ]
+    for p in prefixes:
+        for b in bucket.list_blobs(prefix=p):
+            existed_file_list.append('gs://dhg-backend/' + b.name)
+            count += 1
+            size += b.size
 
     for table in table_list:
         if backend == 'fd_de' and table in blacklisted_list:
