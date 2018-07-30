@@ -6,7 +6,7 @@ import urllib.request
 from .hb_pb2 import HeartbeatMessage
 
 HOSTNAME = socket.gethostname()
-CLUSTER_NAME = '-'.join(HOSTNAME.split('-')[:-1])
+CLUSTER_NAME = HOSTNAME[:-2]
 
 QUERY = 'jmx?qry=Hadoop:service=ResourceManager,name=QueueMetrics,q0=root,' \
         'q1=default '
@@ -33,7 +33,7 @@ def send_hb():
 def compute_hb():
     # Initialize HB message
     hb = HeartbeatMessage()
-    hb.cluster_name = CLUSTER_NAME
+    hb.cluster_name = "dataproc/" + CLUSTER_NAME
 
     # Collect metrics from Yarn master
     req = urllib.request.urlopen(QUERY_URL)
