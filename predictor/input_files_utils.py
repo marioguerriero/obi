@@ -284,6 +284,7 @@ def get_count_size_from_prefixes(bucket, prefixes):
             size += b.size
     return count, size, existed_file_list
 
+
 def check_path_in_list(path, file_list):
     """
     Check if a file is in a list
@@ -477,7 +478,6 @@ def _get_csv_update_input_size(backend, date=None, day_diff=0):
     updated_prefix = 'dwh_psql_' + source_splitted[0] + '/updated/' + today
     single_prefix = 'dwh_psql_' + source_splitted[0] + '/single/' + today
 
-    existed_file_list = []
     storage_client = storage.Client()
     bucket = storage_client.bucket('dhg-backend')
 
@@ -491,13 +491,12 @@ def _get_csv_update_input_size(backend, date=None, day_diff=0):
     count += tmpCount
 
     for table in table_list:
-        if backend == 'fd_de' and table in blacklisted_list:
-            continue
-
-        if backend == 'lh_payment_de' and table in blacklisted_list:
-            continue
-
-        if backend == 'pde_payment_de' and table in blacklisted_list:
+        continue_cond = (backend == 'fd_de' and table in blacklisted_list) \
+                        or (backend == 'lh_payment_de'
+                            and table in blacklisted_list)\
+                        or (backend == 'pde_payment_de'
+                            and table in blacklisted_list)
+        if continue_cond:
             continue
 
         output_path = base_output_path + '/' + table
@@ -555,16 +554,16 @@ def _get_csv_recreate_input_size(backend, date, day_diff=0):
     name_clean = changed_path.replace('gs://', '')
     changed_tables = storage.Blob(name_clean, bucket).download_as_string()
 
-    existed_file_list = []
-
     updated_prefix = 'dwh_psql_' + source_prefix + '/updated/' + yesterday
     unique_prefix = 'dwh_psql_' + source_prefix + '/unique/' + yesterday
 
-    for b in bucket.list_blobs(prefix=updated_prefix):
-        existed_file_list.append('gs://dhg-backend/' + b.name)
-
-    for b in bucket.list_blobs(prefix=unique_prefix):
-        existed_file_list.append('gs://dhg-backend/' + b.name)
+    prefixes = [
+        updated_prefix, unique_prefix
+    ]
+    tmpCount, tmpSize, existed_file_list = \
+        get_count_size_from_prefixes(bucket, prefixes)
+    size += tmpSize
+    count += tmpCount
 
     for table in changed_tables:
         table = table.split('\n')[0]
