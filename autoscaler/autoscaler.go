@@ -48,7 +48,7 @@ func (as *Autoscaler) StartMonitoringScale() {
 
 // StopMonitoringScale stops the execution of the autoscaler
 func (as *Autoscaler) StopMonitoringScale() {
-	as.quit <- struct{}{}
+	close(as.quit)
 }
 
 // goroutine which apply the scaling policy at each time interval. It will be stop when an empty object is inserted in
@@ -61,20 +61,29 @@ func autoscalerRoutine(as *Autoscaler) {
 		case <-as.quit:
 			break
 		default:
-			shouldScaleUp, shouldScaleDown = applyPolicy(as.managedCluster.Status(), as.Algorithm)
+			shouldScaleUp, shouldScaleDown = applyPolicy(
+					as.managedCluster.(model.ClusterBaseInterface).GetMetricsSnapshot(),
+					as.Algorithm,
+			)
 
 			var nodes int16 = 1
 			for shouldScaleUp && nodes < 128 {
 				as.managedCluster.Scale(nodes, false)
 				time.Sleep(time.Duration(as.SustainedTimeout) * time.Second)
-				shouldScaleUp, shouldScaleDown = applyPolicy(as.managedCluster.Status(), as.Algorithm)
+				shouldScaleUp, shouldScaleDown = applyPolicy(
+					as.managedCluster.(model.ClusterBaseInterface).GetMetricsSnapshot(),
+					as.Algorithm,
+				)
 				nodes = nodes << 1
 			}
 
 			for shouldScaleDown {
 				as.managedCluster.Scale(1, true)
 				time.Sleep(time.Duration(as.SustainedTimeout) * time.Second)
-				_, shouldScaleDown = applyPolicy(as.managedCluster.Status(), as.Algorithm)
+				_, shouldScaleDown = applyPolicy(
+					as.managedCluster.(model.ClusterBaseInterface).GetMetricsSnapshot(),
+					as.Algorithm,
+				)
 			}
 			time.Sleep(time.Duration(as.Timeout) * time.Second)
 		}
