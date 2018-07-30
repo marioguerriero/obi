@@ -28,7 +28,7 @@ func NewDataprocCluster(baseInfo *m.ClusterBase, projectID string, region string
 
 	// TO DO: create cluster using by Dataproc rRPC
 
-	glog.Infof("New Dataproc cluster '%s' created", baseInfo.Name)
+	glog.Infof("New Dataproc cluster '%s' created.", baseInfo.Name)
 
 	return &DataprocCluster{
 		baseInfo,
@@ -50,7 +50,7 @@ func (c *DataprocCluster) Scale(nodes int16, toAdd bool) {
 	ctx := context.Background()
 	controller, err := dataproc.NewClusterControllerClient(ctx)
 	if err != nil {
-		glog.Error("'NewClusterControllerClient' method call failed")
+		glog.Error("'NewClusterControllerClient' method call failed.")
 		return
 	}
 
@@ -84,16 +84,16 @@ func (c *DataprocCluster) Scale(nodes int16, toAdd bool) {
 
 	op, err := controller.UpdateCluster(ctx, req)
 	if err != nil {
-		glog.Error("'UpdateCluster' method call failed")
+		glog.Error("'UpdateCluster' method call failed.")
 		return
 	}
 
 	_, err = op.Wait(ctx)
 	if err != nil {
-		glog.Error("'Wait' method call for UpdateCluster operation failed")
+		glog.Error("'Wait' method call for UpdateCluster operation failed.")
 		return
 	}
-	glog.Infof("Scaling completed. The new size of cluster '%s' is %d", c.Name, newSize)
+	glog.Infof("Scaling completed. The new size of cluster '%s' is %d.", c.Name, newSize)
 }
 
 // <-- end implementation of `Scalable` interface -->
