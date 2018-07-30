@@ -274,6 +274,16 @@ def get_blob_size(bucket, name):
     return storage.Blob(name_clean, bucket).size
 
 
+def get_count_size_from_prefixes(bucket, prefixes):
+    count, size = 0, 0
+    existed_file_list = list()
+    for p in prefixes:
+        for b in bucket.list_blobs(prefix=p):
+            existed_file_list.append('gs://dhg-backend/' + b.name)
+            count += 1
+            size += b.size
+    return count, size, existed_file_list
+
 def check_path_in_list(path, file_list):
     """
     Check if a file is in a list
@@ -475,11 +485,10 @@ def _get_csv_update_input_size(backend, date=None, day_diff=0):
         id_md5_changes_prefix, unique_prefix, unique_full_prefix,
         updated_prefix, single_prefix
     ]
-    for p in prefixes:
-        for b in bucket.list_blobs(prefix=p):
-            existed_file_list.append('gs://dhg-backend/' + b.name)
-            count += 1
-            size += b.size
+    tmpCount, tmpSize, existed_file_list = \
+        get_count_size_from_prefixes(bucket, prefixes)
+    size += tmpSize
+    count += tmpCount
 
     for table in table_list:
         if backend == 'fd_de' and table in blacklisted_list:
