@@ -2,5 +2,5 @@
 
 predictor/*.pyc
 
-heartbeat/hb_message.pb.go
+heartbeat/message.pb.go
 heartbeat/hb_pb2.py
