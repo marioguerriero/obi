@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package heartbeat;
 
-message Heartbeat {
+message HeartbeatMessage {
     // Cluster details
     string cluster_name = 1;
     // Cluster metrics
