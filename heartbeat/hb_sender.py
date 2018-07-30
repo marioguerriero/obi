@@ -1,5 +1,7 @@
 import json
+import sched
 import socket
+import time
 import urllib.request
 
 from .hb_pb2 import HeartbeatMessage
@@ -13,6 +15,9 @@ QUERY_URL = '{}:8088/{}'.format(HOSTNAME, QUERY)
 
 RECEIVER_ADDRESS = ''
 RECEIVER_PORT = 8080
+
+TIMEOUT = 10
+HB_EVENT_PRIORITY = 1
 
 # Create UDP socket object for sending heartbeat
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -67,3 +72,15 @@ def compute_hb():
     hb.PendingContainers = metrics['PendingContainers']
 
     return hb
+
+
+if __name__ == '__main__':
+    def scheduler_wrapper(scheduler):
+        # Send heartbeat
+        send_hb()
+        # Reschedule event
+        scheduler.enter(TIMEOUT, HB_EVENT_PRIORITY, scheduler_wrapper, (s,))
+
+    # Schedule first heartbeat message
+    s = sched.scheduler(time.time, time.sleep)
+    s.enter(TIMEOUT, HB_EVENT_PRIORITY, scheduler_wrapper, (s,))
