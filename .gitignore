@@ -1,3 +1,6 @@
 .idea/
 
 predictor/*.pyc
+
+heartbeat/hb.pb.go
+heartbeat/hb_pb2.py
