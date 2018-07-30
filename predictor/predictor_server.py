@@ -3,18 +3,24 @@ from flask import request
 
 import json
 
-from .config import APP_NAME, REQUIRED_FIELDS
+from .config import APP_NAME, ACCEPTED_JOBS
+
+from .models.failure_predictor import FailurePredictor, PredictionException
+
+from .profile_manager import get_profile
 
 app = Flask(APP_NAME)
 
+PROFILE_ARG = 'profile'
+
 
 @app.route("/predict-duration")
-def hello():
+def duration():
     # Parse request arguments
-    profile = request.args.get('profile')
+    profile = request.args.get(PROFILE_ARG)
 
     # Handle missing profile errors
-    if profile is None or profile not in REQUIRED_FIELDS:
+    if profile is None or profile not in ACCEPTED_JOBS:
         resp = app.response_class(
             response=json.dumps({
                 'error': 'Malformed request. '
@@ -25,20 +31,28 @@ def hello():
         )
         return resp
 
-    # Handle missing query fields errors
-    required_fields = REQUIRED_FIELDS[profile]
-    for f in required_fields:
-        val = request.args.get(f)
-        if val is None:
-            resp = app.response_class(
-                response=json.dumps({
-                    'error': 'Malformed request. '
-                             'Profile {}  requires "{}" field.'.format(profile,
-                                                                       f)
-                }),
-                status=400,
-                mimetype='application/json'
-            )
-            return resp
+    # Obtain other (eventual) arguments from query
+    args = request.args
+    del args[PROFILE_ARG]
 
-    return "Hello World!"
+    # Obtain profile and generate predictions
+    profile = get_profile[profile]
+    return profile.predict_duration(args)
+
+
+@app.route("/predict-failure")
+def failure():
+    predictor = FailurePredictor()
+    try:
+        pred = predictor.predict_failure(**request.args)
+        return pred
+    except PredictionException:
+        resp = app.response_class(
+            response=json.dumps({
+                'error': 'Exception generated while attempting '
+                         'to generate prediction'
+            }),
+            status=400,
+            mimetype='application/json'
+        )
+        return resp

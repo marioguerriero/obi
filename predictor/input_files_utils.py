@@ -430,9 +430,9 @@ def _get_csv_find_input_size(backend, date=None, day_diff=0):
     id_md5_changes_prefix = 'dwh_psql_' + source_splitted[0] \
                             + '/id_md5_changes/' + today
 
-    tmpCount, tmpSize = get_list_count_size(bucket, id_md5_changes_prefix)
-    count += tmpCount
-    size += tmpSize
+    tmp_count, tmp_size = get_list_count_size(bucket, id_md5_changes_prefix)
+    count += tmp_count
+    size += tmp_size
 
     for table in table_list:
         if backend == 'fd_de' and table in blacklisted_list:
@@ -497,15 +497,15 @@ def _get_csv_update_input_size(backend, date=None, day_diff=0):
         id_md5_changes_prefix, unique_prefix, unique_full_prefix,
         updated_prefix, single_prefix
     ]
-    tmpCount, tmpSize, existed_file_list = \
+    tmp_count, tmp_size, existed_file_list = \
         get_count_size_from_prefixes(bucket, prefixes)
-    size += tmpSize
-    count += tmpCount
+    size += tmp_size
+    count += tmp_count
 
     for table in table_list:
         continue_cond = (backend == 'fd_de' and table in blacklisted_list) \
                         or (backend == 'lh_payment_de'
-                            and table in blacklisted_list)\
+                            and table in blacklisted_list) \
                         or (backend == 'pde_payment_de'
                             and table in blacklisted_list)
         if continue_cond:
@@ -528,12 +528,12 @@ def _get_csv_update_input_size(backend, date=None, day_diff=0):
         del_path = changed_file_base_path + '/' + table + "/del/*.csv"
 
         check_del = del_path[:-5] + 'part-0000'
-        tmpCount, tmpSize = get_count_size_all_csv(bucket, check_del,
-                                                   existed_file_list,
-                                                   changed_file_base_path,
-                                                   table)
-        count += tmpCount
-        size += tmpSize
+        tmp_count, tmp_size = get_count_size_all_csv(bucket, check_del,
+                                                     existed_file_list,
+                                                     changed_file_base_path,
+                                                     table)
+        count += tmp_count
+        size += tmp_size
 
         if mod_path in existed_file_list:
             count += 1
@@ -564,7 +564,8 @@ def _get_csv_recreate_input_size(backend, date, day_diff=0):
     changed_path = BUCKET_PREFIX + source_prefix + '/changelogs/' + \
         today + '.changed.txt'
     name_clean = changed_path.replace('gs://', '')
-    changed_tables = storage.Blob(name_clean, bucket).download_as_string()
+    changed_tables = storage.Blob(name_clean, bucket) \
+        .download_as_string().split('\n')
 
     updated_prefix = 'dwh_psql_' + source_prefix + '/updated/' + yesterday
     unique_prefix = 'dwh_psql_' + source_prefix + '/unique/' + yesterday
@@ -572,10 +573,10 @@ def _get_csv_recreate_input_size(backend, date, day_diff=0):
     prefixes = [
         updated_prefix, unique_prefix
     ]
-    tmpCount, tmpSize, existed_file_list = \
+    tmp_count, tmp_size, existed_file_list = \
         get_count_size_from_prefixes(bucket, prefixes)
-    size += tmpSize
-    count += tmpCount
+    size += tmp_size
+    count += tmp_count
 
     for table in changed_tables:
         table = table.split('\n')[0]
