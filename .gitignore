@@ -3,4 +3,6 @@
 predictor/*.pyc
 
 heartbeat/message.pb.go
+heartbeat/hb.pb.go
 heartbeat/hb_pb2.py
+heartbeat/message_pb2.py
