@@ -30,5 +30,4 @@ message HeartbeatMessage {
     int32 PendingMB = 23;
     int32 PendingVCores = 24;
     int32 PendingContainers = 25;
-
 }

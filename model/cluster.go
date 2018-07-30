@@ -5,7 +5,6 @@ import "sync"
 // Scalable is the interface that must be implemented from a scalable cluster
 type Scalable interface {
 	Scale(nodes int16, down bool)
-	Status() Metrics
 }
 
 // ClusterBase is the base class for any type of cluster
@@ -19,6 +18,8 @@ type ClusterBase struct {
 // ClusterBaseInterface defines the primitive methods that must be implemented for any type of cluster
 type ClusterBaseInterface interface {
 	SubmitJob()
+	GetMetricsSnapshot() Metrics
+	SetMetricsSnapshot(Metrics)
 }
 
 
@@ -35,7 +36,7 @@ func NewClusterBase(clusterName string, size int16) *ClusterBase {
 
 // GetMetricsSnapshot is the getter of status field inside ClusterBase
 // thread-safe
-func (c *ClusterBase) GetMetricsSnapshot() Metrics {
+func (c *ClusterBase) GetMetrics() Metrics {
 	c.Lock()
 	defer c.Unlock()
 
@@ -45,7 +46,7 @@ func (c *ClusterBase) GetMetricsSnapshot() Metrics {
 
 // SetMetricsSnapshot is the setter of status field inside ClusterBase
 // thread-safe
-func (c *ClusterBase) SetMetricsSnapshot(newStatus Metrics) {
+func (c *ClusterBase) SetMetrics(newStatus Metrics) {
 	c.Lock()
 	defer c.Unlock()
 

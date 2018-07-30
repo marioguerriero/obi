@@ -5,10 +5,10 @@ import (
 	"net"
 	"github.com/golang/glog"
 	"github.com/golang/protobuf/proto"
-	"fmt"
-)
+		"obi/model"
+	)
 
-// Autoscaler class with properties
+// HeartbeatReceiver class with properties
 type HeartbeatReceiver struct {
 	pool *utils.ConcurrentMap
 	DeleteTimeout int16
@@ -21,7 +21,7 @@ var hbReceiverInstance *HeartbeatReceiver
 var quit chan struct{}
 
 
-// GetInstance if for getting the singleton instance of the autoscaler
+// GetInstance if for getting the singleton instance of the heartbeat receiver
 // @param clustersMap is the pool of the available clusters to update regularly
 // @param deleteTimeout is the time interval after which a cluster is assumed down
 // return the pointer to the instance
@@ -35,11 +35,15 @@ func GetInstance(clustersMap *utils.ConcurrentMap, deleteTimeout int16) *Heartbe
 	return hbReceiverInstance
 }
 
+// Start the execution of the heartbeat receiver
 func (hbReceiver *HeartbeatReceiver) Start() {
 	quit = make(chan struct{})
 	go hbReceiverRoutine(hbReceiver)
 }
 
+// goroutine which listens to new heartbeats from cluster masters. It will be stop when an empty object is inserted in
+// the `quit` channel
+// @param hbReceiver is the heartbeat receiver instance
 func hbReceiverRoutine(hbReceiver *HeartbeatReceiver) {
 	// listen to incoming udp packets
 	ln, err := net.Listen("udp", ":8080")
@@ -66,8 +70,24 @@ func hbReceiverRoutine(hbReceiver *HeartbeatReceiver) {
 				continue
 			}
 
-			fmt.Println(hbMessage)
+			newMetrics := model.Metrics{
+				PendingContainers:   hbMessage.GetPendingContainers(),
+				AllocatedContainers: hbMessage.GetPendingContainers(),
+				PendingMemory:       hbMessage.GetPendingMB(),
+				AvailableMemory:     hbMessage.GetAvailableMB(),
+				PendingVCores:       hbMessage.GetPendingVCores(),
+			}
+
+			if value, ok := hbReceiver.pool.Get(hbMessage.GetClusterName()); ok {
+				cluster := value.(model.ClusterBaseInterface)
+				cluster.SetMetricsSnapshot(newMetrics)
+			}
 		}
 	}
 
+}
+
+// Stop the execution of the heartbeat receiver
+func (hbReceiver *HeartbeatReceiver) Stop() {
+	// TO DO
 }

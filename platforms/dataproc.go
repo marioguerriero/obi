@@ -96,11 +96,6 @@ func (c *DataprocCluster) Scale(nodes int16, toAdd bool) {
 	glog.Infof("Scaling completed. The new size of cluster '%s' is %d", c.Name, newSize)
 }
 
-// Status is for getting the last metrics about the cluster
-func (c *DataprocCluster) Status() m.Metrics {
-	return c.GetMetricsSnapshot()
-}
-
 // <-- end implementation of `Scalable` interface -->
 
 // <-- start implementation of `ClusterBaseInterface` interface -->
@@ -108,6 +103,14 @@ func (c *DataprocCluster) Status() m.Metrics {
 // SubmitJob is for sending a new job to Dataproc
 func (c *DataprocCluster) SubmitJob() {
 
+}
+
+func (c *DataprocCluster) GetMetricsSnapshot() m.Metrics {
+	return c.GetMetrics()
+}
+
+func (c *DataprocCluster) SetMetricsSnapshot(newMetrics m.Metrics) {
+	c.SetMetrics(newMetrics)
 }
 
 // <-- end implementation of `ClusterBaseInterface` interface -->
