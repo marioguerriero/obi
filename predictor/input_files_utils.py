@@ -285,6 +285,18 @@ def get_count_size_from_prefixes(bucket, prefixes):
     return count, size, existed_file_list
 
 
+def get_count_size_all_csv(bucket, check_del, existed_file_list,
+                           changed_file_base_path, table):
+    count, size = 0, 0
+    if check_path_in_list(check_del, existed_file_list):
+        for b in bucket.list_blobs(
+                prefix=changed_file_base_path + '/' + table + "/del"):
+            if 'csv' in b.name.split('.')[-1]:
+                count += 1
+                size += b.size
+    return count, size
+
+
 def check_path_in_list(path, file_list):
     """
     Check if a file is in a list
@@ -516,12 +528,12 @@ def _get_csv_update_input_size(backend, date=None, day_diff=0):
         del_path = changed_file_base_path + '/' + table + "/del/*.csv"
 
         check_del = del_path[:-5] + 'part-0000'
-        if check_path_in_list(check_del, existed_file_list):
-            for b in bucket.list_blobs(
-                    prefix=changed_file_base_path + '/' + table + "/del"):
-                if 'csv' in b.name.split('.')[-1]:
-                    count += 1
-                    size += b.size
+        tmpCount, tmpSize = get_count_size_all_csv(bucket, check_del,
+                                                   existed_file_list,
+                                                   changed_file_base_path,
+                                                   table)
+        count += tmpCount
+        size += tmpSize
 
         if mod_path in existed_file_list:
             count += 1
