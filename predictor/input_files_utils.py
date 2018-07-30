@@ -421,9 +421,7 @@ def _get_csv_find_input_size(backend, date=None, day_diff=0):
         if backend == 'pde_payment_de' and table in blacklisted_list:
             continue
 
-        output_new = today_path + '/' + table + '/new'
         output_mod = today_path + '/' + table + '/mod'
-        output_del = today_path + '/' + table + '/del'
 
         if check_path_in_list(output_mod, existed_file_list):
             if check_path_in_list(output_mod + '/_SUCCESS', existed_file_list):
@@ -456,16 +454,10 @@ def _get_csv_update_input_size(backend, date=None, day_diff=0):
                           + '/updated/' + yesterday
     base_output_path = 'gs://dhg-backend/dwh_psql_' + source_splitted[0] \
                        + '/updated/' + today
-    unique_output_path = 'gs://dhg-backend/dwh_psql_' + source_splitted[0] \
-                         + '/unique/' + today
-    unique_full_output_path = 'gs://dhg-backend/dwh_psql_' \
-                              + source_splitted[0] + '/unique_full/' + today
 
-    changed_file_base_path = 'gs://dhg-backend/dwh_psql_' + source_splitted[0] \
+    changed_file_base_path = 'gs://dhg-backend/dwh_psql_' \
+                             + source_splitted[0] \
                              + '/id_md5_changes/' + today
-
-    single_file_output_path = 'gs://dhg-backend/dwh_psql_' + \
-                              source_splitted[0] + '/single/' + today
 
     id_md5_changes_prefix = 'dwh_psql_' + source_splitted[0] \
                             + '/id_md5_changes/' + today
