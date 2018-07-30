@@ -105,10 +105,13 @@ func (c *DataprocCluster) SubmitJob() {
 
 }
 
+// GetMetricsSnapshot is for getting last metrics of the cluster
 func (c *DataprocCluster) GetMetricsSnapshot() m.Metrics {
 	return c.GetMetrics()
 }
 
+// SetMetricsSnapshot is for updating the cluster with new metrics
+// @newMetrics is the object filled with new metrics
 func (c *DataprocCluster) SetMetricsSnapshot(newMetrics m.Metrics) {
 	c.SetMetrics(newMetrics)
 }

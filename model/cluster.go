@@ -34,7 +34,7 @@ func NewClusterBase(clusterName string, size int16) *ClusterBase {
 	}
 }
 
-// GetMetricsSnapshot is the getter of status field inside ClusterBase
+// GetMetrics is the getter of status field inside ClusterBase
 // thread-safe
 func (c *ClusterBase) GetMetrics() Metrics {
 	c.Lock()
@@ -44,7 +44,7 @@ func (c *ClusterBase) GetMetrics() Metrics {
 	return value
 }
 
-// SetMetricsSnapshot is the setter of status field inside ClusterBase
+// SetMetrics is the setter of status field inside ClusterBase
 // thread-safe
 func (c *ClusterBase) SetMetrics(newStatus Metrics) {
 	c.Lock()

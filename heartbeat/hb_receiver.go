@@ -8,14 +8,14 @@ import (
 		"obi/model"
 	)
 
-// HeartbeatReceiver class with properties
-type HeartbeatReceiver struct {
+// Receiver class with properties
+type Receiver struct {
 	pool *utils.ConcurrentMap
 	DeleteTimeout int16
 }
 
 // singleton instance
-var hbReceiverInstance *HeartbeatReceiver
+var hbReceiverInstance *Receiver
 
 // channel to interrupt the heartbeat receiver routine
 var quit chan struct{}
@@ -25,9 +25,9 @@ var quit chan struct{}
 // @param clustersMap is the pool of the available clusters to update regularly
 // @param deleteTimeout is the time interval after which a cluster is assumed down
 // return the pointer to the instance
-func GetInstance(clustersMap *utils.ConcurrentMap, deleteTimeout int16) *HeartbeatReceiver {
+func GetInstance(clustersMap *utils.ConcurrentMap, deleteTimeout int16) *Receiver {
 	if hbReceiverInstance == nil {
-		hbReceiverInstance = &HeartbeatReceiver{
+		hbReceiverInstance = &Receiver{
 			clustersMap,
 			deleteTimeout,
 		}
@@ -36,7 +36,7 @@ func GetInstance(clustersMap *utils.ConcurrentMap, deleteTimeout int16) *Heartbe
 }
 
 // Start the execution of the heartbeat receiver
-func (hbReceiver *HeartbeatReceiver) Start() {
+func (hbReceiver *Receiver) Start() {
 	quit = make(chan struct{})
 	go hbReceiverRoutine(hbReceiver)
 }
@@ -44,7 +44,7 @@ func (hbReceiver *HeartbeatReceiver) Start() {
 // goroutine which listens to new heartbeats from cluster masters. It will be stop when an empty object is inserted in
 // the `quit` channel
 // @param hbReceiver is the heartbeat receiver instance
-func hbReceiverRoutine(hbReceiver *HeartbeatReceiver) {
+func hbReceiverRoutine(hbReceiver *Receiver) {
 	// listen to incoming udp packets
 	ln, err := net.Listen("udp", ":8080")
 	if err != nil {
@@ -88,6 +88,6 @@ func hbReceiverRoutine(hbReceiver *HeartbeatReceiver) {
 }
 
 // Stop the execution of the heartbeat receiver
-func (hbReceiver *HeartbeatReceiver) Stop() {
+func (hbReceiver *Receiver) Stop() {
 	// TO DO
 }

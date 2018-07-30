@@ -35,6 +35,8 @@ func (cm *ConcurrentMap) Get(key string) (interface{}, bool) {
 	return value, ok
 }
 
+// Delete if for deleting a <key, value> pair from the map
+// @param key is the key for the dictionary
 func (cm *ConcurrentMap) Delete(key string) {
 	cm.Lock()
 	defer cm.Unlock()
