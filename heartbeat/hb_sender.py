@@ -1,5 +1,4 @@
 import json
-import sched
 import socket
 import time
 import urllib.request
@@ -11,13 +10,12 @@ CLUSTER_NAME = '-'.join(HOSTNAME.split('-')[:-1])
 
 QUERY = 'jmx?qry=Hadoop:service=ResourceManager,name=QueueMetrics,q0=root,' \
         'q1=default '
-QUERY_URL = '{}:8088/{}'.format(HOSTNAME, QUERY)
+QUERY_URL = 'http://{}:8088/{}'.format(HOSTNAME, QUERY)
 
-RECEIVER_ADDRESS = ''
+RECEIVER_ADDRESS = '62.96.154.22'
 RECEIVER_PORT = 8080
 
 TIMEOUT = 10
-HB_EVENT_PRIORITY = 1
 
 # Create UDP socket object for sending heartbeat
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -39,7 +37,7 @@ def compute_hb():
 
     # Collect metrics from Yarn master
     req = urllib.request.urlopen(QUERY_URL)
-    req = req.read()
+    req = req.read().decode('utf-8')
     metrics = json.loads(req)
     metrics = metrics['beans'][0]
 
@@ -75,12 +73,6 @@ def compute_hb():
 
 
 if __name__ == '__main__':
-    def scheduler_wrapper(scheduler):
-        # Send heartbeat
+    while True:
         send_hb()
-        # Reschedule event
-        scheduler.enter(TIMEOUT, HB_EVENT_PRIORITY, scheduler_wrapper, (s,))
-
-    # Schedule first heartbeat message
-    s = sched.scheduler(time.time, time.sleep)
-    s.enter(TIMEOUT, HB_EVENT_PRIORITY, scheduler_wrapper, (s,))
+        time.sleep(TIMEOUT)
