@@ -7,6 +7,7 @@ import (
 	"github.com/golang/protobuf/proto"
 		"obi/model"
 	"time"
+	"fmt"
 )
 
 // Receiver class with properties
@@ -22,9 +23,8 @@ var receiverInstance *Receiver
 // channel to interrupt the heartbeat receiver routine
 var quit chan struct{}
 
-// listener for UDP packets
-var ln net.Listener
-
+// UDP connection
+var conn *net.UDPConn
 
 // GetInstance if for getting the singleton instance of the heartbeat receiver
 // @param clustersMap is the pool of the available clusters to update regularly
@@ -58,56 +58,55 @@ func receiverRoutine(pool *utils.ConcurrentMap) {
 	var err error
 
 	// listen to incoming udp packets
-	ln, err = net.Listen("udp", ":8080")
+	addr := net.UDPAddr{
+		Port: 8080,
+		IP:   net.ParseIP("127.0.0.1"),
+	}
+
+	conn, err = net.ListenUDP("udp", &addr)
 	if err != nil {
-		glog.Errorf("'Listen' method call for creating new UDP server failed: %s")
+		glog.Errorf("'ListenUDP' method call for creating new UDP server failed: %s", err)
 		return
 	}
 
 	for {
-		if conn, err := ln.Accept(); err == nil {
-
-			data := make([]byte, 4096)
-			n, err:= conn.Read(data)
-			if err != nil {
-				glog.Errorf("'Read' method call for accepting new connection failed: %s", err)
-				continue
-			}
-			conn.Close()
-
-			m := &HeartbeatMessage{}
-			err = proto.Unmarshal(data[0:n], m)
-			if err != nil {
-				glog.Errorf("'Unmarshal' method call for new heartbeat message failed: %s", err)
-				continue
-			}
-
-			newMetrics := model.Metrics{
-				Timestamp:           time.Now(),
-				PendingContainers:   m.GetPendingContainers(),
-				AllocatedContainers: m.GetPendingContainers(),
-				PendingMemory:       m.GetPendingMB(),
-				AvailableMemory:     m.GetAvailableMB(),
-				PendingVCores:       m.GetPendingVCores(),
-			}
-
-			if value, ok := pool.Get(m.GetClusterName()); ok {
-				cluster := value.(model.ClusterBaseInterface)
-				cluster.SetMetricsSnapshot(newMetrics)
-				glog.Infof("Metrics updated for cluster '%s'.", m.GetClusterName())
-			} else {
-				glog.Error("Received metrics for a cluster not in the pool.")
-			}
-		} else {
-			glog.Error(err.Error())
+		data := make([]byte, 4096)
+		n, err:= conn.Read(data)
+		if err != nil {
 			select {
 			case <-quit:
 				glog.Info("Closing heartbeat receiver routine.")
 				// the error was caused by the closing of the listener
-				break
+				return
 			default:
 				// temporary error - let's continue
+				continue
 			}
+
+		}
+		fmt.Println(n)
+		m := &HeartbeatMessage{}
+		err = proto.Unmarshal(data[0:n], m)
+		if err != nil {
+			glog.Errorf("'Unmarshal' method call for new heartbeat message failed: %s", err)
+			continue
+		}
+
+		newMetrics := model.Metrics{
+			Timestamp:           time.Now(),
+			PendingContainers:   m.GetPendingContainers(),
+			AllocatedContainers: m.GetPendingContainers(),
+			PendingMemory:       m.GetPendingMB(),
+			AvailableMemory:     m.GetAvailableMB(),
+			PendingVCores:       m.GetPendingVCores(),
+		}
+
+		if value, ok := pool.Get(m.GetClusterName()); ok {
+			cluster := value.(model.ClusterBaseInterface)
+			cluster.SetMetricsSnapshot(newMetrics)
+			glog.Infof("Metrics updated for cluster '%s'.", m.GetClusterName())
+		} else {
+			glog.Error("Received metrics for a cluster not in the pool.")
 		}
 	}
 }
@@ -122,7 +121,7 @@ func clustersTrackerRoutine(pool *utils.ConcurrentMap, timeout int16, interval i
 		select {
 		case <-quit:
 			glog.Info("Closing cluster tracker routine.")
-			break
+			return
 		default:
 			for pair := range pool.Iter() {
 				key := pair.Key
@@ -141,5 +140,5 @@ func clustersTrackerRoutine(pool *utils.ConcurrentMap, timeout int16, interval i
 // Stop the execution of the receiver goroutines
 func (receiver *Receiver) Stop() {
 	close(quit)
-	ln.Close()
+	conn.Close()
 }

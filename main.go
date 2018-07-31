@@ -1,14 +1,26 @@
 package main
 
 import (
-	"obi/pooling"
-	"flag"
+		"flag"
 	"github.com/golang/glog"
+	"obi/utils"
+	"obi/heartbeat"
+	"time"
 )
 
 func main() {
 	flag.Parse()
-	p := pooling.New()
-	p.SubmitPySparkJob("obi-test", "gs://dhg-obi/cluster-script/word_count.py")
+	pool := &utils.ConcurrentMap{}
+
+	// instantiate modules
+	// p := pooling.New(pool)
+	hb := heartbeat.GetInstance(pool, 60, 30)
+	hb.Start()
+	time.Sleep(30 * time.Second)
+	hb.Stop()
+	time.Sleep(30 * time.Second)
+	// submit a job
+	// p.SubmitPySparkJob("obi-test", "gs://dhg-obi/cluster-script/word_count.py")
 	glog.Flush()
+
 }

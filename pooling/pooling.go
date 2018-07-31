@@ -3,16 +3,20 @@ package pooling
 import (
 	"obi/platforms"
 	"obi/model"
+	"obi/utils"
 )
 
 // Pooling class with properties
 type Pooling struct {
-
+	pool *utils.ConcurrentMap
 }
 
 // New is the constructor of Pooling struct
-func New() *Pooling {
-	return &Pooling{}
+// @param clustersMap is the pool of the available clusters to update regularly
+func New(clustersMap *utils.ConcurrentMap) *Pooling {
+	return &Pooling{
+		clustersMap,
+	}
 }
 
 // SubmitPySparkJob is for submitting a new Spark job in Python environment
@@ -29,7 +33,11 @@ func (p *Pooling) SubmitPySparkJob(clusterName string, scriptURI string) {
 
 	// Allocate cluster resources
 	err := cluster.AllocateResources()
+
 	if err == nil {
+		// Add to pool
+		p.pool.Set(clusterName, cluster)
+
 		// Schedule some jobs
 		cluster.SubmitJob(scriptURI)
 	}
