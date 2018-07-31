@@ -13,4 +13,4 @@ gsutil cp gs://dhg-obi/cluster-script/heartbeat.py $SERVICE_EXEC
 chmod +x $SERVICE_EXEC
 
 # Schedule cron job
-echo "* * * * * ( sleep $INTERVAL ; SERVICE_EXEC)" | crontab
+(while True; sleep ${INTERVAL}; do ${SERVICE_EXEC}; done) &
