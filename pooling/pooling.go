@@ -17,12 +17,12 @@ func main() {
 	// Create cluster object
 	cluster := platforms.NewDataprocCluster(&model.ClusterBase{
 		Name: "obi-test-cluster",
-		Nodes: 2,
+		Nodes: 3,
 	}, proj, "europe-west3-b","europe-west3", 1, 0.3)
 
 	// Allocate cluster resources
 	cluster.AllocateResources()
 
 	// Schedule some jobs
-	cluster.SubmitJob()
+	cluster.SubmitJob("gc://dhg-obi/cluster-script/word_count.py")
 }
