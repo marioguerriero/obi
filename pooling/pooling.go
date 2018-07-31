@@ -28,8 +28,9 @@ func (p *Pooling) SubmitPySparkJob(clusterName string, scriptURI string) {
 	}, "dhg-data-intelligence-ops", "europe-west3-b","global", 1, 0.3)
 
 	// Allocate cluster resources
-	cluster.AllocateResources()
-
-	// Schedule some jobs
-	cluster.SubmitJob(scriptURI)
+	err := cluster.AllocateResources()
+	if err == nil {
+		// Schedule some jobs
+		cluster.SubmitJob(scriptURI)
+	}
 }
