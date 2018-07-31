@@ -101,12 +101,12 @@ func (c *DataprocCluster) Scale(nodes int16, toAdd bool) {
 	glog.Infof("Scaling completed. The new size of cluster '%s' is %d.", c.Name, newSize)
 }
 // SubmitJob is for sending a new job to Dataproc
-func (c *DataprocCluster) SubmitJob(scriptURI string) {
+func (c *DataprocCluster) SubmitJob(scriptURI string) (*dataprocpb.Job, error){
 	ctx := context.Background()
 	controller, err := dataproc.NewJobControllerClient(ctx)
 	if err != nil {
 		glog.Error("'NewJobControllerClient' method call failed.")
-		return
+		return nil, err
 	}
 
 	// TODO generalize this function to deploy any type of job, not only PySpark
@@ -126,12 +126,13 @@ func (c *DataprocCluster) SubmitJob(scriptURI string) {
 		},
 	}
 
-	_, err = controller.SubmitJob(ctx, req)
+	job, err := controller.SubmitJob(ctx, req)
 	if err != nil {
 		glog.Error("'SubmitJob' method call failed.")
-		return
+		return nil, err
 	}
 	glog.Infof("New job deployed in cluster '%s'.", c.Name)
+	return job, nil
 
 }
 
