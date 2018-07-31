@@ -9,7 +9,10 @@ import (
 	m "obi/model"
 )
 
+// InitializationActionRequirements initialization script for installing necessary requirements
 const InitializationActionRequirements = "gc://dhg-obi/cluster-script/requirements-install.sh"
+
+// InitializationActionHeartbeatService initialization script for running heartbeat service
 const InitializationActionHeartbeatService = "gc://dhg-obi/cluster-script/heartbeat.py"
 
 // DataprocCluster is the extended cluster struct of Google Dataproc
@@ -147,6 +150,7 @@ func (c *DataprocCluster) SetMetricsSnapshot(newMetrics m.Metrics) {
 	c.SetMetrics(newMetrics)
 }
 
+// AllocateResources instantiate physical resources for the given cluster
 func (c *DataprocCluster) AllocateResources() {
 	// Create cluster controller
 	ctx := context.Background()
