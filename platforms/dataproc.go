@@ -9,10 +9,14 @@ import (
 	m "obi/model"
 )
 
+const InitializationActionRequirements = "gc://dhg-obi/cluster-script/requirements-install.sh"
+const InitializationActionHeartbeatService = "gc://dhg-obi/cluster-script/heartbeat.py"
+
 // DataprocCluster is the extended cluster struct of Google Dataproc
 type DataprocCluster struct {
 	*m.ClusterBase
 	ProjectID string
+	Zone string
 	Region string
 	PreemptibleNodes int16
 	PreemptiveNodesRatio int8
@@ -24,20 +28,18 @@ type DataprocCluster struct {
 // @param region is the geo-region where the cluster was deployed (e.g. europe-west-1)
 // @param preemptibleRatio in the percentage of preemptible VMs that has to be present inside the cluster
 // return the pointer to the new DataprocCluster instance
-func NewDataprocCluster(baseInfo *m.ClusterBase, projectID string, region string, preemptibleNodes int16, preemptibleRatio int8) *DataprocCluster {
-
-	// TO DO: create cluster using by Dataproc rRPC
-
-	glog.Infof("New Dataproc cluster '%s' created.", baseInfo.Name)
-
+func NewDataprocCluster(baseInfo *m.ClusterBase, projectID, zone, region string,
+		preemptibleNodes int16, preemptibleRatio int8) *DataprocCluster {
 	return &DataprocCluster{
 		baseInfo,
 		projectID,
+		zone,
 		region,
 		preemptibleNodes,
 		preemptibleRatio,
 	}
 }
+
 
 // <-- start implementation of `Scalable` interface -->
 
@@ -95,11 +97,6 @@ func (c *DataprocCluster) Scale(nodes int16, toAdd bool) {
 	}
 	glog.Infof("Scaling completed. The new size of cluster '%s' is %d.", c.Name, newSize)
 }
-
-// <-- end implementation of `Scalable` interface -->
-
-// <-- start implementation of `ClusterBaseInterface` interface -->
-
 // SubmitJob is for sending a new job to Dataproc
 func (c *DataprocCluster) SubmitJob(scriptURI string) (*dataprocpb.Job, error){
 	ctx := context.Background()
@@ -136,6 +133,10 @@ func (c *DataprocCluster) SubmitJob(scriptURI string) (*dataprocpb.Job, error){
 
 }
 
+// <-- end implementation of `Scalable` interface -->
+
+// <-- start implementation of `ClusterBaseInterface` interface -->
+
 // GetMetricsSnapshot is for getting last metrics of the cluster
 func (c *DataprocCluster) GetMetricsSnapshot() m.Metrics {
 	return c.GetMetrics()
@@ -145,6 +146,56 @@ func (c *DataprocCluster) GetMetricsSnapshot() m.Metrics {
 // @newMetrics is the object filled with new metrics
 func (c *DataprocCluster) SetMetricsSnapshot(newMetrics m.Metrics) {
 	c.SetMetrics(newMetrics)
+}
+
+func (c *DataprocCluster) AllocateResources() {
+	// Create cluster controller
+	ctx := context.Background()
+	controller, err := dataproc.NewClusterControllerClient(ctx)
+	if err != nil {
+		glog.Error("Could not create cluster controller for %s: %s", c.Name, err)
+	}
+
+	// Send request to allocate cluster resources
+	req := &dataprocpb.CreateClusterRequest{
+		ProjectId: c.ProjectID,
+		Region: c.Region,
+		Cluster: &dataprocpb.Cluster{
+			ProjectId: c.ProjectID,
+			ClusterName: c.Name,
+			Config: &dataprocpb.ClusterConfig{
+				GceClusterConfig: &dataprocpb.GceClusterConfig{
+					ZoneUri: c.Zone,
+				},
+				WorkerConfig: &dataprocpb.InstanceGroupConfig{
+					NumInstances: int32(c.Nodes),
+				},
+				SecondaryWorkerConfig: &dataprocpb.InstanceGroupConfig{
+					NumInstances: int32(c.PreemptibleNodes),
+				},
+				InitializationActions: []*dataprocpb.NodeInitializationAction{
+					{
+						ExecutableFile: InitializationActionRequirements,
+					},
+					{
+						ExecutableFile: InitializationActionHeartbeatService,
+					},
+				},
+			},
+		},
+	}
+	op, err := controller.CreateCluster(ctx, req)
+	if err != nil {
+		glog.Error("Could not allocate resources for cluster %s: %s", c.Name, err)
+	}
+
+	// Wait till cluster is successfully created
+	_, err = op.Wait(ctx)
+	if err != nil {
+		glog.Error("Cluster %s resource allocation failed: %s", c.Name, err)
+	}
+
+	glog.Infof("New Dataproc cluster '%s' created.", c.Name)
 }
 
 // <-- end implementation of `ClusterBaseInterface` interface -->

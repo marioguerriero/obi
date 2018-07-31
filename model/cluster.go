@@ -20,6 +20,7 @@ type ClusterBaseInterface interface {
 	SubmitJob()
 	GetMetricsSnapshot() Metrics
 	SetMetricsSnapshot(Metrics)
+	AllocateResources()
 }
 
 
