@@ -153,12 +153,13 @@ func (c *DataprocCluster) SetMetricsSnapshot(newMetrics m.Metrics) {
 }
 
 // AllocateResources instantiate physical resources for the given cluster
-func (c *DataprocCluster) AllocateResources() {
+func (c *DataprocCluster) AllocateResources() error {
 	// Create cluster controller
 	ctx := context.Background()
 	controller, err := dataproc.NewClusterControllerClient(ctx, option.WithCredentialsFile("/Users/l.lombardo/Documents/dataproc-sa.json"))
 	if err != nil {
 		glog.Errorf("Could not create cluster controller for %s: %s", c.Name, err)
+		return err
 	}
 
 	// Send request to allocate cluster resources
@@ -189,15 +190,18 @@ func (c *DataprocCluster) AllocateResources() {
 	op, err := controller.CreateCluster(ctx, req)
 	if err != nil {
 		glog.Errorf("Could not allocate resources for cluster %s: %s", c.Name, err)
+		return err
 	}
 
 	// Wait till cluster is successfully created
 	_, err = op.Wait(ctx)
 	if err != nil {
 		glog.Errorf("Cluster %s resource allocation failed: %s", c.Name, err)
+		return err
 	}
 
 	glog.Infof("New Dataproc cluster '%s' created.", c.Name)
+	return nil
 }
 
 // <-- end implementation of `ClusterBaseInterface` interface -->
