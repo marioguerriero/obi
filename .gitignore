@@ -8,4 +8,4 @@ heartbeat/hb_pb2.py
 heartbeat/message_pb2.py
 
 predictor/__pycache__/
-predictor/**/__pycache__/
+predictor/**/__pycache__/.DS_Store
