@@ -11,11 +11,8 @@ import (
 	"fmt"
 )
 
-// InitializationActionRequirements initialization script for installing necessary requirements
-const InitializationActionRequirements = "gc://dhg-obi/cluster-script/requirements-install.sh"
-
-// InitializationActionHeartbeatService initialization script for running heartbeat service
-const InitializationActionHeartbeatService = "gc://dhg-obi/cluster-script/heartbeat.py"
+// InitializationAction initialization script for installing necessary requirements
+const InitializationAction = "gc://dhg-obi/cluster-script/init-script.sh"
 
 // DataprocCluster is the extended cluster struct of Google Dataproc
 type DataprocCluster struct {
@@ -181,10 +178,7 @@ func (c *DataprocCluster) AllocateResources() {
 				},
 				InitializationActions: []*dataprocpb.NodeInitializationAction{
 					{
-						ExecutableFile: InitializationActionRequirements,
-					},
-					{
-						ExecutableFile: InitializationActionHeartbeatService,
+						ExecutableFile: InitializationAction,
 					},
 				},
 			},
