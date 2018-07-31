@@ -2,7 +2,7 @@
 
 INTERVAL=10
 
-SERVICE_EXEC=/urs/local/bin/heartbeat_service
+SERVICE_EXEC=/usr/local/bin/heartbeat_service
 
 # Install dependencies
 sudo apt-get install python3-pip -y

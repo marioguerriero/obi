@@ -20,11 +20,11 @@ func main() {
 	cluster := platforms.NewDataprocCluster(&model.ClusterBase{
 		Name: "obi-test-cluster",
 		Nodes: 3,
-	}, "dhg-data-intelligence-ops", "europe-west3-b","global", 1, 0.3)
+	}, "dhg-data-intelligence-ops", "europe-west3-b","europe-west3", 1, 0.3)
 
 	// Allocate cluster resources
 	cluster.AllocateResources()
 
 	// Schedule some jobs
-	cluster.SubmitJob("gc://dhg-obi/cluster-script/word_count.py")
+	cluster.SubmitJob("gs://dhg-obi/cluster-script/word_count.py")
 }
