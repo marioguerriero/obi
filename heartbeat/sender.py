@@ -1,6 +1,5 @@
 import json
 import socket
-import time
 import urllib.request
 
 from .hb_pb2 import HeartbeatMessage
@@ -9,7 +8,7 @@ HOSTNAME = socket.gethostname()
 CLUSTER_NAME = HOSTNAME[:-2]
 
 QUERY = 'jmx?qry=Hadoop:service=ResourceManager,name=QueueMetrics,q0=root,' \
-        'q1=default '
+        'q1=default'
 QUERY_URL = 'http://{}:8088/{}'.format(HOSTNAME, QUERY)
 
 RECEIVER_ADDRESS = None

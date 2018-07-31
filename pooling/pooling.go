@@ -23,8 +23,12 @@ func main() {
 	}, "dhg-data-intelligence-ops", "europe-west3-b","europe-west3", 1, 0.3)
 
 	// Allocate cluster resources
-	cluster.AllocateResources()
-
-	// Schedule some jobs
-	cluster.SubmitJob("gs://dhg-obi/cluster-script/word_count.py")
+	err := cluster.AllocateResources()
+	if err != nil {
+		// Schedule some jobs
+		_, err = cluster.SubmitJob("gs://dhg-obi/cluster-script/word_count.py")
+		if err == nil {
+			glog.Info("Unable to submit job")
+		}
+	}
 }
