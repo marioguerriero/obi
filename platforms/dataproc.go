@@ -12,7 +12,7 @@ import (
 )
 
 // InitializationAction initialization script for installing necessary requirements
-const InitializationAction = "gc://dhg-obi/cluster-script/init-script.sh"
+const InitializationAction = "gc://dhg-obi/cluster-script/init_action.sh"
 
 // DataprocCluster is the extended cluster struct of Google Dataproc
 type DataprocCluster struct {
