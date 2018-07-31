@@ -1,30 +1,35 @@
-package main
+package pooling
 
 import (
 	"obi/platforms"
 	"obi/model"
-	"os"
-	"github.com/golang/glog"
-	"flag"
 )
 
-func main() {
-	// Read project name
-	proj := "projects/" + os.Getenv("GOOGLE_CLOUD_PROJECT")
-	if proj == "" {
-		glog.Error(" GOOGLE_CLOUD_PROJECT env not set")
-	}
+// Pooling class with properties
+type Pooling struct {
 
-	flag.Parse()
+}
+
+// New is the constructor of Pooling struct
+func New() *Pooling {
+	return &Pooling{}
+}
+
+// SubmitPySparkJob is for submitting a new Spark job in Python environment
+// @param clusterName is the name of the cluster where to run the new job
+// @param scriptURI is the script path
+// TODO this is only a fake method -> pooling logic should choose the cluster, not the user!
+func (p *Pooling) SubmitPySparkJob(clusterName string, scriptURI string) {
+
 	// Create cluster object
 	cluster := platforms.NewDataprocCluster(&model.ClusterBase{
-		Name: "obi-test-cluster",
+		Name: clusterName,
 		Nodes: 3,
-	}, "dhg-data-intelligence-ops", "europe-west3-b","europe-west3", 1, 0.3)
+	}, "dhg-data-intelligence-ops", "europe-west3-b","global", 1, 0.3)
 
 	// Allocate cluster resources
 	cluster.AllocateResources()
 
 	// Schedule some jobs
-	cluster.SubmitJob("gs://dhg-obi/cluster-script/word_count.py")
+	cluster.SubmitJob(scriptURI)
 }

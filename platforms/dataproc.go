@@ -27,7 +27,8 @@ type DataprocCluster struct {
 // NewDataprocCluster is the constructor of DataprocCluster struct
 // @param baseInfo is the base object for a cluster
 // @param projectId is the project ID in the GCP environment
-// @param region is the geo-region where the cluster was deployed (e.g. europe-west-1)
+// @param region is the macro-area where the cluster was deployed (e.g. europe-west3)
+// @param zone is a specific area inside region (e.g. europe-west3-b)
 // @param preemptibleRatio in the percentage of preemptible VMs that has to be present inside the cluster
 // return the pointer to the new DataprocCluster instance
 func NewDataprocCluster(baseInfo *m.ClusterBase, projectID, zone, region string,
