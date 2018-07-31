@@ -7,13 +7,14 @@ import (
 	"context"
 	"github.com/golang/glog"
 	m "obi/model"
+	"google.golang.org/api/option"
 )
 
 // InitializationActionRequirements initialization script for installing necessary requirements
-const InitializationActionRequirements = "gc://dhg-obi/cluster-script/requirements-install.sh"
+const InitializationActionRequirements = "gs://dhg-obi/cluster-script/requirements-install.sh"
 
 // InitializationActionHeartbeatService initialization script for running heartbeat service
-const InitializationActionHeartbeatService = "gc://dhg-obi/cluster-script/heartbeat.py"
+const InitializationActionHeartbeatService = "gs://dhg-obi/cluster-script/heartbeat.py"
 
 // DataprocCluster is the extended cluster struct of Google Dataproc
 type DataprocCluster struct {
@@ -55,7 +56,7 @@ func (c *DataprocCluster) Scale(nodes int16, toAdd bool) {
 	ctx := context.Background()
 	controller, err := dataproc.NewClusterControllerClient(ctx)
 	if err != nil {
-		glog.Error("'NewClusterControllerClient' method call failed.")
+		glog.Errorf("'NewClusterControllerClient' method call failed: %s", err)
 		return
 	}
 
@@ -89,13 +90,13 @@ func (c *DataprocCluster) Scale(nodes int16, toAdd bool) {
 
 	op, err := controller.UpdateCluster(ctx, req)
 	if err != nil {
-		glog.Error("'UpdateCluster' method call failed.")
+		glog.Errorf("'UpdateCluster' method call failed: %s", err)
 		return
 	}
 
 	_, err = op.Wait(ctx)
 	if err != nil {
-		glog.Error("'Wait' method call for UpdateCluster operation failed.")
+		glog.Errorf("'Wait' method call for UpdateCluster operation failed: %s", err)
 		return
 	}
 	glog.Infof("Scaling completed. The new size of cluster '%s' is %d.", c.Name, newSize)
@@ -105,7 +106,7 @@ func (c *DataprocCluster) SubmitJob(scriptURI string) (*dataprocpb.Job, error){
 	ctx := context.Background()
 	controller, err := dataproc.NewJobControllerClient(ctx)
 	if err != nil {
-		glog.Error("'NewJobControllerClient' method call failed.")
+		glog.Errorf("'NewJobControllerClient' method call failed: %s", err)
 		return nil, err
 	}
 
@@ -128,7 +129,7 @@ func (c *DataprocCluster) SubmitJob(scriptURI string) (*dataprocpb.Job, error){
 
 	job, err := controller.SubmitJob(ctx, req)
 	if err != nil {
-		glog.Error("'SubmitJob' method call failed.")
+		glog.Errorf("'SubmitJob' method call failed: %s", err)
 		return nil, err
 	}
 	glog.Infof("New job deployed in cluster '%s'.", c.Name)
@@ -155,7 +156,7 @@ func (c *DataprocCluster) SetMetricsSnapshot(newMetrics m.Metrics) {
 func (c *DataprocCluster) AllocateResources() {
 	// Create cluster controller
 	ctx := context.Background()
-	controller, err := dataproc.NewClusterControllerClient(ctx)
+	controller, err := dataproc.NewClusterControllerClient(ctx, option.WithCredentialsFile("/Users/l.lombardo/Documents/dataproc-sa.json"))
 	if err != nil {
 		glog.Errorf("Could not create cluster controller for %s: %s", c.Name, err)
 	}

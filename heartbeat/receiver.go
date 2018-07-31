@@ -60,7 +60,8 @@ func receiverRoutine(pool *utils.ConcurrentMap) {
 	// listen to incoming udp packets
 	ln, err = net.Listen("udp", ":8080")
 	if err != nil {
-		glog.Error("'ListenPacked' method call for creating new UDP server failed.")
+		glog.Errorf("'Listen' method call for creating new UDP server failed: %s")
+		return
 	}
 
 	for {
@@ -69,7 +70,7 @@ func receiverRoutine(pool *utils.ConcurrentMap) {
 			data := make([]byte, 4096)
 			n, err:= conn.Read(data)
 			if err != nil {
-				glog.Error("'Read' method call for accepting new connection failed.")
+				glog.Errorf("'Read' method call for accepting new connection failed: %s", err)
 				continue
 			}
 			conn.Close()
@@ -77,7 +78,7 @@ func receiverRoutine(pool *utils.ConcurrentMap) {
 			m := &HeartbeatMessage{}
 			err = proto.Unmarshal(data[0:n], m)
 			if err != nil {
-				glog.Error("'Unmarshal' method call for new heartbeat message failed.")
+				glog.Errorf("'Unmarshal' method call for new heartbeat message failed: %s", err)
 				continue
 			}
 
