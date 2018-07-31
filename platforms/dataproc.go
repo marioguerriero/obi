@@ -22,7 +22,7 @@ type DataprocCluster struct {
 	Zone string
 	Region string
 	PreemptibleNodes int16
-	PreemptiveNodesRatio int8
+	PreemptiveNodesRatio float32
 }
 
 // NewDataprocCluster is the constructor of DataprocCluster struct
@@ -32,7 +32,7 @@ type DataprocCluster struct {
 // @param preemptibleRatio in the percentage of preemptible VMs that has to be present inside the cluster
 // return the pointer to the new DataprocCluster instance
 func NewDataprocCluster(baseInfo *m.ClusterBase, projectID, zone, region string,
-		preemptibleNodes int16, preemptibleRatio int8) *DataprocCluster {
+		preemptibleNodes int16, preemptibleRatio float32) *DataprocCluster {
 	return &DataprocCluster{
 		baseInfo,
 		projectID,
@@ -157,7 +157,7 @@ func (c *DataprocCluster) AllocateResources() {
 	ctx := context.Background()
 	controller, err := dataproc.NewClusterControllerClient(ctx)
 	if err != nil {
-		glog.Error("Could not create cluster controller for %s: %s", c.Name, err)
+		glog.Errorf("Could not create cluster controller for %s: %s", c.Name, err)
 	}
 
 	// Send request to allocate cluster resources
@@ -190,13 +190,13 @@ func (c *DataprocCluster) AllocateResources() {
 	}
 	op, err := controller.CreateCluster(ctx, req)
 	if err != nil {
-		glog.Error("Could not allocate resources for cluster %s: %s", c.Name, err)
+		glog.Errorf("Could not allocate resources for cluster %s: %s", c.Name, err)
 	}
 
 	// Wait till cluster is successfully created
 	_, err = op.Wait(ctx)
 	if err != nil {
-		glog.Error("Cluster %s resource allocation failed: %s", c.Name, err)
+		glog.Errorf("Cluster %s resource allocation failed: %s", c.Name, err)
 	}
 
 	glog.Infof("New Dataproc cluster '%s' created.", c.Name)
