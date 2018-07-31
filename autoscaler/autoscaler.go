@@ -93,9 +93,9 @@ func autoscalerRoutine(as *Autoscaler) {
 func applyPolicy(currentStatus model.Metrics, algorithm ScalingAlgorithm) (bool, bool) {
 	switch algorithm {
 	case WorkloadBased:
-		// do something
+		// TODO
 	case BacklogBased:
-		// do something
+		// TODO
 	}
 	return true, true
 }
