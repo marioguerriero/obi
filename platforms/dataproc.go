@@ -7,6 +7,8 @@ import (
 	"context"
 	"github.com/golang/glog"
 	m "obi/model"
+	"google.golang.org/api/option"
+	"fmt"
 )
 
 // InitializationActionRequirements initialization script for installing necessary requirements
@@ -155,7 +157,7 @@ func (c *DataprocCluster) SetMetricsSnapshot(newMetrics m.Metrics) {
 func (c *DataprocCluster) AllocateResources() {
 	// Create cluster controller
 	ctx := context.Background()
-	controller, err := dataproc.NewClusterControllerClient(ctx)
+	controller, err := dataproc.NewClusterControllerClient(ctx, option.WithCredentialsFile("/Users/m.guerriero/code/dataproc-sa.json"))
 	if err != nil {
 		glog.Errorf("Could not create cluster controller for %s: %s", c.Name, err)
 	}
@@ -188,6 +190,7 @@ func (c *DataprocCluster) AllocateResources() {
 			},
 		},
 	}
+	fmt.Println(req)
 	op, err := controller.CreateCluster(ctx, req)
 	if err != nil {
 		glog.Errorf("Could not allocate resources for cluster %s: %s", c.Name, err)

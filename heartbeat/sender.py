@@ -12,7 +12,7 @@ QUERY = 'jmx?qry=Hadoop:service=ResourceManager,name=QueueMetrics,q0=root,' \
         'q1=default '
 QUERY_URL = 'http://{}:8088/{}'.format(HOSTNAME, QUERY)
 
-RECEIVER_ADDRESS = '62.96.154.22'
+RECEIVER_ADDRESS = None
 RECEIVER_PORT = 8080
 
 TIMEOUT = 10
@@ -73,6 +73,4 @@ def compute_hb():
 
 
 if __name__ == '__main__':
-    while True:
-        send_hb()
-        time.sleep(TIMEOUT)
+    send_hb()
