@@ -13,3 +13,5 @@ predictor/**/__pycache__/.DS_Store
 predictor/profiles/__pycache__/
 
 .DS_Store
+
+obi-dataproc-sa.json
