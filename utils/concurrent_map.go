@@ -14,6 +14,15 @@ type ConcurrentMapItem struct {
 	Value interface{}
 }
 
+// NewConcurrentMap creates a new concurrent map
+func NewConcurrentMap() *ConcurrentMap {
+	cm := &ConcurrentMap{
+		items: make(map[string]interface{}),
+	}
+
+	return cm
+}
+
 // Set is for adding/updating a new <key, value> pair into the map
 // @param key is the key for the dictionary
 // @param value is any object

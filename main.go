@@ -11,7 +11,7 @@ import (
 
 func main() {
 	flag.Parse()
-	pool := &utils.ConcurrentMap{}
+	pool := utils.NewConcurrentMap()
 
 	// instantiate modules
 	p := pooling.New(pool)
