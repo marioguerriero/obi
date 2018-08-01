@@ -59,7 +59,7 @@ func autoscalerRoutine(as *Autoscaler) {
 	for {
 		select {
 		case <-as.quit:
-			break
+			return
 		default:
 			shouldScaleUp, shouldScaleDown = applyPolicy(
 					as.managedCluster.(model.ClusterBaseInterface).GetMetricsSnapshot(),
