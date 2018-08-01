@@ -99,4 +99,3 @@ func applyPolicy(currentStatus model.Metrics, algorithm ScalingAlgorithm) (bool,
 	}
 	return true, true
 }
-
