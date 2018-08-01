@@ -6,6 +6,7 @@ import (
 	"obi/utils"
 	"obi/heartbeat"
 	"time"
+	"obi/pooling"
 )
 
 func main() {
@@ -13,14 +14,15 @@ func main() {
 	pool := &utils.ConcurrentMap{}
 
 	// instantiate modules
-	// p := pooling.New(pool)
+	p := pooling.New(pool)
 	hb := heartbeat.GetInstance(pool, 60, 30)
 	hb.Start()
 	time.Sleep(30 * time.Second)
 	hb.Stop()
 	time.Sleep(30 * time.Second)
+
 	// submit a job
-	// p.SubmitPySparkJob("obi-test", "gs://dhg-obi/cluster-script/word_count.py")
+	p.SubmitPySparkJob("obi-test", "gs://dhg-obi/cluster-script/word_count.py")
 	glog.Flush()
 
 }
