@@ -9,3 +9,5 @@ heartbeat/message_pb2.py
 
 predictor/__pycache__/
 predictor/**/__pycache__/
+
+obi-dataproc-sa.json

@@ -7,7 +7,6 @@ import (
 	"context"
 	"github.com/golang/glog"
 	m "obi/model"
-	"google.golang.org/api/option"
 	)
 
 // InitializationAction initialization script for installing necessary requirements
@@ -103,7 +102,7 @@ func (c *DataprocCluster) Scale(nodes int16, toAdd bool) {
 // SubmitJob is for sending a new job to Dataproc
 func (c *DataprocCluster) SubmitJob(scriptURI string) (*dataprocpb.Job, error){
 	ctx := context.Background()
-	controller, err := dataproc.NewJobControllerClient(ctx, option.WithCredentialsFile("/Users/l.lombardo/Documents/dataproc-sa.json"))
+	controller, err := dataproc.NewJobControllerClient(ctx)
 	if err != nil {
 		glog.Errorf("'NewJobControllerClient' method call failed: %s", err)
 		return nil, err
@@ -156,7 +155,7 @@ func (c *DataprocCluster) SetMetricsSnapshot(newMetrics m.Metrics) {
 func (c *DataprocCluster) AllocateResources() error {
 	// Create cluster controller
 	ctx := context.Background()
-	controller, err := dataproc.NewClusterControllerClient(ctx, option.WithCredentialsFile("/Users/l.lombardo/Documents/dataproc-sa.json"))
+	controller, err := dataproc.NewClusterControllerClient(ctx)
 	if err != nil {
 		glog.Errorf("Could not create cluster controller for %s: %s", c.Name, err)
 		return err
