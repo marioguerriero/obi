@@ -1,6 +1,8 @@
 FROM golang
 
-ENV SRC_DIR=/go/src/obi
+ENV SRC_DIR /go/src/obi
+
+ENV GOOGLE_APPLICATION_CREDENTIALS /go/src/obi/dataproc-sa.json
 
 WORKDIR /app
 
