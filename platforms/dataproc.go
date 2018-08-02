@@ -7,7 +7,8 @@ import (
 	"context"
 	"github.com/golang/glog"
 	m "obi/model"
-	)
+	"google.golang.org/api/iterator"
+)
 
 // InitializationAction initialization script for installing necessary requirements
 const InitializationAction = "gs://dhg-obi/cluster-script/init_action.sh"
@@ -19,7 +20,7 @@ type DataprocCluster struct {
 	ProjectID string
 	Zone string
 	Region string
-	PreemptibleNodes int16
+	PreemptibleNodes int32
 	PreemptiveNodesRatio float32
 }
 
@@ -31,7 +32,7 @@ type DataprocCluster struct {
 // @param preemptibleRatio in the percentage of preemptible VMs that has to be present inside the cluster
 // return the pointer to the new DataprocCluster instance
 func NewDataprocCluster(baseInfo *m.ClusterBase, projectID, zone, region string,
-		preemptibleNodes int16, preemptibleRatio float32) *DataprocCluster {
+		preemptibleNodes int32, preemptibleRatio float32) *DataprocCluster {
 	return &DataprocCluster{
 		baseInfo,
 		projectID,
@@ -42,13 +43,54 @@ func NewDataprocCluster(baseInfo *m.ClusterBase, projectID, zone, region string,
 	}
 }
 
+func NewExistingDataprocCluster(projectID string, region string, zone string, clusterName string) *DataprocCluster {
+	ctx := context.Background()
+	c, err := dataproc.NewClusterControllerClient(ctx)
+	if err != nil {
+		// TODO: Handle error.
+	}
+
+	req := &dataprocpb.ListClustersRequest{
+		ProjectId: projectID,
+		Region:    region,
+		Filter:    "clusterName = " + clusterName,
+	}
+
+	it := c.ListClusters(ctx, req)
+	var newCluster *DataprocCluster
+	for {
+		resp, err := it.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			// TODO: Handle error.
+		}
+
+		newBaseCluster := &m.ClusterBase{
+			Name:   clusterName,
+			Nodes:  resp.Config.WorkerConfig.NumInstances,
+		}
+
+		newCluster = &DataprocCluster{
+			newBaseCluster,
+			projectID,
+			zone,
+			region,
+			resp.Config.SecondaryWorkerConfig.NumInstances,
+			0.0,
+		}
+	}
+	return newCluster
+}
+
 
 // <-- start implementation of `Scalable` interface -->
 
 // Scale is for scaling up the cluster, i.e. add new nodes to increase size
 // @param nodes is the number of nodes to add
 // @param direction is for specifying if there is the need to add o remove nodes
-func (c *DataprocCluster) Scale(nodes int16, toAdd bool) {
+func (c *DataprocCluster) Scale(nodes int32, toAdd bool) {
 	var newSize int32
 
 	ctx := context.Background()

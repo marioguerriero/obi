@@ -5,10 +5,10 @@ import (
 	"net"
 	"github.com/golang/glog"
 	"github.com/golang/protobuf/proto"
-		"obi/model"
+	"obi/model"
 	"time"
 	"fmt"
-)
+	)
 
 // Receiver class with properties
 type Receiver struct {
@@ -107,7 +107,12 @@ func receiverRoutine(pool *utils.ConcurrentMap) {
 			cluster.SetMetricsSnapshot(newMetrics)
 			glog.Infof("Metrics updated for cluster '%s'.", m.GetClusterName())
 		} else {
-			glog.Error("Received metrics for a cluster not in the pool.")
+			glog.Info("Received metrics for a cluster not in the pool.")
+
+			// newCluster := platforms.NewExistingCluster(m.)
+			// pool.Set(m.GetClusterName(), newCluster)
+
+			glog.Infof("Added cluster '%s' in the pool", m.GetClusterName())
 		}
 	}
 }
