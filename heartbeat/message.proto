@@ -33,8 +33,5 @@ message HeartbeatMessage {
     int32 PendingContainers = 25;
 
     // Platform type
-    enum ServiceProvider {
-        DATAPROC = 0;
-    }
-    ServiceProvider ServiceType = 26;
+    string ServiceType = 26;
 }
