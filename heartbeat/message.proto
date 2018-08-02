@@ -5,6 +5,7 @@ package heartbeat;
 message HeartbeatMessage {
     // Cluster details
     string cluster_name = 1;
+
     // Cluster metrics
     int32 AMResourceLimitMB = 2;
     int32 AMResourceLimitVCores = 3;
@@ -30,4 +31,10 @@ message HeartbeatMessage {
     int32 PendingMB = 23;
     int32 PendingVCores = 24;
     int32 PendingContainers = 25;
+
+    // Platform type
+    enum ServiceProvider {
+        DATAPROC = 0;
+    }
+    ServiceProvider ServiceType = 26;
 }

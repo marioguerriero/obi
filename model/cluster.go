@@ -1,6 +1,8 @@
 package model
 
-import "sync"
+import (
+	"sync"
+)
 
 // Scalable is the interface that must be implemented from a scalable cluster
 type Scalable interface {
@@ -10,6 +12,7 @@ type Scalable interface {
 // ClusterBase is the base class for any type of cluster
 type ClusterBase struct {
 	Name string
+	ServiceType string
 	Nodes int16
 	status Metrics // not available outside package to prevent race conditions- get and set must be used
 	sync.Mutex

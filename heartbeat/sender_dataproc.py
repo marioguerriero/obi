@@ -2,7 +2,7 @@ import json
 import socket
 import urllib.request
 
-from .message_pb2 import HeartbeatMessage, ServiceProvider
+from .message_pb2 import HeartbeatMessage
 
 HOSTNAME = socket.gethostname()
 CLUSTER_NAME = HOSTNAME[:-2]
