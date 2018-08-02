@@ -8,7 +8,8 @@ import (
 	"obi/model"
 	"time"
 	"fmt"
-	)
+	"obi/platforms"
+)
 
 // Receiver class with properties
 type Receiver struct {
@@ -109,8 +110,8 @@ func receiverRoutine(pool *utils.ConcurrentMap) {
 		} else {
 			glog.Info("Received metrics for a cluster not in the pool.")
 
-			// newCluster := platforms.NewExistingCluster(m.)
-			// pool.Set(m.GetClusterName(), newCluster)
+			newCluster := platforms.NewExistingCluster(m.GetServiceType(), m.GetClusterName())
+			pool.Set(m.GetClusterName(), newCluster)
 
 			glog.Infof("Added cluster '%s' in the pool", m.GetClusterName())
 		}
