@@ -15,7 +15,7 @@ spec:
     - name: GOOGLE_CLOUD_PROJECT
       value: "dhg-data-intelligence-ops"
     - name: GOOGLE_APPLICATION_CREDENTIALS
-      value: "/etc/sa/obi-dataproc-sa.json"
+      value: "etc/sa/obi-dataproc-sa-volume.json"
   volumes:
     - name: obi-dataproc-sa-volume
       secret:

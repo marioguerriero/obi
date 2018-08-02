@@ -1,4 +1,4 @@
-FROM golang
+FROM iron/go:dev
 
 ENV SRC_DIR /go/src/obi
 
