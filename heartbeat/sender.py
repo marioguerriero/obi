@@ -32,7 +32,7 @@ def send_hb():
 def compute_hb():
     # Initialize HB message
     hb = HeartbeatMessage()
-    hb.cluster_name = "dataproc/" + CLUSTER_NAME
+    hb.cluster_name = CLUSTER_NAME
 
     # Collect metrics from Yarn master
     req = urllib.request.urlopen(QUERY_URL)

@@ -87,6 +87,7 @@ func receiverRoutine(pool *utils.ConcurrentMap) {
 		fmt.Println(n)
 		m := &HeartbeatMessage{}
 		err = proto.Unmarshal(data[0:n], m)
+		fmt.Println(m)
 		if err != nil {
 			glog.Errorf("'Unmarshal' method call for new heartbeat message failed: %s", err)
 			continue

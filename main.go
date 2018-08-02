@@ -6,6 +6,7 @@ import (
 	"obi/utils"
 	"obi/heartbeat"
 		"obi/pooling"
+	"time"
 )
 
 func main() {
@@ -22,4 +23,5 @@ func main() {
 	p.SubmitPySparkJob("obi-test", "gs://dhg-obi/cluster-script/word_count.py")
 	glog.Flush()
 
+	time.Sleep(time.Minute * 15)
 }
