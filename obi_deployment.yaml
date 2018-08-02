@@ -10,13 +10,12 @@ spec:
     volumeMounts:
     - name: obi-dataproc-sa-volume
       mountPath: "/etc/sa"
-      readOnly: true
     env:
     - name: GOOGLE_CLOUD_PROJECT
       value: "dhg-data-intelligence-ops"
     - name: GOOGLE_APPLICATION_CREDENTIALS
-      value: "etc/sa/obi-dataproc-sa-volume.json"
+      value: "/etc/sa/dataproc-sa.json"
   volumes:
     - name: obi-dataproc-sa-volume
       secret:
-        secretName: obi-dataproc-sa
+        secretName: dataproc-sa
