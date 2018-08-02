@@ -11,6 +11,7 @@ type Scalable interface {
 type ClusterBase struct {
 	Name string
 	Nodes int32
+	ServiceType string
 	status Metrics // not available outside package to prevent race conditions- get and set must be used
 	sync.Mutex
 }

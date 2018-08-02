@@ -2,7 +2,7 @@ import json
 import socket
 import urllib.request
 
-from .hb_pb2 import HeartbeatMessage
+from .message_pb2 import HeartbeatMessage
 
 HOSTNAME = socket.gethostname()
 CLUSTER_NAME = HOSTNAME[:-2]
@@ -67,6 +67,9 @@ def compute_hb():
     hb.PendingMB = metrics['PendingMB']
     hb.PendingVCores = metrics['PendingVCores']
     hb.PendingContainers = metrics['PendingContainers']
+
+    # Set service type to dataproc
+    hb.ServiceProvider = HeartbeatMessage.DATAPROC
 
     return hb
 
