@@ -5,6 +5,7 @@ metadata:
   namespace: obi
 spec:
   containers:
+  restartPolicy: Never
   - name: obi-latest
     image: eu.gcr.io/dhg-data-intelligence-ops/obi
     volumeMounts:
