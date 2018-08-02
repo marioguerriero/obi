@@ -69,7 +69,7 @@ def compute_hb():
     hb.PendingContainers = metrics['PendingContainers']
 
     # Set service type to dataproc
-    hb.ServiceProvider = HeartbeatMessage.DATAPROC
+    hb.ServiceProvider = 'dataproc'
 
     return hb
 
