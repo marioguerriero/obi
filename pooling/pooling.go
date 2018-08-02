@@ -26,6 +26,7 @@ func New(clustersMap *utils.ConcurrentMap) *Pooling {
 func (p *Pooling) SubmitPySparkJob(clusterName string, scriptURI string) {
 
 	// Create cluster object
+	// TODO: Define config variables for Google Dataproc.
 	cluster := platforms.NewDataprocCluster(&model.ClusterBase{
 		Name: clusterName,
 		Nodes: 3,
