@@ -99,13 +99,18 @@ func (c *DataprocCluster) Scale(nodes int16, toAdd bool) {
 	}
 	glog.Infof("Scaling completed. The new size of cluster '%s' is %d.", c.Name, newSize)
 }
+
+// <-- end implementation of `Scalable` interface -->
+
+// <-- start implementation of `ClusterBaseInterface` interface -->
+
 // SubmitJob is for sending a new job to Dataproc
-func (c *DataprocCluster) SubmitJob(scriptURI string) (*dataprocpb.Job, error){
+func (c *DataprocCluster) SubmitJob(scriptURI string) error {
 	ctx := context.Background()
 	controller, err := dataproc.NewJobControllerClient(ctx)
 	if err != nil {
 		glog.Errorf("'NewJobControllerClient' method call failed: %s", err)
-		return nil, err
+		return err
 	}
 
 	// TODO generalize this function to deploy any type of job, not only PySpark
@@ -125,20 +130,16 @@ func (c *DataprocCluster) SubmitJob(scriptURI string) (*dataprocpb.Job, error){
 		},
 	}
 
-	job, err := controller.SubmitJob(ctx, req)
+	_, err = controller.SubmitJob(ctx, req)
 
 	if err != nil {
 		glog.Errorf("'SubmitJob' method call failed: %s", err)
-		return nil, err
+		return err
 	}
 	glog.Infof("New job deployed in cluster '%s'.", c.Name)
-	return job, nil
+	return nil
 
 }
-
-// <-- end implementation of `Scalable` interface -->
-
-// <-- start implementation of `ClusterBaseInterface` interface -->
 
 // GetMetricsSnapshot is for getting last metrics of the cluster
 func (c *DataprocCluster) GetMetricsSnapshot() m.Metrics {

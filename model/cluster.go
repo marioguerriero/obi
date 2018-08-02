@@ -17,10 +17,10 @@ type ClusterBase struct {
 
 // ClusterBaseInterface defines the primitive methods that must be implemented for any type of cluster
 type ClusterBaseInterface interface {
-	SubmitJob()
+	SubmitJob(string) error
 	GetMetricsSnapshot() Metrics
 	SetMetricsSnapshot(Metrics)
-	AllocateResources()
+	AllocateResources() error
 }
 
 

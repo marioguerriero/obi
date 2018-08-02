@@ -60,7 +60,7 @@ func receiverRoutine(pool *utils.ConcurrentMap) {
 	// listen to incoming udp packets
 	addr := net.UDPAddr{
 		Port: 8080,
-		IP:   net.ParseIP("127.0.0.1"),
+		IP:   net.ParseIP("0.0.0.0"),
 	}
 
 	conn, err = net.ListenUDP("udp", &addr)
