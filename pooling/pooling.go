@@ -27,10 +27,8 @@ func (p *Pooling) SubmitPySparkJob(clusterName string, scriptURI string) {
 
 	// Create cluster object
 	// TODO: Define config variables for Google Dataproc.
-	cluster := platforms.NewDataprocCluster(&model.ClusterBase{
-		Name: clusterName,
-		Nodes: 3,
-	}, "dhg-data-intelligence-ops", "europe-west3-b","global", 1, 0.3)
+	cb := model.NewClusterBase("obi-test", 3, "dataproc")
+	cluster := platforms.NewDataprocCluster(cb, "dhg-data-intelligence-ops", "europe-west3-b","global", 1, 0.3)
 
 	// Allocate cluster resources
 	err := cluster.AllocateResources()

@@ -28,11 +28,13 @@ type ClusterBaseInterface interface {
 // NewClusterBase is the constructor of ClusterBase struct
 // @param clusterName is the name of the cluster
 // @param size is the number of nodes in the cluster
+// @param platform is the cloud service environment name
 // return the pointer to the ClusterBase instance
-func NewClusterBase(clusterName string, size int32) *ClusterBase {
+func NewClusterBase(clusterName string, size int32, platform string) *ClusterBase {
 	return &ClusterBase{
 		Name:  clusterName,
 		Nodes: size,
+		ServiceType: platform,
 	}
 }
 

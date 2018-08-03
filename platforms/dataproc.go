@@ -5,9 +5,9 @@ import (
 	"cloud.google.com/go/dataproc/apiv1"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"context"
-	"github.com/golang/glog"
-	m "obi/model"
+		m "obi/model"
 	"google.golang.org/api/iterator"
+	"github.com/sirupsen/logrus"
 )
 
 // InitializationAction initialization script for installing necessary requirements
@@ -43,7 +43,13 @@ func NewDataprocCluster(baseInfo *m.ClusterBase, projectID, zone, region string,
 	}
 }
 
-func NewExistingDataprocCluster(projectID string, region string, zone string, clusterName string) *DataprocCluster {
+// NewExistingDataprocCluster is the constructor of DataprocCluster for already allocated resources in Dataproc
+// Even if OBI-master fails, it will be capable of rebuilding the pool, simply reading the content of the heartbeats
+// @param projectID is the project ID in the GCP environment
+// @param region is the the macro-area where the cluster was deployed (e.g. europe-west3)
+// @param zone is a specific area inside region (e.g. europe-west3-b)
+// @param clusterName is the name of the existing cluster inside Dataproc environment
+func NewExistingDataprocCluster(projectID string, region string, zone string, clusterName string) (*DataprocCluster, error) {
 	ctx := context.Background()
 	c, err := dataproc.NewClusterControllerClient(ctx)
 	if err != nil {
@@ -64,13 +70,11 @@ func NewExistingDataprocCluster(projectID string, region string, zone string, cl
 			break
 		}
 		if err != nil {
-			// TODO: Handle error.
+			logrus.WithField("error", err).Error("'Next' method failed during existing clusters iteration")
+			return nil, err
 		}
 
-		newBaseCluster := &m.ClusterBase{
-			Name:   clusterName,
-			Nodes:  resp.Config.WorkerConfig.NumInstances,
-		}
+		newBaseCluster := m.NewClusterBase(clusterName, resp.Config.WorkerConfig.NumInstances, "dataproc")
 
 		newCluster = &DataprocCluster{
 			newBaseCluster,
@@ -81,7 +85,7 @@ func NewExistingDataprocCluster(projectID string, region string, zone string, cl
 			0.0,
 		}
 	}
-	return newCluster
+	return newCluster, nil
 }
 
 
@@ -96,7 +100,7 @@ func (c *DataprocCluster) Scale(nodes int32, toAdd bool) {
 	ctx := context.Background()
 	controller, err := dataproc.NewClusterControllerClient(ctx)
 	if err != nil {
-		glog.Errorf("'NewClusterControllerClient' method call failed: %s", err)
+		logrus.WithField("error", err).Error("'NewClusterControllerClient' method call failed")
 		return
 	}
 
@@ -130,16 +134,19 @@ func (c *DataprocCluster) Scale(nodes int32, toAdd bool) {
 
 	op, err := controller.UpdateCluster(ctx, req)
 	if err != nil {
-		glog.Errorf("'UpdateCluster' method call failed: %s", err)
+		logrus.WithField("error", err).Error("'UpdateCluster' method call failed")
 		return
 	}
 
 	_, err = op.Wait(ctx)
 	if err != nil {
-		glog.Errorf("'Wait' method call for UpdateCluster operation failed: %s", err)
+		logrus.WithField("error", err).Error("'Wait' method call for UpdateCluster operation failed")
 		return
 	}
-	glog.Infof("Scaling completed. The new size of cluster '%s' is %d.", c.Name, newSize)
+	logrus.WithFields(logrus.Fields{
+		"clusterName": c.Name,
+		"newSize": newSize,
+	}).Info("Scaling completed.")
 }
 
 // <-- end implementation of `Scalable` interface -->
@@ -151,7 +158,7 @@ func (c *DataprocCluster) SubmitJob(scriptURI string) error {
 	ctx := context.Background()
 	controller, err := dataproc.NewJobControllerClient(ctx)
 	if err != nil {
-		glog.Errorf("'NewJobControllerClient' method call failed: %s", err)
+		logrus.WithField("error", err).Error("'NewJobControllerClient' method call failed")
 		return err
 	}
 
@@ -175,10 +182,10 @@ func (c *DataprocCluster) SubmitJob(scriptURI string) error {
 	_, err = controller.SubmitJob(ctx, req)
 
 	if err != nil {
-		glog.Errorf("'SubmitJob' method call failed: %s", err)
+		logrus.WithField("error", err).Error("'SubmitJob' method call failed")
 		return err
 	}
-	glog.Infof("New job deployed in cluster '%s'.", c.Name)
+	logrus.WithField("clusterName", c.Name).Info("New job deployed")
 	return nil
 
 }
@@ -200,7 +207,7 @@ func (c *DataprocCluster) AllocateResources() error {
 	ctx := context.Background()
 	controller, err := dataproc.NewClusterControllerClient(ctx)
 	if err != nil {
-		glog.Errorf("Could not create cluster controller for %s: %s", c.Name, err)
+		logrus.WithField("error", err).Error("NewClusterControllerClient' method call failed")
 		return err
 	}
 
@@ -231,18 +238,17 @@ func (c *DataprocCluster) AllocateResources() error {
 	}
 	op, err := controller.CreateCluster(ctx, req)
 	if err != nil {
-		glog.Errorf("Could not allocate resources for cluster %s: %s", c.Name, err)
+		logrus.WithField("error", err).Error("'CreateCluster' method call failed")
 		return err
 	}
 
 	// Wait till cluster is successfully created
 	_, err = op.Wait(ctx)
 	if err != nil {
-		glog.Errorf("Cluster %s resource allocation failed: %s", c.Name, err)
+		logrus.WithField("error", err).Error("'Wait' method call for CreateCluster operation failed")
 		return err
 	}
-
-	glog.Infof("New Dataproc cluster '%s' created.", c.Name)
+	logrus.WithField("name", c.Name).Info("New Dataproc cluster")
 	return nil
 }
 
