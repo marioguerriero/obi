@@ -6,8 +6,7 @@ import (
 		"github.com/golang/protobuf/proto"
 	"obi/model"
 	"time"
-	"fmt"
-	"obi/platforms"
+		"obi/platforms"
 	"github.com/sirupsen/logrus"
 )
 
@@ -85,10 +84,10 @@ func receiverRoutine(pool *utils.ConcurrentMap) {
 			}
 
 		}
-		fmt.Println(n)
+
 		m := &HeartbeatMessage{}
 		err = proto.Unmarshal(data[0:n], m)
-		fmt.Println(m)
+
 		if err != nil {
 			logrus.WithField("error", err).Error("'Unmarshal' method call for new heartbeat message failed")
 			continue
@@ -102,6 +101,10 @@ func receiverRoutine(pool *utils.ConcurrentMap) {
 			AvailableMemory:     m.GetAvailableMB(),
 			PendingVCores:       m.GetPendingVCores(),
 		}
+
+		logrus.WithFields(logrus.Fields{
+			"pendingContainers": newMetrics.PendingContainers,
+		}).Debug("Just an example of field inside metrics obj")
 
 		if value, ok := pool.Get(m.GetClusterName()); ok {
 			cluster := value.(model.ClusterBaseInterface)
