@@ -3,13 +3,14 @@ package autoscaler
 import (
 	"time"
 	"obi/model"
-)
+	"github.com/sirupsen/logrus"
+	)
 
 // ScalingAlgorithm is the enum type to specify different scaling algorithms
 type ScalingAlgorithm int
 const (
 	// BacklogBased scales the cluster to meet Time Of Completion constraints
-	BacklogBased ScalingAlgorithm = iota
+	TimeBased ScalingAlgorithm = iota
 	// WorkloadBased scales the cluster when the resource utilization is too high
 	WorkloadBased
 )
@@ -42,12 +43,12 @@ func New(algorithm ScalingAlgorithm, timeout int16, sustainedTimeout int16, clus
 
 
 // StartMonitoringScale starts the execution of the autoscaler
-func (as *Autoscaler) StartMonitoringScale() {
+func (as *Autoscaler) StartMonitoring() {
 	go autoscalerRoutine(as)
 }
 
 // StopMonitoringScale stops the execution of the autoscaler
-func (as *Autoscaler) StopMonitoringScale() {
+func (as *Autoscaler) StopMonitoring() {
 	close(as.quit)
 }
 
@@ -59,6 +60,8 @@ func autoscalerRoutine(as *Autoscaler) {
 	for {
 		select {
 		case <-as.quit:
+			logrus.WithField("clusterName", as.managedCluster.(model.ClusterBaseInterface).GetName()).Info(
+				"Closing autoscaler routine.")
 			return
 		default:
 			shouldScaleUp, shouldScaleDown = applyPolicy(
@@ -66,7 +69,7 @@ func autoscalerRoutine(as *Autoscaler) {
 					as.Algorithm,
 			)
 
-			var nodes int16 = 1
+			var nodes int32 = 1
 			for shouldScaleUp && nodes < 128 {
 				as.managedCluster.Scale(nodes, false)
 				time.Sleep(time.Duration(as.SustainedTimeout) * time.Second)
@@ -94,8 +97,12 @@ func applyPolicy(currentStatus model.Metrics, algorithm ScalingAlgorithm) (bool,
 	switch algorithm {
 	case WorkloadBased:
 		// TODO
-	case BacklogBased:
+		logrus.WithField("metrics", currentStatus).Info("Applying policy")
+	case TimeBased:
 		// TODO
+		logrus.WithField("metrics", currentStatus).Info("Applying policy")
+	default:
+		logrus.WithField("algorithm", algorithm).Error("Unknown algorithm")
 	}
-	return true, true
+	return false, false
 }

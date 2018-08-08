@@ -53,7 +53,8 @@ func NewExistingDataprocCluster(projectID string, region string, zone string, cl
 	ctx := context.Background()
 	c, err := dataproc.NewClusterControllerClient(ctx)
 	if err != nil {
-		// TODO: Handle error.
+		logrus.WithField("error", err).Error("NewClusterControllerClient' method call failed")
+		return nil, err
 	}
 
 	req := &dataprocpb.ListClustersRequest{
@@ -157,6 +158,11 @@ func (c *DataprocCluster) Scale(nodes int32, toAdd bool) {
 // <-- end implementation of `Scalable` interface -->
 
 // <-- start implementation of `ClusterBaseInterface` interface -->
+
+//
+func (c *DataprocCluster) GetName() string {
+	return c.Name
+}
 
 // SubmitJob is for sending a new job to Dataproc
 func (c *DataprocCluster) SubmitJob(scriptURI string) error {

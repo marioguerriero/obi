@@ -4,6 +4,7 @@ import (
 	"obi/platforms"
 	"obi/model"
 	"obi/utils"
+	"obi/autoscaler"
 )
 
 // Pooling class with properties
@@ -36,6 +37,8 @@ func (p *Pooling) SubmitPySparkJob(clusterName string, scriptURI string) {
 	if err == nil {
 		// Add to pool
 		p.pool.Set(clusterName, cluster)
+		a := autoscaler.New(autoscaler.WorkloadBased, 15, 5, cluster)
+		a.StartMonitoring()
 
 		// Schedule some jobs
 		cluster.SubmitJob(scriptURI)

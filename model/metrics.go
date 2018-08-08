@@ -6,8 +6,9 @@ import "time"
 type Metrics struct {
 	Timestamp time.Time
 	PendingContainers int32
-	AllocatedContainers int32
 	PendingMemory int32
 	AvailableMemory int32
-	PendingVCores int32
+	FirstContainerDelayTime float32
+	TotalContainersAllocated int32
+	TotalContainersReleased int32
 }

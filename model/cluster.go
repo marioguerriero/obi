@@ -4,7 +4,7 @@ import "sync"
 
 // Scalable is the interface that must be implemented from a scalable cluster
 type Scalable interface {
-	Scale(nodes int16, down bool)
+	Scale(nodes int32, down bool)
 }
 
 // ClusterBase is the base class for any type of cluster
@@ -18,6 +18,7 @@ type ClusterBase struct {
 
 // ClusterBaseInterface defines the primitive methods that must be implemented for any type of cluster
 type ClusterBaseInterface interface {
+	GetName() string
 	SubmitJob(string) error
 	GetMetricsSnapshot() Metrics
 	SetMetricsSnapshot(Metrics)

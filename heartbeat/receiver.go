@@ -8,6 +8,7 @@ import (
 	"time"
 		"obi/platforms"
 	"github.com/sirupsen/logrus"
+	"fmt"
 )
 
 // Receiver class with properties
@@ -17,7 +18,7 @@ type Receiver struct {
 	TrackerInterval int16
 }
 
-// singleton instancevg
+// singleton instance
 var receiverInstance *Receiver
 
 // channel to interrupt the heartbeat receiver routine
@@ -94,17 +95,16 @@ func receiverRoutine(pool *utils.ConcurrentMap) {
 		}
 
 		newMetrics := model.Metrics{
-			Timestamp:           time.Now(),
-			PendingContainers:   m.GetPendingContainers(),
-			AllocatedContainers: m.GetPendingContainers(),
-			PendingMemory:       m.GetPendingMB(),
-			AvailableMemory:     m.GetAvailableMB(),
-			PendingVCores:       m.GetPendingVCores(),
+			time.Now(),
+			m.GetPendingContainers(),
+			m.GetPendingMB(),
+			m.GetAvailableMB(),
+			m.GetAppAttemptFirstContainerAllocationDelayAvgTime(),
+			m.GetAggregateContainersAllocated(),
+			m.GetAggregateContainersReleased(),
 		}
 
-		logrus.WithFields(logrus.Fields{
-			"pendingContainers": newMetrics.PendingContainers,
-		}).Debug("Just an example of field inside metrics obj")
+		fmt.Println(newMetrics)
 
 		if value, ok := pool.Get(m.GetClusterName()); ok {
 			cluster := value.(model.ClusterBaseInterface)

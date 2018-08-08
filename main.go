@@ -8,7 +8,7 @@ import (
 	"time"
 		"os"
 		"github.com/sirupsen/logrus"
-)
+	)
 
 func main() {
 	logrus.SetOutput(os.Stdout)
