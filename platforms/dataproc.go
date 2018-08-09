@@ -77,7 +77,7 @@ func NewExistingDataprocCluster(projectID string, region string, zone string, cl
 
 		newBaseCluster := m.NewClusterBase(clusterName, resp.Config.WorkerConfig.NumInstances, "dataproc")
 
-		var preemptibleNodes int32 = 0
+		var preemptibleNodes int32
 		if resp.Config.SecondaryWorkerConfig != nil {
 			preemptibleNodes = resp.Config.SecondaryWorkerConfig.NumInstances
 		}

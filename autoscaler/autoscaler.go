@@ -9,7 +9,7 @@ import (
 // ScalingAlgorithm is the enum type to specify different scaling algorithms
 type ScalingAlgorithm int
 const (
-	// BacklogBased scales the cluster to meet Time Of Completion constraints
+	// TimeBased scales the cluster to meet Time Of Completion constraints
 	TimeBased ScalingAlgorithm = iota
 	// WorkloadBased scales the cluster when the resource utilization is too high
 	WorkloadBased
@@ -42,12 +42,12 @@ func New(algorithm ScalingAlgorithm, timeout int16, sustainedTimeout int16, clus
 }
 
 
-// StartMonitoringScale starts the execution of the autoscaler
+// StartMonitoring starts the execution of the autoscaler
 func (as *Autoscaler) StartMonitoring() {
 	go autoscalerRoutine(as)
 }
 
-// StopMonitoringScale stops the execution of the autoscaler
+// StopMonitoring stops the execution of the autoscaler
 func (as *Autoscaler) StopMonitoring() {
 	close(as.quit)
 }
