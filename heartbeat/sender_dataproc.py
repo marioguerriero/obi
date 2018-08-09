@@ -1,3 +1,4 @@
+import os
 import json
 import socket
 import urllib.request
@@ -11,8 +12,13 @@ QUERY = 'jmx?qry=Hadoop:service=ResourceManager,name=QueueMetrics,q0=root,' \
         'q1=default'
 QUERY_URL = 'http://{}:8088/{}'.format(HOSTNAME, QUERY)
 
-RECEIVER_ADDRESS = None
-RECEIVER_PORT = 8080
+RECEIVER_ADDRESS = os.popen('/usr/share/google/'
+                            'get_metadata_value attributes/'
+                            'obi_hb_host').read()
+RECEIVER_PORT = os.popen('/usr/share/google/'
+                         'get_metadata_value attributes/'
+                         'obi_hb_port').read()
+RECEIVER_PORT = int(RECEIVER_PORT)
 
 TIMEOUT = 10
 
