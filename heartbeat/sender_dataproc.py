@@ -14,10 +14,10 @@ QUERY_URL = 'http://{}:8088/{}'.format(HOSTNAME, QUERY)
 
 RECEIVER_ADDRESS = os.popen('/usr/share/google/'
                             'get_metadata_value attributes/'
-                            'obi_hb_host').read()
+                            'obi-hb-host').read()
 RECEIVER_PORT = os.popen('/usr/share/google/'
                          'get_metadata_value attributes/'
-                         'obi_hb_port').read()
+                         'obi-hb-port').read()
 RECEIVER_PORT = int(RECEIVER_PORT)
 
 TIMEOUT = 10
