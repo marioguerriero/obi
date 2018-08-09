@@ -8,6 +8,7 @@ import (
 		m "obi/model"
 	"google.golang.org/api/iterator"
 	"github.com/sirupsen/logrus"
+	"strconv"
 )
 
 // InitializationAction initialization script for installing necessary requirements
@@ -163,7 +164,7 @@ func (c *DataprocCluster) Scale(nodes int32, toAdd bool) {
 
 // <-- start implementation of `ClusterBaseInterface` interface -->
 
-//
+// GetName is for getting the name of the cluster
 func (c *DataprocCluster) GetName() string {
 	return c.Name
 }
@@ -237,7 +238,10 @@ func (c *DataprocCluster) AllocateResources() error {
 				GceClusterConfig: &dataprocpb.GceClusterConfig{
 					ZoneUri: c.Zone,
 					// TODO: set address and port in config file
-					Metadata: map[string]string{"obi-hb-host": c.HeartbeatHost, "obi-hb-port": string(c.HeartbeatPort)},
+					Metadata: map[string]string{
+						"obi-hb-host": c.HeartbeatHost,
+						"obi-hb-port": strconv.Itoa(c.HeartbeatPort),
+					},
 				},
 				WorkerConfig: &dataprocpb.InstanceGroupConfig{
 					NumInstances: int32(c.Nodes),

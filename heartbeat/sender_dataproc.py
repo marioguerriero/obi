@@ -75,7 +75,7 @@ def compute_hb():
     hb.PendingContainers = metrics['PendingContainers']
 
     # Set service type to dataproc
-    hb.ServiceProvider = 'dataproc'
+    hb.ServiceType = 'dataproc'
 
     return hb
 
