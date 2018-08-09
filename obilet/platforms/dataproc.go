@@ -5,7 +5,7 @@ import (
 	"cloud.google.com/go/dataproc/apiv1"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"context"
-		m "obi/model"
+		m "obi/obilet/model"
 	"google.golang.org/api/iterator"
 	"github.com/sirupsen/logrus"
 	"strconv"
@@ -253,6 +253,9 @@ func (c *DataprocCluster) AllocateResources() error {
 					{
 						ExecutableFile: InitializationAction,
 					},
+				},
+				SoftwareConfig: &dataprocpb.SoftwareConfig{
+					ImageVersion: "1.3",
 				},
 			},
 		},

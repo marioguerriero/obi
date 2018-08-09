@@ -1,12 +1,21 @@
 import os
 import json
 import socket
+import sys
 import urllib.request
 
 from .message_pb2 import HeartbeatMessage
 
 HOSTNAME = socket.gethostname()
 CLUSTER_NAME = HOSTNAME[:-2]
+
+# Before doing anything, make sure that the current node is the master
+GET_MASTER_CMD = '/usr/share/google/get_metadata_value attributes/dataproc-master'
+master_name = os.popen(GET_MASTER_CMD).read()
+if master_name != HOSTNAME:
+    # If we are not in the master we should not send any heartbeat
+    # so the current program can be aborted
+    sys.exit(1)
 
 QUERY = 'jmx?qry=Hadoop:service=ResourceManager,name=QueueMetrics,q0=root,' \
         'q1=default'
@@ -22,14 +31,15 @@ RECEIVER_PORT = int(RECEIVER_PORT)
 
 TIMEOUT = 10
 
-# Create UDP socket object for sending heartbeat
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
 
 def send_hb():
     # Get Heartbeat message and serialized it
     hb = compute_hb()
     serialized = hb.SerializeToString()
+
+    # Create UDP socket object for sending heartbeat
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.close()
 
     # Send heartbeat through UDP connection
     sock.sendto(serialized, (RECEIVER_ADDRESS, RECEIVER_PORT))

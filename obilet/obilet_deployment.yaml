@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: obi-master
+  name: obilet
   namespace: obi
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: obi-main
+      app: obilet
   template:
     metadata:
       labels:
-        app: obi-main
+        app: obilet
     spec:
       containers:
-      - name: obi-latest
-        image: eu.gcr.io/dhg-data-intelligence-ops/obi
+      - name: obilet-latest
+        image: eu.gcr.io/dhg-data-intelligence-ops/obilet
         volumeMounts:
         - name: obi-dataproc-sa-volume
           mountPath: "/etc/sa"
@@ -40,4 +40,4 @@ spec:
   - port: 8080
     protocol: UDP
   selector:
-    app: obi-main
+    app: obilet

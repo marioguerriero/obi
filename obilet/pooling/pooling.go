@@ -1,10 +1,10 @@
 package pooling
 
 import (
-	"obi/platforms"
-	"obi/model"
-	"obi/utils"
-	"obi/autoscaler"
+	"obi/obilet/platforms"
+	"obi/obilet/model"
+	"obi/obilet/utils"
+	"obi/obilet/autoscaler"
 )
 
 // Pooling class with properties
@@ -28,7 +28,7 @@ func (p *Pooling) SubmitPySparkJob(clusterName string, scriptURI string) {
 
 	// Create cluster object
 	// TODO: Define config variables for Google Dataproc.
-	cb := model.NewClusterBase("obi-test", 3, "dataproc", "35.234.108.242", 8080)
+	cb := model.NewClusterBase("obi-test", 3, "dataproc", "35.198.69.116", 8080)
 	cluster := platforms.NewDataprocCluster(cb, "dhg-data-intelligence-ops", "europe-west3-b","global", 1, 0.3)
 
 	// Allocate cluster resources

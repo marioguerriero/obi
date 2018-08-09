@@ -1,14 +1,14 @@
-package main
+package obilet
 
 import (
-			"github.com/golang/glog"
-	"obi/utils"
-	"obi/heartbeat"
-		"obi/pooling"
+	"github.com/golang/glog"
+	"obi/obilet/utils"
+	"obi/obilet/heartbeat"
+	"obi/obilet/pooling"
 	"time"
-		"os"
-		"github.com/sirupsen/logrus"
-	)
+	"os"
+	"github.com/sirupsen/logrus"
+)
 
 func main() {
 	logrus.SetOutput(os.Stdout)
