@@ -75,7 +75,11 @@ func NewExistingDataprocCluster(projectID string, region string, zone string, cl
 			return nil, err
 		}
 
-		newBaseCluster := m.NewClusterBase(clusterName, resp.Config.WorkerConfig.NumInstances, "dataproc")
+		newBaseCluster := m.NewClusterBase(clusterName,
+			resp.Config.WorkerConfig.NumInstances,
+			"dataproc",
+			"35.234.108.242",
+			8080)
 
 		var preemptibleNodes int32
 		if resp.Config.SecondaryWorkerConfig != nil {
@@ -232,6 +236,8 @@ func (c *DataprocCluster) AllocateResources() error {
 			Config: &dataprocpb.ClusterConfig{
 				GceClusterConfig: &dataprocpb.GceClusterConfig{
 					ZoneUri: c.Zone,
+					// TODO: set address and port in config file
+					Metadata: map[string]string{"obi-hb-host": c.HeartbeatHost, "obi-hb-port": string(c.HeartbeatPort)},
 				},
 				WorkerConfig: &dataprocpb.InstanceGroupConfig{
 					NumInstances: int32(c.Nodes),

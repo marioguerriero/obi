@@ -12,6 +12,8 @@ type ClusterBase struct {
 	Name string
 	Nodes int32
 	ServiceType string
+	HeartbeatHost string
+	HeartbeatPort int16
 	status Metrics // not available outside package to prevent race conditions- get and set must be used
 	sync.Mutex
 }
@@ -31,11 +33,13 @@ type ClusterBaseInterface interface {
 // @param size is the number of nodes in the cluster
 // @param platform is the cloud service environment name
 // return the pointer to the ClusterBase instance
-func NewClusterBase(clusterName string, size int32, platform string) *ClusterBase {
+func NewClusterBase(clusterName string, size int32, platform string, hbHost string, hbPort int16) *ClusterBase {
 	return &ClusterBase{
 		Name:  clusterName,
 		Nodes: size,
 		ServiceType: platform,
+		HeartbeatHost: hbHost,
+		HeartbeatPort: hbPort,
 	}
 }
 
