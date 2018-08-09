@@ -4,7 +4,7 @@ import "sync"
 
 // Scalable is the interface that must be implemented from a scalable cluster
 type Scalable interface {
-	Scale(nodes int16, down bool)
+	Scale(nodes int32, down bool)
 }
 
 // ClusterBase is the base class for any type of cluster
@@ -18,6 +18,7 @@ type ClusterBase struct {
 
 // ClusterBaseInterface defines the primitive methods that must be implemented for any type of cluster
 type ClusterBaseInterface interface {
+	GetName() string
 	SubmitJob(string) error
 	GetMetricsSnapshot() Metrics
 	SetMetricsSnapshot(Metrics)
@@ -28,11 +29,13 @@ type ClusterBaseInterface interface {
 // NewClusterBase is the constructor of ClusterBase struct
 // @param clusterName is the name of the cluster
 // @param size is the number of nodes in the cluster
+// @param platform is the cloud service environment name
 // return the pointer to the ClusterBase instance
-func NewClusterBase(clusterName string, size int32) *ClusterBase {
+func NewClusterBase(clusterName string, size int32, platform string) *ClusterBase {
 	return &ClusterBase{
 		Name:  clusterName,
 		Nodes: size,
+		ServiceType: platform,
 	}
 }
 

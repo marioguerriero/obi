@@ -3,12 +3,13 @@ package heartbeat
 import (
 	"obi/utils"
 	"net"
-	"github.com/golang/glog"
-	"github.com/golang/protobuf/proto"
+		"github.com/golang/protobuf/proto"
 	"obi/model"
 	"time"
+		"obi/platforms"
+	"github.com/sirupsen/logrus"
 	"fmt"
-	)
+)
 
 // Receiver class with properties
 type Receiver struct {
@@ -45,9 +46,9 @@ func GetInstance(clustersMap *utils.ConcurrentMap, deleteTimeout int16, trackerI
 // Start the execution of the heartbeat receiver
 func (receiver *Receiver) Start() {
 	quit = make(chan struct{})
-	glog.Info("Starting heartbeat receiver routine.")
+	logrus.Info("Starting heartbeat receiver routine.")
 	go receiverRoutine(receiver.pool)
-	glog.Info("Starting cluster tracker routine.")
+	logrus.Info("Starting cluster tracker routine.")
 	go clustersTrackerRoutine(receiver.pool, receiver.DeleteTimeout, receiver.TrackerInterval)
 }
 
@@ -65,7 +66,7 @@ func receiverRoutine(pool *utils.ConcurrentMap) {
 
 	conn, err = net.ListenUDP("udp", &addr)
 	if err != nil {
-		glog.Errorf("'ListenUDP' method call for creating new UDP server failed: %s", err)
+		logrus.WithField("error", err).Error("'ListenUDP' method call for creating new UDP server failed")
 		return
 	}
 
@@ -75,7 +76,7 @@ func receiverRoutine(pool *utils.ConcurrentMap) {
 		if err != nil {
 			select {
 			case <-quit:
-				glog.Info("Closing heartbeat receiver routine.")
+				logrus.Info("Closing heartbeat receiver routine.")
 				// the error was caused by the closing of the listener
 				return
 			default:
@@ -84,41 +85,45 @@ func receiverRoutine(pool *utils.ConcurrentMap) {
 			}
 
 		}
-		fmt.Println(n)
+
 		m := &HeartbeatMessage{}
 		err = proto.Unmarshal(data[0:n], m)
-		fmt.Println(m)
+
 		if err != nil {
-			glog.Errorf("'Unmarshal' method call for new heartbeat message failed: %s", err)
+			logrus.WithField("error", err).Error("'Unmarshal' method call for new heartbeat message failed")
 			continue
 		}
 
 		newMetrics := model.Metrics{
-			Timestamp:           time.Now(),
-			PendingContainers:   m.GetPendingContainers(),
-			AllocatedContainers: m.GetPendingContainers(),
-			PendingMemory:       m.GetPendingMB(),
-			AvailableMemory:     m.GetAvailableMB(),
-			PendingVCores:       m.GetPendingVCores(),
+			time.Now(),
+			m.GetPendingContainers(),
+			m.GetPendingMB(),
+			m.GetAvailableMB(),
+			m.GetAppAttemptFirstContainerAllocationDelayAvgTime(),
+			m.GetAggregateContainersAllocated(),
+			m.GetAggregateContainersReleased(),
 		}
+
+		fmt.Println(newMetrics)
 
 		if value, ok := pool.Get(m.GetClusterName()); ok {
 			cluster := value.(model.ClusterBaseInterface)
 			cluster.SetMetricsSnapshot(newMetrics)
-			glog.Infof("Metrics updated for cluster '%s'.", m.GetClusterName())
+			logrus.WithField("clusterName", m.GetClusterName()).Info("Metrics updated")
 		} else {
-			glog.Info("Received metrics for a cluster not in the pool.")
+			logrus.Info("Received metrics for a cluster not in the pool.")
 
-			// newCluster := platforms.NewExistingCluster(m.)
-			// pool.Set(m.GetClusterName(), newCluster)
+			newCluster, err := platforms.NewExistingCluster(m.GetServiceType(), m.GetClusterName())
+			if err == nil {
+				pool.Set(m.GetClusterName(), newCluster)
 
-			glog.Infof("Added cluster '%s' in the pool", m.GetClusterName())
+				logrus.WithField("clusterName", m.GetClusterName()).Info("Added cluster in the pool")
+			}
 		}
 	}
 }
 
-// goroutine which periodically removes outdated/down clusters. It will be stop when an empty object is inserted in
-// the `quit` channel
+// goroutine which periodically removes outdated/down clusters. It will be stop when the `quit` channel is closed
 // @param pool is the map containing all the available clusters
 // @param timeout is the time interval after which a cluster must be removed from the pool
 func clustersTrackerRoutine(pool *utils.ConcurrentMap, timeout int16, interval int16) {
@@ -126,7 +131,7 @@ func clustersTrackerRoutine(pool *utils.ConcurrentMap, timeout int16, interval i
 	for {
 		select {
 		case <-quit:
-			glog.Info("Closing cluster tracker routine.")
+			logrus.Info("Closing cluster tracker routine.")
 			return
 		default:
 			for pair := range pool.Iter() {
@@ -134,7 +139,7 @@ func clustersTrackerRoutine(pool *utils.ConcurrentMap, timeout int16, interval i
 				cluster := pair.Value.(model.ClusterBaseInterface)
 				lastHeartbeatInterval := int16(time.Now().Sub(cluster.GetMetricsSnapshot().Timestamp).Seconds())
 				if lastHeartbeatInterval > timeout {
-					glog.Infof("Deleting cluster '%s'.", key)
+					logrus.WithField("Name", key).Info("Deleting cluster.")
 					pool.Delete(key)
 				}
 			}

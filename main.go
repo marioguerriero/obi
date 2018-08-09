@@ -1,16 +1,17 @@
 package main
 
 import (
-		"flag"
-	"github.com/golang/glog"
+			"github.com/golang/glog"
 	"obi/utils"
 	"obi/heartbeat"
 		"obi/pooling"
 	"time"
-)
+		"os"
+		"github.com/sirupsen/logrus"
+	)
 
 func main() {
-	flag.Parse()
+	logrus.SetOutput(os.Stdout)
 	pool := utils.NewConcurrentMap()
 
 	// instantiate modules
