@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: obi-predictor
+  namespace: obi
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: obi-predictor
+  template:
+    metadata:
+      labels:
+        app: obi-predictor
+    spec:
+      containers:
+      - name: obi-predictor-latest
+        image: eu.gcr.io/dhg-data-intelligence-ops/obi-predictor
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: obi-predictor-service
+  namespace: obi
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    protocol: TCP
+  selector:
+    app: obi-predictor
