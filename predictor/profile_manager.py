@@ -1,4 +1,4 @@
-from .profiles import *
+from profiles import *
 
 _profile_instances = [obj() for name, obj in globals().items()
                       if not name.startswith('__') and name != 'Profile']

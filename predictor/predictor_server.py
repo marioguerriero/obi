@@ -1,13 +1,14 @@
 from flask import Flask
 from flask import request
 
+import os
 import json
 
-from .config import APP_NAME, ACCEPTED_JOBS
+from config import APP_NAME, ACCEPTED_JOBS
 
-from .models.failure_predictor import FailurePredictor, PredictionException
+from models.failure_predictor import FailurePredictor, PredictionException
 
-from .profile_manager import get_profile
+from profile_manager import get_profile
 
 app = Flask(APP_NAME)
 
@@ -56,3 +57,7 @@ def failure():
             mimetype='application/json'
         )
         return resp
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.environ['SERVICE_PORT']))
