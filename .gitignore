@@ -18,3 +18,4 @@ assets/.DS_Store
 obi-dataproc-sa.json
 
 master/*.pb.go
+master/main
