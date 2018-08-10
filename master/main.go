@@ -1,10 +1,11 @@
 package main
 
 import (
+	"os"
+	"github.com/sirupsen/logrus"
 	"net"
 	"fmt"
 	"google.golang.org/grpc"
-	"github.com/sirupsen/logrus"
 )
 
 const ConfigPath = ""
@@ -18,13 +19,14 @@ func parseConfig() {
 }
 
 func main() {
+	// Show logs on stdout
+	logrus.SetOutput(os.Stdout)
+
 	// Read configuration file
 	parseConfig()
 
 	// Create ObiMaster instance
-	var master = ObiMaster{
-
-	}
+	master := CreateMaster()
 
 	// Open connection
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", Port))
@@ -35,8 +37,8 @@ func main() {
 
 	// Create gRPC server
 	grpcServer := grpc.NewServer()
-	RegisterObiMasterServer(grpcServer, &master)
-	logrus.WithField("obi-master", master).Info("Successfully registered OBI Master server")
+	RegisterObiMasterServer(grpcServer, master)
+	logrus.WithField("obi-master-old", *master).Info("Successfully registered OBI Master server")
 
 	// TODO: Use encrypted TLS connection
 

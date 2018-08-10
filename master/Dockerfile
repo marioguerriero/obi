@@ -1,7 +1,7 @@
 FROM golang
 
 # Set some configuration environment variables
-ENV SRC_DIR /go/src/obi/obimaster
+ENV SRC_DIR /go/src/obi/master
 
 # Change workdir
 WORKDIR /app
@@ -10,9 +10,9 @@ WORKDIR /app
 ADD . $SRC_DIR
 
 # Compile executable
-RUN cd $SRC_DIR; go get .; go build -o obimaster; cp obilet /app/
+RUN cd $SRC_DIR; go get .; go build -o obimaster; cp obimaster /app/
 
-# Expose external port for the communication with the client
-EXPOSE 8080
+# Expose external port for the heartbeat services
+EXPOSE 8080/udp
 
 ENTRYPOINT [ "./obimaster" ]

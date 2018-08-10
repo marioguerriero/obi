@@ -5,7 +5,7 @@ import (
 	"cloud.google.com/go/dataproc/apiv1"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"context"
-		m "obi/obilet/model"
+		m "obi/master/model"
 	"google.golang.org/api/iterator"
 	"github.com/sirupsen/logrus"
 	"strconv"
@@ -45,7 +45,7 @@ func NewDataprocCluster(baseInfo *m.ClusterBase, projectID, zone, region string,
 }
 
 // NewExistingDataprocCluster is the constructor of DataprocCluster for already allocated resources in Dataproc
-// Even if OBI-master fails, it will be capable of rebuilding the pool, simply reading the content of the heartbeats
+// Even if OBI-master-old fails, it will be capable of rebuilding the pool, simply reading the content of the heartbeats
 // @param projectID is the project ID in the GCP environment
 // @param region is the the macro-area where the cluster was deployed (e.g. europe-west3)
 // @param zone is a specific area inside region (e.g. europe-west3-b)

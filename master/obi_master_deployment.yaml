@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: obi-master
+  name: master
   namespace: obi
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: obi-master
+      app: master
   template:
     metadata:
       labels:
-        app: obi-master
+        app: master
     spec:
       containers:
-      - name: obi-master
-        image: eu.gcr.io/dhg-data-intelligence-ops/obi-master
+      - name: master-latest
+        image: eu.gcr.io/dhg-data-intelligence-ops/master
         volumeMounts:
         - name: obi-dataproc-sa-volume
           mountPath: "/etc/sa"
@@ -32,12 +32,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: obi-master-service
+  name: master-service
   namespace: obi
 spec:
   type: LoadBalancer
   ports:
   - port: 8080
-    protocol: TCP
+    protocol: UDP
   selector:
-    app: obi-master
+    app: master

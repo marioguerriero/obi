@@ -9,11 +9,11 @@ from .message_pb2 import HeartbeatMessage
 HOSTNAME = socket.gethostname()
 CLUSTER_NAME = HOSTNAME[:-2]
 
-# Before doing anything, make sure that the current node is the master
-GET_MASTER_CMD = '/usr/share/google/get_metadata_value attributes/dataproc-master'
+# Before doing anything, make sure that the current node is the master-old
+GET_MASTER_CMD = '/usr/share/google/get_metadata_value attributes/dataproc-master-old'
 master_name = os.popen(GET_MASTER_CMD).read()
 if master_name != HOSTNAME:
-    # If we are not in the master we should not send any heartbeat
+    # If we are not in the master-old we should not send any heartbeat
     # so the current program can be aborted
     sys.exit(1)
 
@@ -50,7 +50,7 @@ def compute_hb():
     hb = HeartbeatMessage()
     hb.cluster_name = CLUSTER_NAME
 
-    # Collect metrics from Yarn master
+    # Collect metrics from Yarn master-old
     req = urllib.request.urlopen(QUERY_URL)
     req = req.read().decode('utf-8')
     metrics = json.loads(req)

@@ -1,7 +1,7 @@
 package platforms
 
 import (
-	"obi/obilet/model"
+	"obi/master/model"
 		"github.com/sirupsen/logrus"
 )
 

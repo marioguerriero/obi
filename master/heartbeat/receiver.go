@@ -1,14 +1,14 @@
 package heartbeat
 
 import (
-	"obi/obilet/utils"
+	"obi/master/utils"
 	"net"
 	"github.com/golang/protobuf/proto"
-	"obi/obilet/model"
+	"obi/master/model"
 	"time"
 	"github.com/sirupsen/logrus"
 	"fmt"
-	"obi/obilet/platforms"
+	"obi/master/platforms"
 )
 
 // Receiver class with properties

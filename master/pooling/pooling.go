@@ -1,10 +1,10 @@
 package pooling
 
 import (
-	"obi/obilet/platforms"
-	"obi/obilet/model"
-	"obi/obilet/utils"
-	"obi/obilet/autoscaler"
+	"obi/master/platforms"
+	"obi/master/model"
+	"obi/master/utils"
+	"obi/master/autoscaler"
 )
 
 // Pooling class with properties
@@ -28,16 +28,25 @@ func (p *Pooling) SubmitPySparkJob(clusterName string, scriptURI string) {
 
 	// Create cluster object
 	// TODO: Define config variables for Google Dataproc.
-	cb := model.NewClusterBase("obi-test", 3, "dataproc", "35.198.69.116", 8080)
-	cluster := platforms.NewDataprocCluster(cb, "dhg-data-intelligence-ops", "europe-west3-b","global", 1, 0.3)
+	var cluster model.ClusterBaseInterface
+	var err error
+	if p.pool.Len() == 0 {
+		cb := model.NewClusterBase("obi-test", 3, "dataproc", "35.198.69.116", 8080)
+		cluster = platforms.NewDataprocCluster(cb, "dhg-data-intelligence-ops", "europe-west3-b","global", 1, 0.3)
 
-	// Allocate cluster resources
-	err := cluster.AllocateResources()
+		// Allocate cluster resources
+		err = cluster.AllocateResources()
+	} else {
+		cIface, _ := p.pool.Get("obi-test")
+		cluster = cIface.(model.ClusterBaseInterface)
+
+		err = nil
+	}
 
 	if err == nil {
 		// Add to pool
 		p.pool.Set(clusterName, cluster)
-		a := autoscaler.New(autoscaler.WorkloadBased, 15, 5, cluster)
+		a := autoscaler.New(autoscaler.WorkloadBased, 15, 5, cluster.(model.Scalable))
 		a.StartMonitoring()
 
 		// Schedule some jobs

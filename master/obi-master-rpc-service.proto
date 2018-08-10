@@ -3,8 +3,6 @@ syntax = "proto3";
 package main;
 
 service ObiMaster {
-    rpc ListInfrastructures (EmptyRequest) returns (ListInfrastructuresResponse) {}
-
     rpc SubmitJob (SubmitJobRequest) returns (EmptyResponse) {}
 }
 
@@ -36,5 +34,4 @@ message ListInfrastructuresResponse {
 
 message SubmitJobRequest {
     Job job = 1;
-    Infrastructure infrastructure = 2;
 }

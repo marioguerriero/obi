@@ -82,8 +82,6 @@ def submit_job(config, stub):
         infrastructure=infrastructure)
     res = stub.SubmitJob(req)
 
-    logging.info(res)
-
 
 def run(config):
     """

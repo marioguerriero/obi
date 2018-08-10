@@ -2,7 +2,7 @@ package autoscaler
 
 import (
 	"time"
-	"obi/obilet/model"
+	"obi/master/model"
 	"github.com/sirupsen/logrus"
 	)
 

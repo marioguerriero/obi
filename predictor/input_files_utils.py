@@ -1,7 +1,7 @@
 # IMPORTANT
 # Most of the code in this script is a just a "replica" of the one which
 # can be found in the following GitLab folder:
-# etl-backend/backend_sync/tree/master/processors
+# etl-backend/backend_sync/tree/master-old/processors
 # Unfortunately there is no other way of being certain about the input size
 # estimation if not by replicating the same actions each job takes
 

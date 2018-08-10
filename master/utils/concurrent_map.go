@@ -23,6 +23,14 @@ func NewConcurrentMap() *ConcurrentMap {
 	return cm
 }
 
+// Len computes the length of the concurrent map
+func (cm *ConcurrentMap) Len() int {
+	cm.Lock()
+	defer cm.Unlock()
+
+	return len(cm.items)
+}
+
 // Set is for adding/updating a new <key, value> pair into the map
 // @param key is the key for the dictionary
 // @param value is any object
