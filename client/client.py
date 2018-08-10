@@ -80,7 +80,7 @@ def submit_job(config, stub):
     req = master_rpc_service_pb2.SubmitJobRequest(
         job=job,
         infrastructure=infrastructure)
-    res = stub.SubmitJob(req)
+    stub.SubmitJob(req)
 
 
 def run(config):

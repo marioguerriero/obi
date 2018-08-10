@@ -33,8 +33,8 @@ func main() {
 	master := CreateMaster()
 
 	// Open connection
-	port := viper.Get("heartbeat.port")
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	port := viper.GetString("servicePort")
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
 	if err != nil {
 		logrus.WithField("error", err).Fatal("Unable to open server listener")
 	}

@@ -80,7 +80,7 @@ func NewExistingDataprocCluster(projectID string, region string, zone string, cl
 		newBaseCluster := m.NewClusterBase(clusterName,
 			resp.Config.WorkerConfig.NumInstances,
 			"dataproc",
-			viper.GetString("heartbeat.host"),
+			viper.GetString("heart	beat.host"),
 			8080)
 
 		var preemptibleNodes int32
