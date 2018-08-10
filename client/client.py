@@ -55,6 +55,36 @@ def parse_config(config_path=CONFIG_PATH):
     return config
 
 
+def submit_job(config, stub):
+    """
+    Send submit job request to OBI Master
+    :param config:
+    :param stub:
+    :return:
+    """
+    # Check if the job type is valid or not
+    sup_types = config['obi']['OBI_SUPPORTED_JOB_TYPES']
+    if args.job_type not in sup_types.split(','):
+        logging.error('{} job type is invalid. '
+                      'Supported job types: {}'.format(args.job_type,
+                                                       sup_types))
+        sys.exit(1)
+
+    # Send submit job request
+    job = master_rpc_service_pb2.Job()
+    job.executablePath = args.job_path
+    job.type = map_job_type(args.job_type)
+
+    infrastructure = master_rpc_service_pb2.Infrastructure()
+
+    req = master_rpc_service_pb2.SubmitJobRequest(
+        job=job,
+        infrastructure=infrastructure)
+    res = stub.SubmitJob(req)
+
+    logging.info(res)
+
+
 def run(config):
     """
     This function represents the main entry point for OBI client
@@ -67,27 +97,7 @@ def run(config):
         stub = master_rpc_service_pb2_grpc.ObiMasterStub(channel)
         # Check fi we need to submit a job
         if args.job_path is not None and args.job_type is not None:
-            # Check if the job type is valid or not
-            sup_types = config['obi']['OBI_SUPPORTED_JOB_TYPES']
-            if args.job_type not in sup_types.split(','):
-                logging.error('{} job type is invalid. '
-                              'Supported job types: {}'.format(args.job_type,
-                                                              sup_types))
-                sys.exit(1)
-
-            # Send submit job request
-            job = master_rpc_service_pb2.Job()
-            job.executablePath = args.job_path
-            job.type = map_job_type(args.job_type)
-
-            infrastructure = master_rpc_service_pb2.Infrastructure()
-
-            req = master_rpc_service_pb2.SubmitJobRequest(
-                job=job,
-                infrastructure=infrastructure)
-            res = stub.SubmitJob(req)
-
-            logging.info(res)
+            submit_job(config, stub)
 
 
 if __name__ == '__main__':
