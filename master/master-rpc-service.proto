@@ -13,11 +13,11 @@ message Infrastructure {
 }
 
 message Job {
-    string executable = 1;
+    string executablePath = 1;
     enum JobType {
         PYSPARK = 0;
     }
-    JobType jobType = 4;
+    JobType type = 4;
 }
 
 // Request/Response messages

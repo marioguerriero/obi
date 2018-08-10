@@ -19,3 +19,7 @@ obi-dataproc-sa.json
 
 master/*.pb.go
 master/main
+
+client/master_rpc_service_pb2.py
+client/master_rpc_service_pb2_grpc.py
+client/__pycache__/
