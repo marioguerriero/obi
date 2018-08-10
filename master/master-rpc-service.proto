@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package main;
+
+service ObiMaster {
+    rpc ListInfrastructures (EmptyRequest) returns (ListInfrastructuresResponse) {}
+
+    rpc SubmitJob (SubmitJobRequest) returns (EmptyResponse) {}
+}
+
+message Infrastructure {
+
+}
+
+message Job {
+    string executable = 1;
+    enum JobType {
+        PYSPARK = 0;
+    }
+    JobType jobType = 4;
+}
+
+// Request/Response messages
+
+message EmptyRequest {
+
+}
+
+message EmptyResponse {
+
+}
+
+message ListInfrastructuresResponse {
+    repeated Infrastructure infrastructure = 1;
+}
+
+message SubmitJobRequest {
+    Job job = 1;
+    Infrastructure infrastructure = 2;
+}

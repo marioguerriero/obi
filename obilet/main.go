@@ -1,4 +1,4 @@
-package obilet
+package main
 
 import (
 	"github.com/golang/glog"
