@@ -39,10 +39,12 @@ def send_hb():
 
     # Create UDP socket object for sending heartbeat
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.close()
 
     # Send heartbeat through UDP connection
     sock.sendto(serialized, (RECEIVER_ADDRESS, RECEIVER_PORT))
+
+    # Close socket connection
+    sock.close()
 
 
 def compute_hb():

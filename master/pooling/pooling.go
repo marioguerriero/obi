@@ -5,6 +5,7 @@ import (
 	"obi/master/model"
 	"obi/master/utils"
 	"obi/master/autoscaler"
+	"github.com/spf13/viper"
 )
 
 // Pooling class with properties
@@ -31,7 +32,7 @@ func (p *Pooling) SubmitPySparkJob(clusterName string, scriptURI string) {
 	var cluster model.ClusterBaseInterface
 	var err error
 	if p.pool.Len() == 0 {
-		cb := model.NewClusterBase("obi-test", 3, "dataproc", "35.198.89.29", 8080)
+		cb := model.NewClusterBase("obi-test", 3, "dataproc", viper.GetString("heartbeat.host"), 8080)
 		cluster = platforms.NewDataprocCluster(cb, "dhg-data-intelligence-ops", "europe-west3-b","global", 1, 0.3)
 
 		// Allocate cluster resources

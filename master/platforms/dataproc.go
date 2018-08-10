@@ -9,6 +9,7 @@ import (
 	"google.golang.org/api/iterator"
 	"github.com/sirupsen/logrus"
 	"strconv"
+	"github.com/spf13/viper"
 )
 
 // InitializationAction initialization script for installing necessary requirements
@@ -79,7 +80,7 @@ func NewExistingDataprocCluster(projectID string, region string, zone string, cl
 		newBaseCluster := m.NewClusterBase(clusterName,
 			resp.Config.WorkerConfig.NumInstances,
 			"dataproc",
-			"35.198.89.29",
+			viper.GetString("heartbeat.host"),
 			8080)
 
 		var preemptibleNodes int32

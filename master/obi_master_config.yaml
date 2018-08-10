@@ -1,0 +1,4 @@
+servicePort: 8081
+heartbeat:
+  host: 35.198.96.235
+  port: 8080

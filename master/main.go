@@ -6,16 +6,20 @@ import (
 	"net"
 	"fmt"
 	"google.golang.org/grpc"
+	"github.com/spf13/viper"
 )
 
-const ConfigPath = ""
-var Port int
+const ConfigPath = "./"
 
 func parseConfig() {
 	logrus.WithField("config-path", ConfigPath).Info("Reading configuration")
 
-	// TODO
-	Port = 8080
+	viper.SetConfigName("obi_master_config")
+	viper.AddConfigPath(ConfigPath)
+	err := viper.ReadInConfig()
+	if err != nil {
+		logrus.Fatal("Unable to read configuration", err)
+	}
 }
 
 func main() {
@@ -29,9 +33,10 @@ func main() {
 	master := CreateMaster()
 
 	// Open connection
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", Port))
+	port := viper.Get("heartbeat.port")
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
-		logrus.WithField("error", err).Error("Unable to open server listener")
+		logrus.WithField("error", err).Fatal("Unable to open server listener")
 	}
 	logrus.Info("Successfully opened connection listener")
 
@@ -43,6 +48,6 @@ func main() {
 	// TODO: Use encrypted TLS connection
 
 	// Start serving
-	logrus.Info("Start serving requests on port ", Port)
+	logrus.Info("Start serving requests on port ", port)
 	grpcServer.Serve(listener)
 }
