@@ -2,6 +2,19 @@
 masterHost: 35.234.75.53
 masterPort: 8081
 
+# Default ports on which services will listen
+defaultMasterPort: 8081
+defaultHeartbeatPort: 8080
+
+# Default selector name used by services to attach to deployments
+defaultServiceSelectorName: app
+
+# Default name used by the deployments to retrieve their config map
+defaultConfigMapName: config-map
+
+# Number of replicas to create when creating a new infrastructure
+masterReplicas: 2
+
 # Supported types: kubernetes/k8s, local
 deploymentPlatform: kubernetes
 
@@ -11,3 +24,17 @@ kubernetesNamespace: obi
 # Supported job types
 supportedJobTypes:
   - name: PySpark
+
+# The set of namespaces which will be scanned by the client while
+# performing the infrastructure service discovery
+namespaces:
+  - name: obi
+
+# Docker image of the OBI master deployment
+masterImage: eu.gcr.io/dhg-data-intelligence-ops/obi-master
+
+# Where to mount the secret within the master's container
+secretMountPath: /etc/sa
+
+# Where to mount the configuration file within master's container
+configMountPath: /etc/config
