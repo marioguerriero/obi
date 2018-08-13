@@ -6,12 +6,22 @@ import "sync"
 type ConcurrentSlice struct {
 	sync.RWMutex
 	items []interface{}
+	maxSize int // ignored if not specified
 }
 
 // ConcurrentSliceItem is a wrapper for a slice item
 type ConcurrentSliceItem struct {
 	Index int
 	Value interface{}
+}
+
+// NewConcurrentSlice creates a new concurrent map
+func NewConcurrentSlice(size int, fixed bool) *ConcurrentSlice {
+	cs := &ConcurrentSlice{items: make([]interface{}, size)}
+	if fixed {
+		cs.maxSize = size
+	}
+	return cs
 }
 
 
@@ -22,6 +32,10 @@ func (cs *ConcurrentSlice) Append(item interface{}) {
 	defer cs.Unlock()
 
 	cs.items = append(cs.items, item)
+
+	if cs.maxSize > 0 && len(cs.items) > cs.maxSize {
+		cs.items = cs.items[1:]
+	}
 }
 
 // Iter is for getting the iterator for the elements in the slice
