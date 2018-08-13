@@ -3,23 +3,23 @@
 # required unless specified.
 
 # Optional. The name of the infrastructure
-name: NAME
+name: obi-test-infrastructure
 
 # Optional. Namespace used to identify deployment objects in certain platforms
 # e.g. Kubernetes. It is not required if the deployment type is local. If the
 # deployment type is Kubernetes and the namespace is not specified, the
 # namespace 'obi' will be used
-namespace: NAMESPACE
+namespace: obi
 
 # This is the service account file path for which the client will
 # create a secret to be attached to the infrastructure deployment
-serviceAccountPath: SA_PATH
+serviceAccountPath: /Users/m.guerriero/code/dataproc-sa.json
 
 # Google Cloud's project ID under which the Dataproc instance is registered
-projectId: ID
+projectId: dhg-data-intelligence-ops
 
 # Region for the Dataproc servers to be used
-region: REGION
+region: europe-west3-b
 
 # Zone for the Dataproc servers to be used
-zone: ZONE
+zone: global
