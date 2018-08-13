@@ -8,42 +8,38 @@ class GenericClient(ABC):
     for several different configurations, e.g. Kubernetes, local, etc.
     """
 
-    _instance = None
-
-    # I want this class to be a singleton
-    def __new__(cls, *args, **kwargs):
-        if not cls._instance:
-            cls._instance = super(GenericClient, cls).__new__(
-                cls, *args, **kwargs)
-        return cls._instance
+    @abstractmethod
+    def __init__(self, user_config):
+        """
+        Constructor method accepting the user configuration
+        for the given client
+        :param user_config:
+        """
 
     @abstractmethod
-    def discover_services(self):
+    def get_objects(self, **kwargs):
         """
         Discover all the OBI available platform services
         :return: list of available services
         """
 
     @abstractmethod
-    def submit_platform(self, platform_config):
+    def create_object(self, **kwargs):
         """
         Generates a new platform service for the given configuration
-        :param platform_config:
         :return:
         """
 
     @abstractmethod
-    def delete_platform(self, platform_name):
+    def delete_object(self, **kwargs):
         """
         Deletes all k8s objects for the given platform
-        :param platform_name:
         :return:
         """
 
     @abstractmethod
-    def submit_job(self, submit_job_request):
+    def describe_object(self, **kwargs):
         """
         Submit a job to OBI according to the given request
-        :param submit_job_request:
         :return:
         """

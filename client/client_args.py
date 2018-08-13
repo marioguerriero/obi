@@ -5,16 +5,21 @@ argument parsing in the OBI command line client tool.
 
 import argparse
 
+CMD_CREATE = 'create'
+CMD_GET = 'get'
+CMD_DELETE = 'delete'
+CMD_DESCRIBE = 'describe'
+
 # Specify command line arguments
 parser = argparse.ArgumentParser(description='OBI client tool')
 subparsers = parser.add_subparsers(help='Available commands', dest='cmd')
 subparsers.required = True
 
 # Get arguments
-get_args = subparsers.add_parser('get', help='Those commands are used to '
-                                             'obtain information from the '
-                                             'remote OBI interface')
-get_args_subparsers = get_args.add_subparsers(dest='get')
+get_args = subparsers.add_parser(CMD_GET, help='Those commands are used to '
+                                               'obtain information from the '
+                                               'remote OBI interface')
+get_args_subparsers = get_args.add_subparsers(dest=CMD_GET)
 get_args_subparsers.required = True
 get_args_subparsers.add_parser('infrastructures', help='Obtain available '
                                                        'infrastructure '
@@ -23,10 +28,10 @@ get_args_subparsers.add_parser('jobs', help='Obtain all running jobs on OBI '
                                             'infrastructures')
 
 # Create arguments
-create_args = subparsers.add_parser('create', help='Create jobs and '
-                                                   'infrastructure services '
-                                                   'for OBI')
-create_args_subparsers = create_args.add_subparsers(dest='create')
+create_args = subparsers.add_parser(CMD_CREATE, help='Create jobs and '
+                                                     'infrastructure services '
+                                                     'for OBI')
+create_args_subparsers = create_args.add_subparsers(dest=CMD_CREATE)
 create_args_subparsers.required = True
 
 # Create job arguments
@@ -39,7 +44,8 @@ create_job_args.add_argument('-i', help='Infrastructure on which execute the '
                                         'given job. If omitted the default '
                                         'infrastructure from the '
                                         'configuration file will be used',
-                             type=str, required=True, dest='job_platform')
+                             type=str, required=True,
+                             dest='job_infrastructure')
 
 # Create infrastructure arguments
 create_infrastructure_args = create_args_subparsers.add_parser('infrastructure')
@@ -49,11 +55,11 @@ create_infrastructure_args.add_argument('-f', help='Infrastructure config '
                                         dest='infrastructure_path')
 
 # Describe arguments
-describe_args = subparsers.add_parser('describe', help='Describe job and '
-                                                       'infrastructure '
-                                                       'services '
-                                                       'from OBI')
-describe_args_subparsers = describe_args.add_subparsers(dest='describe')
+describe_args = subparsers.add_parser(CMD_DESCRIBE, help='Describe job and '
+                                                         'infrastructure '
+                                                         'services '
+                                                         'from OBI')
+describe_args_subparsers = describe_args.add_subparsers(dest=CMD_DESCRIBE)
 describe_args_subparsers.required = True
 describe_infrastructure_args_subparsers = describe_args_subparsers.add_parser(
     'infrastructure', help='Describe an infrastructure given its name')
@@ -65,10 +71,10 @@ describe_job_args_subparsers = \
 describe_job_args_subparsers.add_argument('job_name', type=str)
 
 # Delete arguments
-delete_args = subparsers.add_parser('delete', help='Delete job and '
-                                                   'infrastructure services '
-                                                   'from OBI')
-delete_args_subparsers = delete_args.add_subparsers(dest='delete')
+delete_args = subparsers.add_parser(CMD_DELETE, help='Delete job and '
+                                                     'infrastructure services '
+                                                     'from OBI')
+delete_args_subparsers = delete_args.add_subparsers(dest=CMD_DELETE)
 delete_args_subparsers.required = True
 delete_infrastructure_args_subparsers = delete_args_subparsers.add_parser(
     'infrastructure', help='Delete an infrastructure given its name')
