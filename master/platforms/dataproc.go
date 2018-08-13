@@ -10,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"strconv"
 	"github.com/spf13/viper"
+	"obi/master/utils"
 )
 
 // InitializationAction initialization script for installing necessary requirements
@@ -207,14 +208,14 @@ func (c *DataprocCluster) SubmitJob(scriptURI string) error {
 
 }
 
-// GetMetricsSnapshot is for getting last metrics of the cluster
-func (c *DataprocCluster) GetMetricsSnapshot() m.Metrics {
+// GetMetricsWindow is for getting last metrics of the cluster
+func (c *DataprocCluster) GetMetricsWindow() *utils.ConcurrentSlice {
 	return c.GetMetrics()
 }
 
 // SetMetricsSnapshot is for updating the cluster with new metrics
 // @newMetrics is the object filled with new metrics
-func (c *DataprocCluster) SetMetricsSnapshot(newMetrics m.Metrics) {
+func (c *DataprocCluster) AddMetricsSnapshot(newMetrics m.Metrics) {
 	c.SetMetrics(newMetrics)
 }
 

@@ -4,7 +4,9 @@ import (
 	"time"
 	"obi/master/model"
 	"github.com/sirupsen/logrus"
-	)
+	"obi/master/utils"
+	"fmt"
+)
 
 // ScalingAlgorithm is the enum type to specify different scaling algorithms
 type ScalingAlgorithm int
@@ -65,7 +67,7 @@ func autoscalerRoutine(as *Autoscaler) {
 			return
 		default:
 			shouldScaleUp, shouldScaleDown = applyPolicy(
-					as.managedCluster.(model.ClusterBaseInterface).GetMetricsSnapshot(),
+					as.managedCluster.(model.ClusterBaseInterface).GetMetricsWindow(),
 					as.Algorithm,
 			)
 
@@ -74,7 +76,7 @@ func autoscalerRoutine(as *Autoscaler) {
 				as.managedCluster.Scale(nodes, false)
 				time.Sleep(time.Duration(as.SustainedTimeout) * time.Second)
 				shouldScaleUp, shouldScaleDown = applyPolicy(
-					as.managedCluster.(model.ClusterBaseInterface).GetMetricsSnapshot(),
+					as.managedCluster.(model.ClusterBaseInterface).GetMetricsWindow(),
 					as.Algorithm,
 				)
 				nodes = nodes << 1
@@ -84,7 +86,7 @@ func autoscalerRoutine(as *Autoscaler) {
 				as.managedCluster.Scale(1, true)
 				time.Sleep(time.Duration(as.SustainedTimeout) * time.Second)
 				_, shouldScaleDown = applyPolicy(
-					as.managedCluster.(model.ClusterBaseInterface).GetMetricsSnapshot(),
+					as.managedCluster.(model.ClusterBaseInterface).GetMetricsWindow(),
 					as.Algorithm,
 				)
 			}
@@ -93,14 +95,18 @@ func autoscalerRoutine(as *Autoscaler) {
 	}
 }
 
-func applyPolicy(currentStatus model.Metrics, algorithm ScalingAlgorithm) (bool, bool) {
+func applyPolicy(metricsWindow *utils.ConcurrentSlice, algorithm ScalingAlgorithm) (bool, bool) {
 	switch algorithm {
 	case WorkloadBased:
 		// TODO
-		logrus.WithField("metrics", currentStatus).Info("Applying policy")
+		logrus.Info("Applying policy")
+		fmt.Println("Metrics Window:")
+		for hb := range metricsWindow.Iter() {
+			// fmt.Println(hb.Value)
+		}
 	case TimeBased:
 		// TODO
-		logrus.WithField("metrics", currentStatus).Info("Applying policy")
+		logrus.WithField("metrics", metricsWindow).Info("Applying policy")
 	default:
 		logrus.WithField("algorithm", algorithm).Error("Unknown algorithm")
 	}

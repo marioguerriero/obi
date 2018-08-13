@@ -1,6 +1,9 @@
 package model
 
-import "sync"
+import (
+	"sync"
+	"obi/master/utils"
+)
 
 // Scalable is the interface that must be implemented from a scalable cluster
 type Scalable interface {
@@ -14,7 +17,7 @@ type ClusterBase struct {
 	ServiceType string
 	HeartbeatHost string
 	HeartbeatPort int
-	status Metrics // not available outside package to prevent race conditions- get and set must be used
+	metrics *utils.ConcurrentSlice // not available outside package to prevent race conditions- get and set must be used
 	sync.Mutex
 }
 
@@ -22,8 +25,8 @@ type ClusterBase struct {
 type ClusterBaseInterface interface {
 	GetName() string
 	SubmitJob(string) error
-	GetMetricsSnapshot() Metrics
-	SetMetricsSnapshot(Metrics)
+	GetMetricsWindow() *utils.ConcurrentSlice
+	AddMetricsSnapshot(Metrics)
 	AllocateResources() error
 }
 
@@ -40,24 +43,19 @@ func NewClusterBase(clusterName string, size int32, platform string, hbHost stri
 		ServiceType: platform,
 		HeartbeatHost: hbHost,
 		HeartbeatPort: hbPort,
+		// TODO: metrics window size in the configuration
+		metrics: utils.NewConcurrentSlice(6, true),
 	}
 }
 
 // GetMetrics is the getter of status field inside ClusterBase
 // thread-safe
-func (c *ClusterBase) GetMetrics() Metrics {
-	c.Lock()
-	defer c.Unlock()
-
-	value := c.status
-	return value
+func (c *ClusterBase) GetMetrics() *utils.ConcurrentSlice {
+	return c.metrics
 }
 
 // SetMetrics is the setter of status field inside ClusterBase
 // thread-safe
 func (c *ClusterBase) SetMetrics(newStatus Metrics) {
-	c.Lock()
-	defer c.Unlock()
-
-	c.status = newStatus
+	c.metrics.Append(newStatus)
 }
