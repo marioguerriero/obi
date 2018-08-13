@@ -175,7 +175,10 @@ class KubernetesClient(GenericClient):
         # Create config map to be used in the deployment
         config_map_name = self._create_config_map(
             namespace,
-            heartbeatHost=heartbeat_host, heartbeatPort=heartbeat_port)
+            heartbeatHost=heartbeat_host, heartbeatPort=heartbeat_port,
+            projectId=deployment['projectId'],
+            region=deployment['region'], zone=deployment['zone'],
+            masterPort=self._user_config['defaultMasterPort'])
 
         # Create deployment
         self._create_infrastructure_deployment(
@@ -375,13 +378,21 @@ class KubernetesClient(GenericClient):
         env1 = k8s.client.V1EnvVar()
         env1.name = 'GOOGLE_CLOUD_PROJECT'
         env1.value = project_id
+
         env2 = k8s.client.V1EnvVar()
         env2.name = 'GOOGLE_APPLICATION_CREDENTIALS'
         env2.value = os.path.join(
             self._user_config['secretMountPath'], sa_secret)
+
+        env_config = k8s.client.V1EnvVar()
+        env_config.name = 'CONFIG_PATH'
+        env_config = os.path.join(self._user_config['configMountPath'],
+                                  config_map_name)
+
         container.env = [
-            env1, env2
+            env1, env2, env_config
         ]
+
         template_spec.containers = [
             container
         ]

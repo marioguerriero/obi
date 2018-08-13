@@ -7,15 +7,19 @@ import (
 	"fmt"
 	"google.golang.org/grpc"
 	"github.com/spf13/viper"
+	"path/filepath"
 )
 
-const ConfigPath = "./"
 
 func parseConfig() {
-	logrus.WithField("config-path", ConfigPath).Info("Reading configuration")
+	configPath := os.Getenv("CONFIG_PATH")
+	dir, file := filepath.Split(configPath)
 
-	viper.SetConfigName("obi_master_config")
-	viper.AddConfigPath(ConfigPath)
+	logrus.WithField("config-path", dir).Info("Reading configuration")
+
+
+	viper.SetConfigName(file)
+	viper.AddConfigPath(dir)
 	err := viper.ReadInConfig()
 	if err != nil {
 		logrus.Fatal("Unable to read configuration", err)
@@ -33,7 +37,7 @@ func main() {
 	master := CreateMaster()
 
 	// Open connection
-	port := viper.GetString("servicePort")
+	port := viper.GetString("masterPort")
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
 	if err != nil {
 		logrus.WithField("error", err).Fatal("Unable to open server listener")

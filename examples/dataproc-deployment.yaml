@@ -19,7 +19,7 @@ serviceAccountPath: /Users/m.guerriero/code/dataproc-sa.json
 projectId: dhg-data-intelligence-ops
 
 # Region for the Dataproc servers to be used
-region: europe-west3-b
+region: global
 
 # Zone for the Dataproc servers to be used
-zone: global
+zone: europe-west3-b
