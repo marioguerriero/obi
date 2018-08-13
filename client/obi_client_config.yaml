@@ -1,0 +1,13 @@
+# The two configurations below are just for testing purposes
+masterHost: 35.234.75.53
+masterPort: 8081
+
+# Supported types: kubernetes/k8s, local
+deploymentPlatform: kubernetes
+
+# Deployment specific configs
+kubernetesNamespace: obi
+
+# Supported job types
+supportedJobTypes:
+  - name: PySpark
