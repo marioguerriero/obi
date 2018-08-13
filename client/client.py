@@ -1,13 +1,10 @@
 #!/usr/bin/python3
 
-import sys
 import yaml
 
 from client_args import args, CMD_DESCRIBE, CMD_GET, CMD_CREATE, CMD_DELETE
 
 from logger import log
-
-import master_rpc_service_pb2
 
 # Define some constant values
 CONFIG_PATH = 'obi_client_config.yaml'

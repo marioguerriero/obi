@@ -4,6 +4,12 @@ argument parsing in the OBI command line client tool.
 """
 
 import argparse
+import yaml
+
+# Read config file
+CONFIG_PATH = 'obi_client_config.yaml'
+with open(CONFIG_PATH, 'r') as cf:
+    config = yaml.load(cf)
 
 CMD_CREATE = 'create'
 CMD_GET = 'get'
@@ -39,7 +45,11 @@ create_job_args = create_args_subparsers.add_parser('job')
 create_job_args.add_argument('-f', help='Job file path', type=str,
                              required=True, dest='job_path')
 create_job_args.add_argument('-t', help='Job type', type=str,
-                             required=True, dest='job_type')
+                             required=True, dest='job_type',
+                             choices=[
+                                 t['name']
+                                 for t in config['supportedJobTypes']
+                             ])
 create_job_args.add_argument('-i', help='Infrastructure on which execute the '
                                         'given job. If omitted the default '
                                         'infrastructure from the '

@@ -5,5 +5,9 @@ masterPort: 8081
 # Supported types: kubernetes/k8s, local
 deploymentPlatform: kubernetes
 
-obiSupportedJobTypes:
+# Deployment specific configs
+kubernetesNamespace: obi
+
+# Supported job types
+supportedJobTypes:
   - name: PySpark
