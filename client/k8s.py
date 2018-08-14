@@ -54,7 +54,7 @@ class KubernetesClient(GenericClient):
         }
         self._describe_f = {
             'job': self._describe_job,
-            'infrastructure': self._describe_infrastructure(),
+            'infrastructure': self._describe_infrastructure,
         }
         self._delete_f = {
             'job': self._delete_job,
@@ -199,15 +199,25 @@ class KubernetesClient(GenericClient):
         log.info('Master service created')
 
         # Create heartbeat service
+        heartbeat_service_name = self._object_name_generator(
+            prefix='{}-heartbeat-service'.format(
+                self._user_config['kubernetesNamespace'])
+        )
         heartbeat_host, heartbeat_port = self._create_heartbeat_service(
-            namespace, master_selector)
+            heartbeat_service_name, namespace, master_selector)
         log.info('Heartbeat service created')
 
         # Create predictive service
-        predictor_name = self._object_name_generator(
+        predictor_deployment_name = self._object_name_generator(
             prefix='-'.join([name, 'predictor']))
+        predictor_service_name = self._object_name_generator(
+            prefix='{}-predictive-service'.format(
+                self._user_config['kubernetesNamespace'])
+        )
         pred_host, pred_port = \
-            self._create_predictive_component(predictor_name, namespace,
+            self._create_predictive_component(predictor_deployment_name,
+                                              predictor_service_name,
+                                              namespace,
                                               predictor_selector)
         log.info('Predictor component created')
 
@@ -225,7 +235,10 @@ class KubernetesClient(GenericClient):
             name, namespace, deployment['projectId'], secret_name,
             master_selector,
             config_map_name,
-            master_service_name)
+            master_service_name,
+            heartbeat_service_name,
+            predictor_service_name,
+            predictor_deployment_name)
         log.info('Infrastructure successfully created')
 
     def _delete_job(self, **kwargs):
@@ -239,6 +252,41 @@ class KubernetesClient(GenericClient):
         Deletes all k8s objects for the given infrastructure
         :return:
         """
+        # Get requested infrastructure deployment
+        deployment = self._get_deployment_object(
+            self._user_config['kubernetesNamespace'],
+            kwargs['infrastructure_name'])
+
+        # Collect names of the deployment and services which should be deleted
+        d_names = [
+            kwargs['infrastructure_name'],
+            deployment.metadata.annotations[
+                self._user_config['predictorDeploymentName']]
+        ]
+
+        s_names = [
+            deployment.metadata.annotations[
+                self._user_config['masterServiceName']],
+            deployment.metadata.annotations[
+                self._user_config['heartbeatServiceName']],
+            deployment.metadata.annotations[
+                self._user_config['predictorServiceName']]
+        ]
+
+        # Delete all services and deployments
+        log.info('Deleting infrastructure objects')
+
+        for d in d_names:
+            self._delete_deployment(
+                self._user_config['kubernetesNamespace'], d)
+
+        log.info('All deployments deleted')
+
+        for s in s_names:
+            self._delete_service(
+                self._user_config['kubernetesNamespace'], s)
+
+        log.info('All services deleted')
 
     def _get_jobs(self, **kwargs):
         """
@@ -345,7 +393,10 @@ class KubernetesClient(GenericClient):
 
     def _create_infrastructure_deployment(self, name, namespace, project_id,
                                           sa_secret, label, config_map_name,
-                                          master_service_name):
+                                          master_service_name,
+                                          heartbeat_service_name,
+                                          predictor_service_name,
+                                          predictor_deployment_name):
         """
         This function is used to generate the deployment for the OBI
         master for a certain infrastructure. This function returns the
@@ -362,7 +413,11 @@ class KubernetesClient(GenericClient):
         metadata.namespace = namespace
         metadata.annotations = {
             self._user_config['typeMetadata']: self._user_config['masterType'],
-            self._user_config['masterServiceName']: master_service_name
+            self._user_config['masterServiceName']: master_service_name,
+            self._user_config['heartbeatServiceName']: heartbeat_service_name,
+            self._user_config['predictorServiceName']: predictor_service_name,
+            self._user_config['predictorDeploymentName']:
+                predictor_deployment_name,
         }
         deployment.metadata = metadata
 
@@ -523,7 +578,7 @@ class KubernetesClient(GenericClient):
                 "%s\n" % e)
             return None
 
-    def _create_heartbeat_service(self, namespace, label):
+    def _create_heartbeat_service(self, name, namespace, label):
         """
         This function a OBI master service and returns its
         public IP address and port
@@ -534,10 +589,7 @@ class KubernetesClient(GenericClient):
 
         # Metadata object
         metadata = k8s.client.V1ObjectMeta()
-        metadata.name = self._object_name_generator(
-            prefix='{}-heartbeat-service'.format(
-                self._user_config['kubernetesNamespace'])
-        )
+        metadata.name = name
         metadata.namespace = namespace
         metadata.annotations = {
             self._user_config['serviceTypeMetadata']:
@@ -609,7 +661,8 @@ class KubernetesClient(GenericClient):
                 "CoreV1Api->create_namespaced_config_map: %s\n" % e)
             return None
 
-    def _create_predictive_component(self, name, namespace, label):
+    def _create_predictive_component(self, name, service_name,
+                                     namespace, label):
         """
         This function creates and deploys all the k8s objects required for the
         predictive component. It then returns IP address and port information
@@ -618,7 +671,7 @@ class KubernetesClient(GenericClient):
         """
         # Create service for predictive component
         pred_host, pred_port = self._create_predictive_service(
-            namespace, label)
+            service_name, namespace, label)
 
         # Create config map to be used in the deployment
         config_map_name_pred = self._create_config_map(
@@ -729,7 +782,7 @@ class KubernetesClient(GenericClient):
 
         return deployment
 
-    def _create_predictive_service(self, namespace, label):
+    def _create_predictive_service(self, name, namespace, label):
         """
         This function creates the service for the predictive component
         and returns it IP address and port information
@@ -740,10 +793,7 @@ class KubernetesClient(GenericClient):
 
         # Metadata object
         metadata = k8s.client.V1ObjectMeta()
-        metadata.name = self._object_name_generator(
-            prefix='{}-predictive-service'.format(
-                self._user_config['kubernetesNamespace'])
-        )
+        metadata.name = name
         metadata.annotations = {
             self._user_config['serviceTypeMetadata']:
                 self._user_config['heartbeatServiceType']
@@ -788,7 +838,7 @@ class KubernetesClient(GenericClient):
                 namespace)
             return deployment_list.items
         except k8s.client.rest.ApiException as e:
-            print(
+            log.error(
                 "Exception when calling AppsV1Api->list_namespaced_deployment"
                 ": %s\n" % e)
 
@@ -812,7 +862,7 @@ class KubernetesClient(GenericClient):
                     deployments.append(d)
             return deployments
         except k8s.client.rest.ApiException as e:
-            print(
+            log.error(
                 "Exception when calling CoreV1Api->list_namespaced_service: "
                 "%s\n" % e)
 
@@ -827,7 +877,11 @@ class KubernetesClient(GenericClient):
         :return:
         """
         # Read deployment object
-        if deployment is None:
+        if name is None and deployment is None:
+            return None
+
+        if deployment is None and name is not None:
+            deployment = self._get_deployment_object(namespace, name)
             try:
                 deployment = self._apps_client.read_namespaced_deployment(
                     name, namespace)
@@ -849,7 +903,51 @@ class KubernetesClient(GenericClient):
                 "Exception when calling CoreV1Api->read_namespaced_service: "
                 "%s\n" % e)
         return None
-        # Return public IP and port
+
+    def _get_deployment_object(self, namespace, name):
+        """
+        Queries Kubernetes API for obtaining a Deployment object
+        :param namespace:
+        :param name:
+        :return:
+        """
+        try:
+            return self._apps_client.read_namespaced_deployment(
+                name, namespace)
+        except k8s.client.rest.ApiException as e:
+            log.error(
+                "Exception when calling AppsV1Api->read_namespaced_deployment"
+                ": %s\n" % e)
+
+    def _delete_deployment(self, namespace, name):
+        """
+        Deletes a given deployment
+        :param namespace:
+        :param name:
+        :return:
+        """
+        try:
+            self._apps_client.delete_namespaced_deployment(
+                name, namespace, body=k8s.client.V1DeleteOptions())
+        except k8s.client.rest.ApiException as e:
+            log.error(
+                "Exception when calling "
+                "AppsV1Api->delete_namespaced_deployment: %s\n" % e)
+
+    def _delete_service(self, namespace, name):
+        """
+        Deletes a given service
+        :param namespace:
+        :param name:
+        :return:
+        """
+        try:
+            self._core_client.delete_namespaced_service(
+                name, namespace, body=k8s.client.V1DeleteOptions())
+        except k8s.client.rest.ApiException as e:
+            log.error(
+                "Exception when calling "
+                "AppsV1Api->delete_namespaced_deployment: %s\n" % e)
     #############
     #  END: Generic utility functions
     #############

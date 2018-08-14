@@ -51,6 +51,9 @@ typeMetadata: type
 masterType: master
 predictorType: predictor
 masterServiceName: master-service-name
+heartbeatServiceName: heartbeat-service-name
+predictorServiceName: predictor-service-name
+predictorDeploymentName: predictor-deployment-name
 
 # Extra metadata for services
 serviceTypeMetadata: type
