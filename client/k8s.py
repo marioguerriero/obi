@@ -224,7 +224,11 @@ class KubernetesClient(GenericClient):
         log.info('Predictor component created')
 
         # Create config map to be used in the deployment
-        config_map_name = self._create_config_map(
+        config_map_name = self._object_name_generator(
+            prefix='{}-config-map'.format(
+                self._user_config['kubernetesNamespace']))
+        self._create_config_map(
+            config_map_name,
             namespace,
             heartbeatHost=heartbeat_host, heartbeatPort=heartbeat_port,
             projectId=deployment['projectId'],
@@ -526,7 +530,8 @@ class KubernetesClient(GenericClient):
 
         env_config = k8s.client.V1EnvVar(
             name='CONFIG_PATH', value=os.path.join(
-                self._user_config['configMountPath'], config_map_name)
+                self._user_config['configMountPath'],
+                self._user_config['defaultConfigMapName'])
         )
 
         container.env = [
@@ -657,7 +662,7 @@ class KubernetesClient(GenericClient):
                 "%s\n" % e)
             return None
 
-    def _create_config_map(self, namespace, **kwargs):
+    def _create_config_map(self, name, namespace, **kwargs):
         """
         This function is used to generate a k8s config map, to be passed
         to a deployment so that the OBI master can use it to retrieve
@@ -665,13 +670,8 @@ class KubernetesClient(GenericClient):
         :param namespace:
         :return: the name of the generated config map
         """
-        # Generate a name for the config map
-        name = self._object_name_generator(
-            prefix='{}-config-map'.format(
-                self._user_config['kubernetesNamespace']))
-
         # Generate config map content
-        cm_content = yaml.dump(kwargs)
+        cm_content = yaml.dump(kwargs, default_flow_style=False)
 
         # Create config map object
         config_map = k8s.client.V1ConfigMap()
@@ -684,10 +684,8 @@ class KubernetesClient(GenericClient):
         config_map.metadata = metadata
 
         try:
-            api_response = self._core_client.create_namespaced_config_map(
+            self._core_client.create_namespaced_config_map(
                 namespace, config_map, pretty='true')
-
-            return name
         except k8s.client.rest.ApiException as e:
             log.error(
                 "Exception when calling "
@@ -709,7 +707,12 @@ class KubernetesClient(GenericClient):
             service_name, namespace, label)
 
         # Create config map to be used in the deployment
-        config_map_name_pred = self._create_config_map(
+        # Generate a name for the config map
+        config_map_name_pred = self._object_name_generator(
+            prefix='{}-config-map-pred'.format(
+                self._user_config['kubernetesNamespace']))
+        self._create_config_map(
+            config_map_name_pred,
             namespace)  # This is empty for now
 
         # Create deployment for predictive component
