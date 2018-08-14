@@ -203,6 +203,8 @@ class KubernetesClient(GenericClient):
             prefix='{}-heartbeat-service'.format(
                 self._user_config['kubernetesNamespace'])
         )
+        log.info('Creating heartbeat service. '
+                 'This operation may take a while')
         heartbeat_host, heartbeat_port = self._create_heartbeat_service(
             heartbeat_service_name, namespace, master_selector)
         log.info('Heartbeat service created')
@@ -582,10 +584,8 @@ class KubernetesClient(GenericClient):
         service.spec = spec
 
         try:
-            api_response = self._core_client.create_namespaced_service(
+            self._core_client.create_namespaced_service(
                 namespace, service, pretty='true')
-
-            return api_response.spec.load_balancer_ip, port.port
         except k8s.client.rest.ApiException as e:
             log.error(
                 "Exception when calling CoreV1Api->create_namespaced_service: "
@@ -628,10 +628,17 @@ class KubernetesClient(GenericClient):
         service.spec = spec
 
         try:
-            api_response = self._core_client.create_namespaced_service(
+            self._core_client.create_namespaced_service(
                 namespace, service, pretty='true')
-
-            return api_response.spec.load_balancer_ip, port.port
+            # Wait for the service to be fully initialized with an IP address
+            while True:
+                status = self._core_client.read_namespaced_service_status(
+                    name, namespace)
+                if status.status.load_balancer.ingress is not None \
+                        and status.status.load_balancer.ingress[0].ip \
+                        is not None:
+                    return (status.status.load_balancer.ingress[0].ip,
+                            port.port)
         except k8s.client.rest.ApiException as e:
             log.error(
                 "Exception when calling CoreV1Api->create_namespaced_service: "
@@ -684,6 +691,8 @@ class KubernetesClient(GenericClient):
         :return:
         """
         # Create service for predictive component
+        log.info('Creating predictive component service. '
+                 'This operation may take a while')
         pred_host, pred_port = self._create_predictive_service(
             service_name, namespace, label)
 
@@ -832,9 +841,17 @@ class KubernetesClient(GenericClient):
         service.spec = spec
 
         try:
-            api_response = self._core_client.create_namespaced_service(
+            self._core_client.create_namespaced_service(
                 namespace, service, pretty='true')
-            return api_response.spec.load_balancer_ip, port.port
+            # Wait for the service to be fully initialized with an IP address
+            while True:
+                status = self._core_client.read_namespaced_service_status(
+                    name, namespace)
+                if status.status.load_balancer.ingress is not None \
+                        and status.status.load_balancer.ingress[0].ip \
+                        is not None:
+                    return (status.status.load_balancer.ingress[0].ip,
+                            port.port)
         except k8s.client.rest.ApiException as e:
             log.error(
                 "Exception when calling CoreV1Api->create_namespaced_service: "
