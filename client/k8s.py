@@ -232,7 +232,8 @@ class KubernetesClient(GenericClient):
 
         # Create deployment
         self._create_infrastructure_deployment(
-            name, namespace, deployment['projectId'], secret_name,
+            name, namespace, deployment['projectId'],
+            secret_name,
             master_selector,
             config_map_name,
             master_service_name,
@@ -273,8 +274,11 @@ class KubernetesClient(GenericClient):
                 self._user_config['predictorServiceName']]
         ]
 
-        secret_names = deployment.metadata.annotations[
-            self._user_config['secretsList']]
+        secret_names = [
+            deployment.metadata.annotations[
+                self._user_config['serviceAccountSecretName']
+            ]
+        ]
 
         # Delete all the objects
         log.info('Deleting infrastructure objects')
@@ -427,9 +431,7 @@ class KubernetesClient(GenericClient):
             self._user_config['predictorServiceName']: predictor_service_name,
             self._user_config['predictorDeploymentName']:
                 predictor_deployment_name,
-            self._user_config['secretsList']: [
-                sa_secret
-            ]
+            self._user_config['serviceAccountSecretName']: sa_secret
         }
         deployment.metadata = metadata
 
