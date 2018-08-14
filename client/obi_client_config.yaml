@@ -55,6 +55,7 @@ heartbeatServiceName: heartbeat-service-name
 predictorServiceName: predictor-service-name
 predictorDeploymentName: predictor-deployment-name
 serviceAccountSecretName: service-account-secret
+masterConfigMapName: master-config-map
 
 # Extra metadata for services
 serviceTypeMetadata: type

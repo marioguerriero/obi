@@ -282,6 +282,12 @@ class KubernetesClient(GenericClient):
             ]
         ]
 
+        configmaps = [
+            deployment.metadata.annotations[
+                self._user_config['masterConfigMapName']
+            ]
+        ]
+
         # Delete all the objects
         log.info('Deleting infrastructure objects')
 
@@ -302,6 +308,11 @@ class KubernetesClient(GenericClient):
                 self._user_config['kubernetesNamespace'], s)
 
         log.info('All secrets deleted')
+
+        for c in configmaps:
+            self._delete_configmap(self._user_config['kubernetesNamespace'], c)
+
+        log.info('All ConfigMaps deleted')
 
     def _get_jobs(self, **kwargs):
         """
@@ -433,7 +444,8 @@ class KubernetesClient(GenericClient):
             self._user_config['predictorServiceName']: predictor_service_name,
             self._user_config['predictorDeploymentName']:
                 predictor_deployment_name,
-            self._user_config['serviceAccountSecretName']: sa_secret
+            self._user_config['serviceAccountSecretName']: sa_secret,
+            self._user_config['masterConfigMapName']: config_map_name
         }
         deployment.metadata = metadata
 
@@ -841,17 +853,9 @@ class KubernetesClient(GenericClient):
         service.spec = spec
 
         try:
-            self._core_client.create_namespaced_service(
+            service = self._core_client.create_namespaced_service(
                 namespace, service, pretty='true')
-            # Wait for the service to be fully initialized with an IP address
-            while True:
-                status = self._core_client.read_namespaced_service_status(
-                    name, namespace)
-                if status.status.load_balancer.ingress is not None \
-                        and status.status.load_balancer.ingress[0].ip \
-                        is not None:
-                    return (status.status.load_balancer.ingress[0].ip,
-                            port.port)
+            return service.spec.cluster_ip, service.spec.ports[0].port
         except k8s.client.rest.ApiException as e:
             log.error(
                 "Exception when calling CoreV1Api->create_namespaced_service: "
@@ -994,6 +998,21 @@ class KubernetesClient(GenericClient):
             log.error(
                 "Exception when calling "
                 "CoreV1Api->delete_namespaced_secret: %s\n" % e)
+
+    def _delete_configmap(self, namespace, name):
+        """
+        Deletes a given service
+        :param namespace:
+        :param name:
+        :return:
+        """
+        try:
+            self._core_client.delete_namespaced_config_map(
+                name, namespace, body=k8s.client.V1DeleteOptions())
+        except k8s.client.rest.ApiException as e:
+            log.error(
+                "Exception when calling "
+                "CoreV1Api->delete_namespaced_config_map: %s\n" % e)
     #############
     #  END: Generic utility functions
     #############
