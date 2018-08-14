@@ -5,6 +5,7 @@ masterPort: 8081
 # Default ports on which services will listen
 defaultMasterPort: 8081
 defaultHeartbeatPort: 8080
+defaultPredictorPort: 8008
 
 # Default selector name used by services to attach to deployments
 defaultServiceSelectorName: app
@@ -14,6 +15,9 @@ defaultConfigMapName: config-map
 
 # Number of replicas to create when creating a new infrastructure
 masterReplicas: 2
+
+# Number of replicas to create when creating a new predictor service
+predictorReplicas: 3
 
 # Supported types: kubernetes/k8s, local
 deploymentPlatform: kubernetes
@@ -32,6 +36,9 @@ namespaces:
 
 # Docker image of the OBI master deployment
 masterImage: eu.gcr.io/dhg-data-intelligence-ops/obi-master
+
+# Docker image for the OBI predictor component
+predictorImage: eu.gcr.io/dhg-data-intelligence-ops/obi-predictor
 
 # Where to mount the secret within the master's container
 secretMountPath: /etc/sa

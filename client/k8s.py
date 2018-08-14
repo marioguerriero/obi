@@ -59,8 +59,9 @@ class KubernetesClient(GenericClient):
         # Load cluster configuration
         k8s.config.load_kube_config()
 
-        # Prepare client object
-        self._client = k8s.client.CoreV1Api()
+        # Prepare client objects
+        self._core_client = k8s.client.CoreV1Api()
+        self._apps_client = k8s.client.AppsV1Api()
 
     def get_objects(self, **kwargs):
         """
@@ -93,6 +94,7 @@ class KubernetesClient(GenericClient):
         """
         log.info('Describe request: {}'.format(kwargs))
         self._describe_f[kwargs['type']](**kwargs)
+
     #############
     #  END: Abstract methods from GenericClient
     #############
@@ -159,18 +161,30 @@ class KubernetesClient(GenericClient):
         secret_name = self._create_secret_from_file(
             namespace, deployment['serviceAccountPath'])
 
-        # Generate label to be used to match services to deployments
-        label = self._object_name_generator(
+        # Generate label to be used to match services to master deployment
+        master_selector = self._object_name_generator(
             prefix='{}-deployment'.format(
+                self._user_config['kubernetesNamespace']))
+
+        # Generate label selector for predictive component
+        predictor_selector = self._object_name_generator(
+            prefix='{}-predictor-deployment'.format(
                 self._user_config['kubernetesNamespace']))
 
         # Create master service
         self._create_master_service(
-            namespace, label)
+            namespace, master_selector)
 
         # Create heartbeat service
         heartbeat_host, heartbeat_port = self._create_heartbeat_service(
-            namespace, label)
+            namespace, master_selector)
+
+        # Create predictive service
+        predictor_name = self._object_name_generator(
+            prefix='-'.join([name, 'predictor']))
+        pred_host, pred_port = \
+            self._create_predictive_component(predictor_name, namespace,
+                                              predictor_selector)
 
         # Create config map to be used in the deployment
         config_map_name = self._create_config_map(
@@ -178,11 +192,13 @@ class KubernetesClient(GenericClient):
             heartbeatHost=heartbeat_host, heartbeatPort=heartbeat_port,
             projectId=deployment['projectId'],
             region=deployment['region'], zone=deployment['zone'],
-            masterPort=self._user_config['defaultMasterPort'])
+            masterPort=self._user_config['defaultMasterPort'],
+            predictorHost=pred_host, predictorPort=pred_port)
 
         # Create deployment
         self._create_infrastructure_deployment(
-            namespace, deployment['projectId'], secret_name, label,
+            name, namespace, deployment['projectId'], secret_name,
+            master_selector,
             config_map_name)
 
     def _delete_job(self, **kwargs):
@@ -274,23 +290,26 @@ class KubernetesClient(GenericClient):
             prefix='{}-secret'.format(
                 self._user_config['kubernetesNamespace']))
         secret = k8s.client.V1Secret()
+        secret.metadata = k8s.client.V1ObjectMeta()
+        secret.metadata.name = secret_name
+        encoded_secret = base64.b64encode(secret_content.encode('utf-8'))
+        encoded_string = encoded_secret.decode('ascii')
         secret.data = {
-            secret_name: base64.b64encode(secret_content)
+            secret_name: encoded_string
         }
 
         # Send secret creation request
         try:
-            api_response = self._client.create_namespaced_secret(namespace,
-                                                                 secret,
-                                                                 pretty='true')
-            log.info(api_response)
+            self._core_client.create_namespaced_secret(namespace,
+                                                                      secret,
+                                                                      pretty='true')
             return secret_name
         except k8s.client.rest.ApiException as e:
             log.error(
                 "Exception when calling CoreV1Api->create_namespaced_secret: "
                 "%s" % e)
 
-    def _create_infrastructure_deployment(self, namespace, project_id,
+    def _create_infrastructure_deployment(self, name, namespace, project_id,
                                           sa_secret, label, config_map_name):
         """
         This function is used to generate the deployment for the OBI
@@ -304,6 +323,7 @@ class KubernetesClient(GenericClient):
 
         # Create metadata object
         metadata = k8s.client.V1ObjectMeta()
+        metadata.name = name
         metadata.namespace = namespace
         deployment.metadata = namespace
 
@@ -315,12 +335,12 @@ class KubernetesClient(GenericClient):
 
         # Send deployment creation request
         try:
-            api_response = self._client.create_namespaced_deployment(
+            self._apps_client.create_namespaced_deployment(
                 namespace, deployment, pretty='true')
-            log.info(api_response)
         except k8s.client.rest.ApiException as e:
             log.error(
-                "Exception when calling CoreV1Api->create_namespaced_secret: "
+                "Exception when calling "
+                "CoreV1Api->create_namespaced_deployment: "
                 "%s" % e)
 
     def _build_deployment_spec_object(self, label, project_id,
@@ -333,15 +353,13 @@ class KubernetesClient(GenericClient):
         :param sa_secret:
         :return: the generated spec object
         """
-        spec = k8s.client.V1DeploymentSpec()
-        spec.replicas = self._user_config['masterReplicas']
-
+        # Build selector object
         selector = k8s.client.V1LabelSelector()
         selector.match_labels = {
             self._user_config['defaultServiceSelectorName']: label
         }
-        spec.selector = selector
 
+        # Build spec template object
         template = k8s.client.V1PodTemplateSpec()
         meta = k8s.client.V1ObjectMeta()
         meta.labels = {
@@ -349,63 +367,62 @@ class KubernetesClient(GenericClient):
         }
         template.metadata = meta
 
-        template_spec = k8s.client.V1PodSpec()
-        container = k8s.client.V1Container()
+        # Build containers list
+        container = k8s.client.V1Container(name=self._object_name_generator(
+            prefix="{}-master-container".format(
+                self._user_config['kubernetesNamespace'])
+        ))
         container.image = self._user_config['masterImage']
 
         # Volume mount for secret
-        volume_mount_secret = k8s.client.V1VolumeMount()
         volume_secret_mount_name = self._object_name_generator(
             prefix='{}-volumne-mount'.format(
                 self._user_config['kubernetesNamespace']))
-        volume_mount_secret.name = volume_secret_mount_name
-        volume_mount_secret.mount_path = self._user_config['secretMountPath']
+        volume_mount_secret = k8s.client.V1VolumeMount(
+            name=volume_secret_mount_name,
+            mount_path=self._user_config['secretMountPath'])
 
         # Volume mount for config map
-        volume_mount_config_map = k8s.client.V1VolumeMount()
         volume_mount_config_map_name = self._object_name_generator(
             prefix='{}-volumne-mount'.format(
                 self._user_config['kubernetesNamespace']))
-        volume_mount_config_map.name = volume_mount_config_map_name
-        volume_mount_config_map.mount_path = \
-            self._user_config['configMountPath']
+        volume_mount_config_map = k8s.client.V1VolumeMount(
+            name=volume_mount_config_map_name,
+            mount_path=self._user_config['configMountPath'])
 
         container.volume_mounts = [
             volume_mount_secret, volume_mount_config_map
         ]
 
         # Environment variables
-        env1 = k8s.client.V1EnvVar()
-        env1.name = 'GOOGLE_CLOUD_PROJECT'
-        env1.value = project_id
+        env_proj = k8s.client.V1EnvVar(
+            name='GOOGLE_CLOUD_PROJECT', value=project_id)
 
-        env2 = k8s.client.V1EnvVar()
-        env2.name = 'GOOGLE_APPLICATION_CREDENTIALS'
-        env2.value = os.path.join(
-            self._user_config['secretMountPath'], sa_secret)
+        env_creds = k8s.client.V1EnvVar(
+            name='GOOGLE_APPLICATION_CREDENTIALS', value=os.path.join(
+                self._user_config['secretMountPath'], sa_secret))
 
-        env_config = k8s.client.V1EnvVar()
-        env_config.name = 'CONFIG_PATH'
-        env_config = os.path.join(self._user_config['configMountPath'],
-                                  config_map_name)
+        env_config = k8s.client.V1EnvVar(
+            name='CONFIG_PATH', value=os.path.join(
+                self._user_config['configMountPath'], config_map_name)
+        )
 
         container.env = [
-            env1, env2, env_config
+            env_proj, env_creds, env_config
         ]
 
-        template_spec.containers = [
+        # Build template spec object
+        template_spec = k8s.client.V1PodSpec(containers=[
             container
-        ]
+        ])
 
         # Volume for SA secret
-        volume_secret = k8s.client.V1Volume()
-        volume_secret.name = volume_secret_mount_name
+        volume_secret = k8s.client.V1Volume(name=volume_secret_mount_name)
         volume_secret.secret = k8s.client.V1SecretVolumeSource()
         volume_secret.secret.secret_name = sa_secret
 
         # Volume for config map
-        volume_config_map = k8s.client.V1Volume()
-        volume_config_map.name = volume_mount_config_map_name
+        volume_config_map = k8s.client.V1Volume(name=volume_mount_config_map_name)
         volume_config_map.config_map = k8s.client.V1ConfigMapVolumeSource()
         volume_config_map.config_map.name = config_map_name
 
@@ -414,7 +431,10 @@ class KubernetesClient(GenericClient):
         ]
         template.spec = template_spec
 
-        spec.template = template
+        # Build spec object
+        spec = k8s.client.V1DeploymentSpec(
+            selector=selector, template=template)
+        spec.replicas = self._user_config['masterReplicas']
 
         return spec
 
@@ -429,14 +449,18 @@ class KubernetesClient(GenericClient):
 
         # Metadata object
         metadata = k8s.client.V1ObjectMeta()
-        metadata.name = namespace
+        metadata.name = self._object_name_generator(
+            prefix='{}-master-service'.format(
+                self._user_config['kubernetesNamespace'])
+        )
+        metadata.namespace = namespace
         service.metadata = metadata
 
         # Spec object
         spec = k8s.client.V1ServiceSpec()
         spec.type = 'LoadBalancer'
-        port = k8s.client.V1ServicePort()
-        port.port = self._user_config['defaultMasterPort']
+        port = k8s.client.V1ServicePort(
+            port=self._user_config['defaultMasterPort'])
         port.protocol = 'TCP'
         spec.ports = [
             port
@@ -448,11 +472,11 @@ class KubernetesClient(GenericClient):
         service.spec = spec
 
         try:
-            api_response = self._client.create_namespaced_service(
+            api_response = self._core_client.create_namespaced_service(
                 namespace, service, pretty='true')
-            log.info(api_response)
+
             return api_response.spec.load_balancer_ip, port.port
-        except k8s.client.ApiException as e:
+        except k8s.client.rest.ApiException as e:
             log.error(
                 "Exception when calling CoreV1Api->create_namespaced_service: "
                 "%s\n" % e)
@@ -469,14 +493,19 @@ class KubernetesClient(GenericClient):
 
         # Metadata object
         metadata = k8s.client.V1ObjectMeta()
-        metadata.name = namespace
+        metadata.name = self._object_name_generator(
+            prefix='{}-heartbeat-service'.format(
+                self._user_config['kubernetesNamespace'])
+        )
+        metadata.namespace = namespace
         service.metadata = metadata
 
         # Spec object
         spec = k8s.client.V1ServiceSpec()
         spec.type = 'LoadBalancer'
-        port = k8s.client.V1ServicePort()
-        port.port = self._user_config['defaultHeartbeatPort']
+        port = k8s.client.V1ServicePort(
+            port=self._user_config['defaultHeartbeatPort']
+        )
         port.protocol = 'UDP'
         spec.ports = [
             port
@@ -488,11 +517,11 @@ class KubernetesClient(GenericClient):
         service.spec = spec
 
         try:
-            api_response = self._client.create_namespaced_service(
+            api_response = self._core_client.create_namespaced_service(
                 namespace, service, pretty='true')
-            log.info(api_response)
+
             return api_response.spec.load_balancer_ip, port.port
-        except k8s.client.ApiException as e:
+        except k8s.client.rest.ApiException as e:
             log.error(
                 "Exception when calling CoreV1Api->create_namespaced_service: "
                 "%s\n" % e)
@@ -512,7 +541,7 @@ class KubernetesClient(GenericClient):
                 self._user_config['kubernetesNamespace']))
 
         # Generate config map content
-        cm_content = yaml.dump(**kwargs)
+        cm_content = yaml.dump(kwargs)
 
         # Create config map object
         config_map = k8s.client.V1ConfigMap()
@@ -525,14 +554,174 @@ class KubernetesClient(GenericClient):
         config_map.metadata = metadata
 
         try:
-            api_response = self._client.create_namespaced_config_map(
+            api_response = self._core_client.create_namespaced_config_map(
                 namespace, config_map, pretty='true')
-            log.info(api_response)
+
             return name
-        except k8s.client.ApiException as e:
+        except k8s.client.rest.ApiException as e:
             log.error(
                 "Exception when calling "
                 "CoreV1Api->create_namespaced_config_map: %s\n" % e)
+            return None
+
+    def _create_predictive_component(self, name, namespace, label):
+        """
+        This function creates and deploys all the k8s objects required for the
+        predictive component. It then returns IP address and port information
+        to contact the predictive server.
+        :return:
+        """
+        # Create service for predictive component
+        pred_host, pred_port = self._create_predictive_service(
+            namespace, label)
+
+        # Create config map to be used in the deployment
+        config_map_name_pred = self._create_config_map(
+            namespace)  # This is empty for now
+
+        # Create deployment for predictive component
+        self._create_predictive_deployment(name, namespace, label,
+                                           config_map_name_pred)
+
+        # Return host and port to contact the predictor component
+        return pred_host, pred_port
+
+    def _create_predictive_deployment(self, name, namespace,
+                                      label, config_map_name_pred):
+        """
+        Build and generate deployment for the OBI predictive component
+        :return:
+        """
+        # Get deployment object
+        deployment = self._build_predictor_deployment(name, namespace,
+                                                      label,
+                                                      config_map_name_pred)
+
+        # Send deployment creation request
+        try:
+            self._apps_client.create_namespaced_deployment(
+                namespace, deployment, pretty='true')
+        except k8s.client.rest.ApiException as e:
+            log.error(
+                "Exception when calling "
+                "CoreV1Api->create_namespaced_deployment: "
+                "%s" % e)
+
+    def _build_predictor_deployment(self, name, namespace,
+                                    label, config_map_name):
+        """
+        This function builds and returns a deployment object for the
+        predictive component of OBI
+        :return:
+        """
+        # Create Deployment Object
+        deployment = k8s.client.V1Deployment()
+
+        # Create metadata object
+        metadata = k8s.client.V1ObjectMeta()
+        metadata.name = name
+        metadata.namespace = namespace
+        deployment.metadata = metadata
+
+        # Build selector object
+        selector = k8s.client.V1LabelSelector()
+        selector.match_labels = {
+            self._user_config['defaultServiceSelectorName']: label
+        }
+
+        # Build spec template object
+        template = k8s.client.V1PodTemplateSpec()
+        meta = k8s.client.V1ObjectMeta()
+        meta.labels = {
+            self._user_config['defaultServiceSelectorName']: label
+        }
+        template.metadata = meta
+
+        # Build containers list
+        container = k8s.client.V1Container(name=self._object_name_generator(
+            prefix="{}-predictor-container".format(
+                self._user_config['kubernetesNamespace'])
+        ))
+        container.image = self._user_config['predictorImage']
+
+        # Volume mount for config map
+        volume_mount_config_map_name = self._object_name_generator(
+            prefix='{}-volumne-mount'.format(
+                self._user_config['kubernetesNamespace']))
+        volume_mount_config_map = k8s.client.V1VolumeMount(
+            name=volume_mount_config_map_name,
+            mount_path=self._user_config['configMountPath'])
+
+        container.volume_mounts = [
+            volume_mount_config_map
+        ]
+
+        template_spec = k8s.client.V1PodSpec(containers=[
+            container
+        ])
+
+        # Volume for config map
+        volume_config_map = k8s.client.V1Volume(
+            name=volume_mount_config_map_name)
+        volume_config_map.config_map = k8s.client.V1ConfigMapVolumeSource()
+        volume_config_map.config_map.name = config_map_name
+
+        template_spec.volumes = [
+            volume_config_map
+        ]
+        template.spec = template_spec
+
+        # Build spec object
+        spec = k8s.client.V1DeploymentSpec(selector=selector, template=template)
+        spec.replicas = self._user_config['predictorReplicas']
+
+        # Attach spec to deployment
+        deployment.spec = spec
+
+        return deployment
+
+    def _create_predictive_service(self, namespace, label):
+        """
+        This function creates the service for the predictive component
+        and returns it IP address and port information
+        :return:
+        """
+        # Create service object
+        service = k8s.client.V1Service()
+
+        # Metadata object
+        metadata = k8s.client.V1ObjectMeta()
+        metadata.name = self._object_name_generator(
+            prefix='{}-predictive-service'.format(
+                self._user_config['kubernetesNamespace'])
+        )
+        metadata.namespace = namespace
+        service.metadata = metadata
+
+        # Spec object
+        spec = k8s.client.V1ServiceSpec()
+        spec.type = 'ClusterIP'
+        port = k8s.client.V1ServicePort(
+            port=self._user_config['defaultPredictorPort']
+        )
+        port.protocol = 'TCP'
+        spec.ports = [
+            port
+        ]
+        spec.selector = {
+            self._user_config['defaultServiceSelectorName']: label
+        }
+
+        service.spec = spec
+
+        try:
+            api_response = self._core_client.create_namespaced_service(
+                namespace, service, pretty='true')
+            return api_response.spec.load_balancer_ip, port.port
+        except k8s.client.rest.ApiException as e:
+            log.error(
+                "Exception when calling CoreV1Api->create_namespaced_service: "
+                "%s\n" % e)
             return None
     #############
     #  END: Generic utility functions
