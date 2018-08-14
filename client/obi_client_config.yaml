@@ -45,3 +45,15 @@ secretMountPath: /etc/sa
 
 # Where to mount the configuration file within master's container
 configMountPath: /etc/config
+
+# Extra metadata for deployments
+typeMetadata: type
+masterType: master
+predictorType: predictor
+masterServiceName: master-service-name
+
+# Extra metadata for services
+serviceTypeMetadata: type
+masterServiceType: master=service
+heartbeatServiceType: heartbeat-service
+predictorServiceType: predictor-service

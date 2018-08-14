@@ -1,5 +1,5 @@
-# Use Python 3
-FROM python:3
+# Use Tensorflow Python 3 distribution
+FROM tensorflow/tensorflow:latest-py3
 
 # Set configuration env variables
 ENV SERVICE_PORT 8080
@@ -9,7 +9,7 @@ ADD *.py /
 ADD requirements.txt /
 
 # Install dependencies
-RUN pip install -m requirements.txt
+RUN pip install -r /requirements.txt
 
 # Expose port endpoint
 EXPOSE $SERVICE_PORT

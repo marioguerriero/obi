@@ -27,6 +27,14 @@ class FieldMissingError(Exception):
     pass
 
 
+class MissingServiceForInfrastructure(Exception):
+    """
+    This exception should be triggered when a mandatory field has been
+    omitted from a configuration file
+    """
+    pass
+
+
 class KubernetesClient(GenericClient):
     #############
     #  START: Abstract methods from GenericClient
@@ -69,7 +77,9 @@ class KubernetesClient(GenericClient):
         :return: list of available services
         """
         log.info('Get request: {}'.format(kwargs))
-        self._get_f[kwargs['type']](**kwargs)
+        type = kwargs['type']
+        type = type[:-1] if type[-1] == 's' else type
+        self._get_f[type](**kwargs)
 
     def create_object(self, **kwargs):
         """
@@ -176,8 +186,12 @@ class KubernetesClient(GenericClient):
         log.info('Predictor selector label: {}'.format(predictor_selector))
 
         # Create master service
-        self._create_master_service(
-            namespace, master_selector)
+        master_service_name = self._object_name_generator(
+            prefix='{}-master-service'.format(
+                self._user_config['kubernetesNamespace'])
+        )
+        self._create_master_service(master_service_name,
+                                    namespace, master_selector)
         log.info('Master service created')
 
         # Create heartbeat service
@@ -206,7 +220,8 @@ class KubernetesClient(GenericClient):
         self._create_infrastructure_deployment(
             name, namespace, deployment['projectId'], secret_name,
             master_selector,
-            config_map_name)
+            config_map_name,
+            master_service_name)
         log.info('Infrastructure successfully created')
 
     def _delete_job(self, **kwargs):
@@ -232,6 +247,23 @@ class KubernetesClient(GenericClient):
         Return information for all the infrastructures
         :return:
         """
+        namespace = self._user_config['kubernetesNamespace']
+
+        # Get deployments list
+        deployments = self._get_master_deployments(namespace)
+
+        if len(deployments) == 0:
+            log.info("No available infrastructures")
+            return
+
+        # Print fancy message
+        log.info('Available infrastructures:\n')
+        raw_format = '{:25} {:15} {:>10}'
+        print(raw_format.format('INFRASTRUCTURE', 'IP', 'PORT'))
+        for d in deployments:
+            ip, port = self._get_connection_information(
+                namespace, deployment=d)
+            print(raw_format.format(d.metadata.name, ip, port))
 
     def _describe_job(self, **kwargs):
         """
@@ -248,16 +280,6 @@ class KubernetesClient(GenericClient):
     #############
     #  START: Generic utility functions
     #############
-    def _get_connection_info(self, infrastructure):
-        """
-        Given an infrastructure object, this function returns a tuple
-        with IP address and port for connecting to the given infrastructure
-        :param infrastructure:
-        :return:
-        """
-        # TODO
-        return self._user_config['masterHost'], self._user_config['masterPort']
-
     def _discover_services(self):
         """
         Discover all the OBI available platform services
@@ -309,8 +331,8 @@ class KubernetesClient(GenericClient):
         # Send secret creation request
         try:
             self._core_client.create_namespaced_secret(namespace,
-                                                                      secret,
-                                                                      pretty='true')
+                                                       secret,
+                                                       pretty='true')
             return secret_name
         except k8s.client.rest.ApiException as e:
             log.error(
@@ -318,7 +340,8 @@ class KubernetesClient(GenericClient):
                 "%s" % e)
 
     def _create_infrastructure_deployment(self, name, namespace, project_id,
-                                          sa_secret, label, config_map_name):
+                                          sa_secret, label, config_map_name,
+                                          master_service_name):
         """
         This function is used to generate the deployment for the OBI
         master for a certain infrastructure. This function returns the
@@ -333,6 +356,10 @@ class KubernetesClient(GenericClient):
         metadata = k8s.client.V1ObjectMeta()
         metadata.name = name
         metadata.namespace = namespace
+        metadata.annotations = {
+            self._user_config['typeMetadata']: self._user_config['masterType'],
+            self._user_config['masterServiceName']: master_service_name
+        }
         deployment.metadata = metadata
 
         # Create Spec object
@@ -430,7 +457,8 @@ class KubernetesClient(GenericClient):
         volume_secret.secret.secret_name = sa_secret
 
         # Volume for config map
-        volume_config_map = k8s.client.V1Volume(name=volume_mount_config_map_name)
+        volume_config_map = k8s.client.V1Volume(
+            name=volume_mount_config_map_name)
         volume_config_map.config_map = k8s.client.V1ConfigMapVolumeSource()
         volume_config_map.config_map.name = config_map_name
 
@@ -446,7 +474,7 @@ class KubernetesClient(GenericClient):
 
         return spec
 
-    def _create_master_service(self, namespace, label):
+    def _create_master_service(self, name, namespace, label):
         """
         This function a OBI master service and returns its
         public IP address and port
@@ -457,10 +485,11 @@ class KubernetesClient(GenericClient):
 
         # Metadata object
         metadata = k8s.client.V1ObjectMeta()
-        metadata.name = self._object_name_generator(
-            prefix='{}-master-service'.format(
-                self._user_config['kubernetesNamespace'])
-        )
+        metadata.name = name
+        metadata.annotations = {
+            self._user_config['serviceTypeMetadata']:
+                self._user_config['masterServiceType']
+        }
         metadata.namespace = namespace
         service.metadata = metadata
 
@@ -506,6 +535,10 @@ class KubernetesClient(GenericClient):
                 self._user_config['kubernetesNamespace'])
         )
         metadata.namespace = namespace
+        metadata.annotations = {
+            self._user_config['serviceTypeMetadata']:
+                self._user_config['heartbeatServiceType']
+        }
         service.metadata = metadata
 
         # Spec object
@@ -629,6 +662,10 @@ class KubernetesClient(GenericClient):
         metadata = k8s.client.V1ObjectMeta()
         metadata.name = name
         metadata.namespace = namespace
+        metadata.annotations = {
+            self._user_config['typeMetadata']:
+                self._user_config['predictorType']
+        }
         deployment.metadata = metadata
 
         # Build selector object
@@ -703,6 +740,10 @@ class KubernetesClient(GenericClient):
             prefix='{}-predictive-service'.format(
                 self._user_config['kubernetesNamespace'])
         )
+        metadata.annotations = {
+            self._user_config['serviceTypeMetadata']:
+                self._user_config['heartbeatServiceType']
+        }
         metadata.namespace = namespace
         service.metadata = metadata
 
@@ -731,6 +772,80 @@ class KubernetesClient(GenericClient):
                 "Exception when calling CoreV1Api->create_namespaced_service: "
                 "%s\n" % e)
             return None
+
+    def _get_namespaced_deployments(self, namespace):
+        """
+        Obtain a list of all the deployments belonging to the given namespace
+        :param namespace:
+        :return:
+        """
+        try:
+            deployment_list = self._apps_client.list_namespaced_deployment(
+                namespace)
+            return deployment_list.items
+        except k8s.client.rest.ApiException as e:
+            print(
+                "Exception when calling AppsV1Api->list_namespaced_deployment"
+                ": %s\n" % e)
+
+    def _get_master_deployments(self, namespace):
+        """
+        Returns the IP address and port information for all the master
+        services available in OBI
+        by the client
+        :return:
+        """
+        try:
+            deployment_list = self._apps_client.list_namespaced_deployment(
+                namespace)
+            # Collect only those deployments which claim to be master
+            # in their metadata
+            deployments = list()
+            for d in deployment_list.items:
+                type = d.metadata.annotations[
+                    self._user_config['typeMetadata']]
+                if type == self._user_config['masterType']:
+                    deployments.append(d)
+            return deployments
+        except k8s.client.rest.ApiException as e:
+            print(
+                "Exception when calling CoreV1Api->list_namespaced_service: "
+                "%s\n" % e)
+
+    def _get_connection_information(self, namespace, name=None, deployment=None):
+        """
+        Given an infrastructure name, this function will return a tuple
+        containing IP address and port information for connecting to
+        the master of the given dataset. If the deployment argument is None
+        then a deployment with the given name will be retrieved from Kubernetes
+        otherwise the already available deployment object will be used
+        :param name:
+        :return:
+        """
+        # Read deployment object
+        if deployment is None:
+            try:
+                deployment = self._apps_client.read_namespaced_deployment(
+                    name, namespace)
+            except k8s.client.rest.ApiException as e:
+                log.error(
+                    "Exception when calling AppsV1Api->read_namespaced_deployment"
+                    ": %s\n" % e)
+
+        # Read service object associated to the deployment
+        s_name = deployment.metadata.annotations[
+            self._user_config['masterServiceName']]
+        try:
+            service = self._core_client.read_namespaced_service(
+                s_name, namespace)
+            return (service.status.load_balancer.ingress[0].ip,
+                    service.spec.ports[0].port)
+        except k8s.client.rest.ApiException as e:
+            log.error(
+                "Exception when calling CoreV1Api->read_namespaced_service: "
+                "%s\n" % e)
+        return None
+        # Return public IP and port
     #############
     #  END: Generic utility functions
     #############
