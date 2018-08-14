@@ -116,8 +116,9 @@ class KubernetesClient(GenericClient):
         :return:
         """
         # Obtain connection information
-        host, port = self._get_connection_info(
-            kwargs['job_infrastructure'])
+        host, port = self._get_connection_information(
+            self._user_config['kubernetesNamespace'],
+            name=kwargs['job_infrastructure'])
 
         # Check if the job type is valid or not
         sup_types = [t['name'] for t in self._user_config['supportedJobTypes']]
@@ -141,7 +142,10 @@ class KubernetesClient(GenericClient):
         with grpc.insecure_channel('{}:{}'.format(host, port)) as channel:
             stub = master_rpc_service_pb2_grpc.ObiMasterStub(channel)
             # Submit job creation request
+            log.info('Sending job submission request')
             stub.SubmitJob(req)
+
+        log.info('Job submitted successfully')
 
     def _create_infrastructure(self, **kwargs):
         """
