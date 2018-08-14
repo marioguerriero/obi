@@ -54,6 +54,7 @@ masterServiceName: master-service-name
 heartbeatServiceName: heartbeat-service-name
 predictorServiceName: predictor-service-name
 predictorDeploymentName: predictor-deployment-name
+secretsList: secrets-list
 
 # Extra metadata for services
 serviceTypeMetadata: type

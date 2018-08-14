@@ -257,14 +257,14 @@ class KubernetesClient(GenericClient):
             self._user_config['kubernetesNamespace'],
             kwargs['infrastructure_name'])
 
-        # Collect names of the deployment and services which should be deleted
-        d_names = [
+        # Collect names of the objects which should be deleted
+        deployment_names = [
             kwargs['infrastructure_name'],
             deployment.metadata.annotations[
                 self._user_config['predictorDeploymentName']]
         ]
 
-        s_names = [
+        service_names = [
             deployment.metadata.annotations[
                 self._user_config['masterServiceName']],
             deployment.metadata.annotations[
@@ -273,20 +273,29 @@ class KubernetesClient(GenericClient):
                 self._user_config['predictorServiceName']]
         ]
 
-        # Delete all services and deployments
+        secret_names = deployment.metadata.annotations[
+            self._user_config['secretsList']]
+
+        # Delete all the objects
         log.info('Deleting infrastructure objects')
 
-        for d in d_names:
+        for d in deployment_names:
             self._delete_deployment(
                 self._user_config['kubernetesNamespace'], d)
 
         log.info('All deployments deleted')
 
-        for s in s_names:
+        for s in service_names:
             self._delete_service(
                 self._user_config['kubernetesNamespace'], s)
 
         log.info('All services deleted')
+
+        for s in secret_names:
+            self._delete_secret(
+                self._user_config['kubernetesNamespace'], s)
+
+        log.info('All secrets deleted')
 
     def _get_jobs(self, **kwargs):
         """
@@ -418,6 +427,9 @@ class KubernetesClient(GenericClient):
             self._user_config['predictorServiceName']: predictor_service_name,
             self._user_config['predictorDeploymentName']:
                 predictor_deployment_name,
+            self._user_config['secretsList']: [
+                sa_secret
+            ]
         }
         deployment.metadata = metadata
 
@@ -947,7 +959,22 @@ class KubernetesClient(GenericClient):
         except k8s.client.rest.ApiException as e:
             log.error(
                 "Exception when calling "
-                "AppsV1Api->delete_namespaced_deployment: %s\n" % e)
+                "CoreV1Api->delete_namespaced_service: %s\n" % e)
+
+    def _delete_secret(self, namespace, name):
+        """
+        Deletes a given service
+        :param namespace:
+        :param name:
+        :return:
+        """
+        try:
+            self._core_client.delete_namespaced_secret(
+                name, namespace, body=k8s.client.V1DeleteOptions())
+        except k8s.client.rest.ApiException as e:
+            log.error(
+                "Exception when calling "
+                "CoreV1Api->delete_namespaced_secret: %s\n" % e)
     #############
     #  END: Generic utility functions
     #############
