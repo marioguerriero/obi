@@ -146,10 +146,12 @@ class KubernetesClient(GenericClient):
         # Get name
         name = deployment['name'] if 'name' in deployment \
             else self._object_name_generator()
+        log.info('Creating infrastructure named "{}"'.format(name))
 
         # Get namespace
         namespace = deployment['namespace'] if 'namespace' in deployment \
             else self._user_config['kubernetesNamespace']
+        log.info('Kubernetes namespace: {}'.format(name))
 
         # Check if the mandatory fields were specified
         fields = ['serviceAccountPath', 'projectId', 'region', 'zone']
@@ -165,19 +167,23 @@ class KubernetesClient(GenericClient):
         master_selector = self._object_name_generator(
             prefix='{}-deployment'.format(
                 self._user_config['kubernetesNamespace']))
+        log.info('Master selector label: {}'.format(master_selector))
 
         # Generate label selector for predictive component
         predictor_selector = self._object_name_generator(
             prefix='{}-predictor-deployment'.format(
                 self._user_config['kubernetesNamespace']))
+        log.info('Predictor selector label: {}'.format(predictor_selector))
 
         # Create master service
         self._create_master_service(
             namespace, master_selector)
+        log.info('Master service created')
 
         # Create heartbeat service
         heartbeat_host, heartbeat_port = self._create_heartbeat_service(
             namespace, master_selector)
+        log.info('Heartbeat service created')
 
         # Create predictive service
         predictor_name = self._object_name_generator(
@@ -185,6 +191,7 @@ class KubernetesClient(GenericClient):
         pred_host, pred_port = \
             self._create_predictive_component(predictor_name, namespace,
                                               predictor_selector)
+        log.info('Predictor component created')
 
         # Create config map to be used in the deployment
         config_map_name = self._create_config_map(
@@ -200,6 +207,7 @@ class KubernetesClient(GenericClient):
             name, namespace, deployment['projectId'], secret_name,
             master_selector,
             config_map_name)
+        log.info('Infrastructure successfully created')
 
     def _delete_job(self, **kwargs):
         """
@@ -325,7 +333,7 @@ class KubernetesClient(GenericClient):
         metadata = k8s.client.V1ObjectMeta()
         metadata.name = name
         metadata.namespace = namespace
-        deployment.metadata = namespace
+        deployment.metadata = metadata
 
         # Create Spec object
         deployment.spec = self._build_deployment_spec_object(label,
