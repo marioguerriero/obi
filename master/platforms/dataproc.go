@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"github.com/spf13/viper"
 	"obi/master/utils"
-)
+	)
 
 // InitializationAction initialization script for installing necessary requirements
 const InitializationAction = "gs://dhg-obi/cluster-script/init_action.sh"

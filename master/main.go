@@ -8,21 +8,22 @@ import (
 	"google.golang.org/grpc"
 	"github.com/spf13/viper"
 	"path/filepath"
-)
+	)
 
 
 func parseConfig() {
 	configPath := os.Getenv("CONFIG_PATH")
-	dir, file := filepath.Split(configPath)
+	dir, filename := filepath.Split(configPath)
+	ext := filepath.Ext(filename)
+	name := filename[0:len(filename)-len(ext)]
 
-	logrus.WithField("config-path", dir).Info("Reading configuration")
-
+	logrus.Info("Reading configuration")
 
 	viper.AddConfigPath(dir)
-	viper.SetConfigName(file)
+	viper.SetConfigName(name)
 	err := viper.ReadInConfig()
 	if err != nil {
-		logrus.Fatal("Unable to read configuration", err)
+		logrus.Info("Unable to read configuration", err)
 	}
 }
 
