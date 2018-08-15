@@ -811,7 +811,8 @@ class KubernetesClient(GenericClient):
         template.spec = template_spec
 
         # Build spec object
-        spec = k8s.client.V1DeploymentSpec(selector=selector, template=template)
+        spec = k8s.client.V1DeploymentSpec(
+            selector=selector, template=template)
         spec.replicas = self._user_config['predictorReplicas']
 
         # Attach spec to deployment
@@ -903,7 +904,10 @@ class KubernetesClient(GenericClient):
                 "Exception when calling CoreV1Api->list_namespaced_service: "
                 "%s\n" % e)
 
-    def _get_connection_information(self, namespace, name=None, deployment=None):
+    def _get_connection_information(self,
+                                    namespace,
+                                    name=None,
+                                    deployment=None):
         """
         Given an infrastructure name, this function will return a tuple
         containing IP address and port information for connecting to
@@ -924,7 +928,8 @@ class KubernetesClient(GenericClient):
                     name, namespace)
             except k8s.client.rest.ApiException as e:
                 log.error(
-                    "Exception when calling AppsV1Api->read_namespaced_deployment"
+                    "Exception when calling "
+                    "AppsV1Api->read_namespaced_deployment "
                     ": %s\n" % e)
 
         # Read service object associated to the deployment

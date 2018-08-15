@@ -1,6 +1,6 @@
 #!/bin/sh
 
-pylama $1
+pylama -i W0401 $1
 
 if [ $? -eq 0 ]; then
         echo "no errors found"
