@@ -60,4 +60,5 @@ def failure():
 
 
 if __name__ == '__main__':
-    app.run(host=os.environ['SERVICE_HOST'], port=int(os.environ['SERVICE_PORT']))
+    app.run(host=os.environ['SERVICE_HOST'],
+            port=int(os.environ['SERVICE_PORT']))
