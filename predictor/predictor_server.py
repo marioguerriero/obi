@@ -4,7 +4,7 @@ from flask import request
 import os
 import json
 
-from config import APP_NAME, ACCEPTED_JOBS
+from config import APP_NAME, ACCEPTED_JOBS, HOST
 
 from models.failure_predictor import FailurePredictor, PredictionException
 
@@ -60,4 +60,4 @@ def failure():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ['SERVICE_PORT']))
+    app.run(host=HOST, port=int(os.environ['SERVICE_PORT']))
