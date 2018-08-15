@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import yaml
+import sys
 
 from client_args import args, CMD_DESCRIBE, CMD_GET, CMD_CREATE, CMD_DELETE
 
@@ -60,3 +61,5 @@ if __name__ == '__main__':
         from local import LocalClient as ClientClass
     # Execute command
     run(cfg)
+    sys.stdout.flush()
+    sys.exit(0)

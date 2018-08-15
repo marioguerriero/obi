@@ -14,7 +14,7 @@ defaultServiceSelectorName: app
 defaultConfigMapName: config-map.yaml
 
 # Number of replicas to create when creating a new infrastructure
-masterReplicas: 2
+masterReplicas: 1
 
 # Number of replicas to create when creating a new predictor service
 predictorReplicas: 3

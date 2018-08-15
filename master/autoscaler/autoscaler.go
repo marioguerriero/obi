@@ -98,12 +98,37 @@ func autoscalerRoutine(as *Autoscaler) {
 func applyPolicy(metricsWindow *utils.ConcurrentSlice, algorithm ScalingAlgorithm) (bool, bool) {
 	switch algorithm {
 	case WorkloadBased:
-		// TODO
-		logrus.Info("Applying policy")
-		fmt.Println("Metrics Window:")
-		//for _ := range metricsWindow.Iter() {
-		//	// fmt.Println(hb.Value)
-		//}
+		var previousMetrics model.Metrics
+		var throughput float32
+		var pendingGrowthRate float32
+		var count int8
+
+		for obj := range metricsWindow.Iter() {
+			if obj.Value == nil {
+				continue
+			}
+
+			hb := obj.Value.(model.Metrics)
+			if previousMetrics == (model.Metrics{}) {
+				previousMetrics = hb
+			} else {
+				throughput += float32(hb.TotalContainersAllocated - previousMetrics.TotalContainersAllocated)
+				pendingGrowthRate += float32(hb.PendingContainers - previousMetrics.PendingContainers)
+				count++
+			}
+		}
+
+		if count > 0 {
+			throughput /= float32(count)
+			pendingGrowthRate /= float32(count)
+
+			fmt.Printf("Throughput: %f\n", throughput)
+			fmt.Printf("Pending rate: %f\n", pendingGrowthRate)
+		} else {
+			fmt.Println("No metrics available")
+		}
+
+		logrus.Info("Applying workload-based policy")
 	case TimeBased:
 		// TODO
 		logrus.WithField("metrics", metricsWindow).Info("Applying policy")
