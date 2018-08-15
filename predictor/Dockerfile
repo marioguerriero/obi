@@ -3,6 +3,7 @@ FROM tensorflow/tensorflow:latest-py3
 
 # Set configuration env variables
 ENV SERVICE_PORT 8080
+ENV SERVICE_HOST 0.0.0.0
 
 # Add necessary files
 ADD *.py /
