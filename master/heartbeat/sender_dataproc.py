@@ -10,7 +10,8 @@ HOSTNAME = socket.gethostname()
 CLUSTER_NAME = HOSTNAME[:-2]
 
 # Before doing anything, make sure that the current node is the master-old
-GET_MASTER_CMD = '/usr/share/google/get_metadata_value attributes/dataproc-master-old'
+GET_MASTER_CMD = '/usr/share/google/get_metadata_value ' \
+                 'attributes/dataproc-master-old '
 master_name = os.popen(GET_MASTER_CMD).read()
 if master_name != HOSTNAME:
     # If we are not in the master-old we should not send any heartbeat

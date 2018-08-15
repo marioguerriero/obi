@@ -58,7 +58,8 @@ create_job_args.add_argument('-i', help='Infrastructure on which execute the '
                              dest='job_infrastructure')
 
 # Create infrastructure arguments
-create_infrastructure_args = create_args_subparsers.add_parser('infrastructure')
+create_infrastructure_args = \
+    create_args_subparsers.add_parser('infrastructure')
 create_infrastructure_args.add_argument('-f', help='Infrastructure config '
                                                    'file path', type=str,
                                         required=True,
