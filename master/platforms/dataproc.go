@@ -213,7 +213,7 @@ func (c *DataprocCluster) GetMetricsWindow() *utils.ConcurrentSlice {
 	return c.GetMetrics()
 }
 
-// SetMetricsSnapshot is for updating the cluster with new metrics
+// AddMetricsSnapshot is for updating the cluster with new metrics
 // @newMetrics is the object filled with new metrics
 func (c *DataprocCluster) AddMetricsSnapshot(newMetrics m.Metrics) {
 	c.SetMetrics(newMetrics)
