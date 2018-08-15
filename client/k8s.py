@@ -394,8 +394,7 @@ class KubernetesClient(GenericClient):
         # It was noticed that any newline character or '\n' sequence
         # causes the secret not to be decoded properly. That's why
         # I am avoiding those cases here
-        secret_content = secret_content.replace('\n', '').replace('\r', '') \
-            .replace('\\n', '').replace('\\r', '')
+        secret_content = secret_content.replace('\n', '').replace('\r', '')
 
         # Generate secret
         secret_name = self._object_name_generator(
