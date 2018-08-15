@@ -1,4 +1,4 @@
-from profiles import PROFILES
+# from profiles import PROFILES
 
 
 def infer_profile(req):
@@ -8,7 +8,7 @@ def infer_profile(req):
     :param req:
     :return:
     """
-    _profile_instances = [obj() for obj in PROFILES]
+    # _profile_instances = [obj() for obj in PROFILES]
 
     # get_profile = dict([(p.name, p) for p in _profile_instances])
 

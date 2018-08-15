@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod
 
 class GenericProfile(ABC):
     """
-    General abstract class which is implemented by any of the prediction profiles
-    made available for OBI
+    General abstract class which is implemented by any of the prediction
+    profiles made available for OBI
     """
 
     @abstractmethod
