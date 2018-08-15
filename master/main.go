@@ -18,8 +18,8 @@ func parseConfig() {
 	logrus.WithField("config-path", dir).Info("Reading configuration")
 
 
-	viper.SetConfigName(file)
 	viper.AddConfigPath(dir)
+	viper.SetConfigName(file)
 	err := viper.ReadInConfig()
 	if err != nil {
 		logrus.Fatal("Unable to read configuration", err)

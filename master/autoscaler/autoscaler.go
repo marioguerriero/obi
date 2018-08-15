@@ -101,9 +101,9 @@ func applyPolicy(metricsWindow *utils.ConcurrentSlice, algorithm ScalingAlgorith
 		// TODO
 		logrus.Info("Applying policy")
 		fmt.Println("Metrics Window:")
-		for hb := range metricsWindow.Iter() {
-			// fmt.Println(hb.Value)
-		}
+		//for _ := range metricsWindow.Iter() {
+		//	// fmt.Println(hb.Value)
+		//}
 	case TimeBased:
 		// TODO
 		logrus.WithField("metrics", metricsWindow).Info("Applying policy")
