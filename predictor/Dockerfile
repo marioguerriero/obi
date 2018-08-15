@@ -1,5 +1,5 @@
 # Use Tensorflow Python 3 distribution
-FROM python:3.7
+FROM python:3.5
 
 # Set configuration env variables
 ENV SERVICE_PORT 8080
