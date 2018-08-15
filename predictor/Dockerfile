@@ -1,13 +1,14 @@
 # Use Tensorflow Python 3 distribution
-FROM tensorflow/tensorflow:latest-py3
+FROM python:3.7
 
 # Set configuration env variables
 ENV SERVICE_PORT 8080
 ENV SERVICE_HOST 0.0.0.0
 
 # Add necessary files
-ADD *.py /
-ADD requirements.txt /
+ADD * /
+ADD models/ /models/
+ADD profiles/ /profiles/
 
 # Install dependencies
 RUN pip install -r /requirements.txt
@@ -16,4 +17,4 @@ RUN pip install -r /requirements.txt
 EXPOSE $SERVICE_PORT
 
 # Run application
-CMD ['python', 'predictor_server.py']
+ENTRYPOINT ["python", "predictor_server.py"]

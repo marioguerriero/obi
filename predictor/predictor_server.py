@@ -1,64 +1,65 @@
-from flask import Flask
-from flask import request
+import obi_predictor_service_pb2
+import obi_predictor_service_pb2_grpc
 
+import grpc
+
+from concurrent import futures
 import os
-import json
+import time
 
-from config import APP_NAME, ACCEPTED_JOBS
+from logger import log
 
-from models.failure_predictor import FailurePredictor, PredictionException
+import profile_utils
 
-from profile_manager import get_profile
-
-app = Flask(APP_NAME)
-
-PROFILE_ARG = 'profile'
+_ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 
-@app.route("/predict-duration")
-def duration():
-    # Parse request arguments
-    profile = request.args.get(PROFILE_ARG)
+class PredictorServer(obi_predictor_service_pb2_grpc.ObiPredictorServicer):
+    """
+    This class implement the server side mechanisms for providing predictive
+    feature to OBI through remote procedure call
+    """
 
-    # Handle missing profile errors
-    if profile is None or profile not in ACCEPTED_JOBS:
-        resp = app.response_class(
-            response=json.dumps({
-                'error': 'Malformed request. '
-                         'Profile query parameter missing or invalid.'
-            }),
-            status=400,
-            mimetype='application/json'
-        )
-        return resp
+    def RequestPrediction(self, req, ctx):
+        """
+        Request prediction service
+        :param req:
+        :param ctx:
+        :return:
+        """
+        log.info('Received request {}'.format(req))
 
-    # Obtain other (eventual) arguments from query
-    args = request.args
-    del args[PROFILE_ARG]
+        # Select the correct predictor
+        predictor = profile_utils.infer_profile(req)
+        # Generate predictions
+        predictions = predictor.generate_predictions(req.Metrics)
+        # Return predictions to the user
+        res = obi_predictor_service_pb2.PredictionResponse()
+        res.Duration = predictions[0]
+        res.FailureProbability = predictions[1]
+        log.info('Generated predictions: {}'.format(res))
+        return res
 
-    # Obtain profile and generate predictions
-    profile = get_profile[profile]
-    return profile.predict_duration(args)
 
-
-@app.route("/predict-failure")
-def failure():
-    predictor = FailurePredictor()
+def serve():
+    """
+    Instantiate and keep the server alive
+    """
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    obi_predictor_service_pb2_grpc.add_ObiPredictorServicer_to_server(
+        PredictorServer(), server)
+    host = os.environ['SERVICE_HOST']
+    port = int(os.environ['SERVICE_PORT'])
+    log.info('Serving on {}:{}'.format(host, port))
+    server.add_insecure_port('{}:{}'.format(host, port))
+    server.start()
     try:
-        pred = predictor.predict_failure(**request.args)
-        return pred
-    except PredictionException:
-        resp = app.response_class(
-            response=json.dumps({
-                'error': 'Exception generated while attempting '
-                         'to generate prediction'
-            }),
-            status=400,
-            mimetype='application/json'
-        )
-        return resp
+        while True:
+            time.sleep(_ONE_DAY_IN_SECONDS)
+    except KeyboardInterrupt:
+        server.stop(0)
 
 
 if __name__ == '__main__':
-    app.run(host=os.environ['SERVICE_HOST'],
-            port=int(os.environ['SERVICE_PORT']))
+    log.info('Starting gRPC server')
+    serve()

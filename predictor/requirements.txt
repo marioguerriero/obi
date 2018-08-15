@@ -1,5 +1,7 @@
-Flask
+googleapis-common-protos
+grpcio-tools
 pandas
 numpy
 sklearn
+#tensorflow
 keras
