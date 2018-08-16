@@ -118,9 +118,9 @@ func (c *DataprocCluster) Scale(nodes int32, toAdd bool) {
 	}
 
 	if toAdd {
-		newSize = int32(c.Nodes + nodes)
+		newSize = int32(c.WorkerNodes + nodes)
 	} else {
-		newSize = int32(c.Nodes - nodes)
+		newSize = int32(c.WorkerNodes - nodes)
 	}
 
 	req := &dataprocpb.UpdateClusterRequest{
@@ -246,7 +246,7 @@ func (c *DataprocCluster) AllocateResources() error {
 					},
 				},
 				WorkerConfig: &dataprocpb.InstanceGroupConfig{
-					NumInstances: int32(c.Nodes),
+					NumInstances: int32(c.WorkerNodes),
 				},
 				SecondaryWorkerConfig: &dataprocpb.InstanceGroupConfig{
 					NumInstances: int32(c.PreemptibleNodes),

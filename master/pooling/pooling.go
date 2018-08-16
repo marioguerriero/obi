@@ -31,7 +31,7 @@ func (p *Pooling) SubmitPySparkJob(clusterName string, scriptURI string) {
 	var cluster model.ClusterBaseInterface
 	var err error
 	if p.pool.Len() == 0 {
-		cb := model.NewClusterBase("obi-test", 3,
+		cb := model.NewClusterBase("obi-test", 2,
 			"dataproc",
 			viper.GetString("heartbeatHost"),
 			viper.GetInt("heartbeatPort"))
@@ -52,7 +52,7 @@ func (p *Pooling) SubmitPySparkJob(clusterName string, scriptURI string) {
 	if err == nil {
 		// Add to pool
 		p.pool.Set(clusterName, cluster)
-		a := autoscaler.New(autoscaler.WorkloadBased, 15, 5, cluster.(model.Scalable))
+		a := autoscaler.New(autoscaler.WorkloadBased, 30, 15, cluster.(model.Scalable))
 		a.StartMonitoring()
 
 		// Schedule some jobs

@@ -47,8 +47,8 @@ func (receiver *Receiver) Start() {
 	quit = make(chan struct{})
 	logrus.Info("Starting heartbeat receiver routine.")
 	go receiverRoutine(receiver.pool)
-	// logrus.Info("Starting cluster tracker routine.")
-	// go clustersTrackerRoutine(receiver.pool, receiver.DeleteTimeout, receiver.TrackerInterval)
+	logrus.Info("Starting cluster tracker routine.")
+	go clustersTrackerRoutine(receiver.pool, receiver.DeleteTimeout, receiver.TrackerInterval)
 }
 
 // goroutine which listens to new heartbeats from cluster masters. It will be stop when an empty object is inserted in
@@ -132,16 +132,20 @@ func clustersTrackerRoutine(pool *utils.ConcurrentMap, timeout int16, interval i
 			return
 		default:
 			for pair := range pool.Iter() {
-				key := pair.Key
+				clusterName := pair.Key
 				cluster := pair.Value.(model.ClusterBaseInterface)
 				var lastHeartbeat model.Metrics
 				for hb := range cluster.GetMetricsWindow().Iter() {
-					lastHeartbeat = hb.Value.(model.Metrics)
+					if hb.Value != nil {
+						lastHeartbeat = hb.Value.(model.Metrics)
+					}
 				}
-				lastHeartbeatInterval := int16(time.Now().Sub(lastHeartbeat.Timestamp).Seconds())
-				if lastHeartbeatInterval > timeout {
-					logrus.WithField("Name", key).Info("Deleting cluster.")
-					pool.Delete(key)
+				if lastHeartbeat != (model.Metrics{}) {
+					lastHeartbeatInterval := int16(time.Now().Sub(lastHeartbeat.Timestamp).Seconds())
+					if lastHeartbeatInterval > timeout {
+						logrus.WithField("Name", clusterName).Info("Deleting cluster.")
+						pool.Delete(clusterName)
+					}
 				}
 			}
 			time.Sleep(time.Duration(interval) * time.Second)
