@@ -113,7 +113,16 @@ func applyPolicy(metricsWindow *utils.ConcurrentSlice, algorithm ScalingAlgorith
 				previousMetrics = hb
 			} else {
 				throughput += float32(hb.TotalContainersAllocated - previousMetrics.TotalContainersAllocated)
-				pendingGrowthRate += float32(hb.PendingContainers - previousMetrics.PendingContainers)
+
+				if hb.PendingContainers > 0 {
+					memoryContainer := hb.PendingMemory / hb.PendingContainers
+					containersAllocating := hb.AvailableMemory / memoryContainer
+					pendingGrowth := float32(hb.PendingContainers - containersAllocating - previousMetrics.PendingContainers)
+					if pendingGrowth > 0 {
+						pendingGrowthRate += pendingGrowth
+					}
+				}
+
 				count++
 			}
 		}
@@ -131,7 +140,7 @@ func applyPolicy(metricsWindow *utils.ConcurrentSlice, algorithm ScalingAlgorith
 		logrus.Info("Applying workload-based policy")
 	case TimeBased:
 		// TODO
-		logrus.WithField("metrics", metricsWindow).Info("Applying policy")
+		logrus.Info("Applying time-based policy")
 	default:
 		logrus.WithField("algorithm", algorithm).Error("Unknown algorithm")
 	}

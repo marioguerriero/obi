@@ -7,8 +7,7 @@ import (
 	"obi/master/model"
 	"time"
 	"github.com/sirupsen/logrus"
-	"fmt"
-	"obi/master/platforms"
+		"obi/master/platforms"
 )
 
 // Receiver class with properties
@@ -103,8 +102,6 @@ func receiverRoutine(pool *utils.ConcurrentMap) {
 			m.GetAggregateContainersAllocated(),
 			m.GetAggregateContainersReleased(),
 		}
-
-		fmt.Println(newMetrics)
 
 		if value, ok := pool.Get(m.GetClusterName()); ok {
 			cluster := value.(model.ClusterBaseInterface)
