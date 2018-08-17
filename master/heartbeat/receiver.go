@@ -25,13 +25,13 @@ var quit chan struct{}
 var conn *net.UDPConn
 
 // New is the constructor of the heartbeat Receiver struct
-// @param clustersMap is the pool of the available clusters to update regularly
+// @param pool contains the clusters to update regularly
 // @param deleteTimeout is the time interval after which a cluster is assumed down
 // @param trackerInterval is the time interval for which the clusters tracker is triggered
 // return the pointer to the instance
-func New(clustersMap *pooling.Pool, deleteTimeout int16, trackerInterval int16) *Receiver {
+func New(pool *pooling.Pool, deleteTimeout int16, trackerInterval int16) *Receiver {
 	r := &Receiver{
-		clustersMap,
+		pool,
 		deleteTimeout,
 		trackerInterval,
 	}
@@ -50,7 +50,7 @@ func (receiver *Receiver) Start() {
 
 // goroutine which listens to new heartbeats from cluster masters. It will be stop when an empty object is inserted in
 // the `quit` channel
-// @param pool is the map containing all the available clusters
+// @param pool contains the available clusters to update with new metrics
 func receiverRoutine(pool *pooling.Pool) {
 	var err error
 
@@ -119,7 +119,7 @@ func receiverRoutine(pool *pooling.Pool) {
 }
 
 // goroutine which periodically removes outdated/down clusters. It will be stop when the `quit` channel is closed
-// @param pool is the map containing all the available clusters
+// @param pool contains all the clusters to track
 // @param timeout is the time interval after which a cluster must be removed from the pool
 func clustersTrackerRoutine(pool *pooling.Pool, timeout int16, interval int16) {
 

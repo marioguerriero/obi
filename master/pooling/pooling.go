@@ -14,7 +14,7 @@ type Pooling struct {
 }
 
 // New is the constructor of Pooling struct
-// @param clustersMap is the pool of the available clusters to update regularly
+// @param pool contains the available clusters to use for job deployments
 func New(pool *Pool) *Pooling {
 	// TODO: Implement pooling. For the moment only a cluster to use
 
