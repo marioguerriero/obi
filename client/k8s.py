@@ -165,7 +165,7 @@ class KubernetesClient(GenericClient):
         # Get namespace
         namespace = deployment['namespace'] if 'namespace' in deployment \
             else self._user_config['kubernetesNamespace']
-        log.info('Kubernetes namespace: {}'.format(name))
+        log.info('Kubernetes namespace: {}'.format(namespace))
 
         # Check if the mandatory fields were specified
         fields = ['serviceAccountPath', 'projectId', 'region', 'zone']

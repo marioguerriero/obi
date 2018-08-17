@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/viper"
 	"obi/master/platforms"
 	"obi/master/autoscaler"
+	"github.com/sirupsen/logrus"
 )
 
 // Pooling class with properties
@@ -16,6 +17,8 @@ type Pooling struct {
 // @param clustersMap is the pool of the available clusters to update regularly
 func New(pool *Pool) *Pooling {
 	// TODO: Implement pooling. For the moment only a cluster to use
+
+	logrus.Info("Creating pooling")
 	cb := model.NewClusterBase("obi-test", 2,
 		"dataproc",
 		viper.GetString("heartbeatHost"),
@@ -37,6 +40,7 @@ func New(pool *Pool) *Pooling {
 		pool.AddCluster(cluster, a)
 	}
 
+	logrus.Info("Created pool of clusters")
 	return &Pooling{
 		pool,
 	}
