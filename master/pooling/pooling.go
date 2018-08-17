@@ -1,23 +1,44 @@
 package pooling
 
 import (
-	"obi/master/platforms"
 	"obi/master/model"
-	"obi/master/utils"
-	"obi/master/autoscaler"
 	"github.com/spf13/viper"
+	"obi/master/platforms"
+	"obi/master/autoscaler"
 )
 
 // Pooling class with properties
 type Pooling struct {
-	pool *utils.ConcurrentMap
+	pool *Pool
 }
 
 // New is the constructor of Pooling struct
 // @param clustersMap is the pool of the available clusters to update regularly
-func New(clustersMap *utils.ConcurrentMap) *Pooling {
+func New(pool *Pool) *Pooling {
+	// TODO: Implement pooling. For the moment only a cluster to use
+	cb := model.NewClusterBase("obi-test", 2,
+		"dataproc",
+		viper.GetString("heartbeatHost"),
+		viper.GetInt("heartbeatPort"))
+
+	cluster := platforms.NewDataprocCluster(cb, viper.GetString("projectId"),
+		viper.GetString("zone"),
+		viper.GetString("region"), 1, 0.3)
+
+	// Allocate cluster resources
+	err := cluster.AllocateResources()
+
+	if err == nil {
+		// Instantiate a new autoscaler for the new cluster and start monitoring
+		a := autoscaler.New(autoscaler.WorkloadBased, 30, 15, cluster)
+		a.StartMonitoring()
+
+		// Add to pool
+		pool.AddCluster(cluster, a)
+	}
+
 	return &Pooling{
-		clustersMap,
+		pool,
 	}
 }
 
@@ -26,36 +47,9 @@ func New(clustersMap *utils.ConcurrentMap) *Pooling {
 // @param scriptURI is the script path
 func (p *Pooling) SubmitPySparkJob(clusterName string, scriptURI string) {
 
-	// Create cluster object
-	// TODO: Create a cluster dynamically.
-	var cluster model.ClusterBaseInterface
-	var err error
-	if p.pool.Len() == 0 {
-		cb := model.NewClusterBase("obi-test", 2,
-			"dataproc",
-			viper.GetString("heartbeatHost"),
-			viper.GetInt("heartbeatPort"))
-
-		cluster = platforms.NewDataprocCluster(cb, viper.GetString("projectId"),
-			viper.GetString("zone"),
-			viper.GetString("region"), 1, 0.3)
-
-		// Allocate cluster resources
-		err = cluster.AllocateResources()
-	} else {
-		obj, _ := p.pool.Get("obi-test")
-		cluster = obj.(model.ClusterBaseInterface)
-
-		err = nil
-	}
-
-	if err == nil {
-		// Add to pool
-		p.pool.Set(clusterName, cluster)
-		a := autoscaler.New(autoscaler.WorkloadBased, 30, 15, cluster.(model.Scalable))
-		a.StartMonitoring()
-
-		// Schedule some jobs
+	// Schedule some jobs
+	if obj, ok := p.pool.GetCluster("obi-test"); ok {
+		cluster := obj.(model.ClusterBaseInterface)
 		cluster.SubmitJob(scriptURI)
 	}
 }

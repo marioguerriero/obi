@@ -1,24 +1,22 @@
 package heartbeat
 
 import (
-	"obi/master/utils"
-	"net"
-	"github.com/golang/protobuf/proto"
 	"obi/master/model"
-	"time"
+	"net"
 	"github.com/sirupsen/logrus"
-		"obi/master/platforms"
+	"github.com/golang/protobuf/proto"
+	"time"
+	"obi/master/platforms"
+	"obi/master/autoscaler"
+	"obi/master/pooling"
 )
 
 // Receiver class with properties
 type Receiver struct {
-	pool *utils.ConcurrentMap
+	pool *pooling.Pool
 	DeleteTimeout int16
 	TrackerInterval int16
 }
-
-// singleton instance
-var receiverInstance *Receiver
 
 // channel to interrupt the heartbeat receiver routine
 var quit chan struct{}
@@ -26,20 +24,19 @@ var quit chan struct{}
 // UDP connection
 var conn *net.UDPConn
 
-// GetInstance if for getting the singleton instance of the heartbeat receiver
+// New is the constructor of the heartbeat Receiver struct
 // @param clustersMap is the pool of the available clusters to update regularly
 // @param deleteTimeout is the time interval after which a cluster is assumed down
 // @param trackerInterval is the time interval for which the clusters tracker is triggered
 // return the pointer to the instance
-func GetInstance(clustersMap *utils.ConcurrentMap, deleteTimeout int16, trackerInterval int16) *Receiver {
-	if receiverInstance == nil {
-		receiverInstance = &Receiver{
-			clustersMap,
-			deleteTimeout,
-			trackerInterval,
-		}
+func New(clustersMap *pooling.Pool, deleteTimeout int16, trackerInterval int16) *Receiver {
+	r := &Receiver{
+		clustersMap,
+		deleteTimeout,
+		trackerInterval,
 	}
-	return receiverInstance
+
+	return r
 }
 
 // Start the execution of the heartbeat receiver
@@ -54,7 +51,7 @@ func (receiver *Receiver) Start() {
 // goroutine which listens to new heartbeats from cluster masters. It will be stop when an empty object is inserted in
 // the `quit` channel
 // @param pool is the map containing all the available clusters
-func receiverRoutine(pool *utils.ConcurrentMap) {
+func receiverRoutine(pool *pooling.Pool) {
 	var err error
 
 	// listen to incoming udp packets
@@ -103,7 +100,7 @@ func receiverRoutine(pool *utils.ConcurrentMap) {
 			m.GetAggregateContainersReleased(),
 		}
 
-		if value, ok := pool.Get(m.GetClusterName()); ok {
+		if value, ok := pool.GetCluster(m.GetClusterName()); ok {
 			cluster := value.(model.ClusterBaseInterface)
 			cluster.AddMetricsSnapshot(newMetrics)
 			logrus.WithField("clusterName", m.GetClusterName()).Info("Metrics updated")
@@ -112,7 +109,8 @@ func receiverRoutine(pool *utils.ConcurrentMap) {
 
 			newCluster, err := platforms.NewExistingCluster(m.GetServiceType(), m.GetClusterName())
 			if err == nil {
-				pool.Set(m.GetClusterName(), newCluster)
+				a := autoscaler.New(autoscaler.WorkloadBased, 30, 15, newCluster.(model.Scalable))
+				pool.AddCluster(newCluster, a)
 
 				logrus.WithField("clusterName", m.GetClusterName()).Info("Added cluster in the pool")
 			}
@@ -123,7 +121,7 @@ func receiverRoutine(pool *utils.ConcurrentMap) {
 // goroutine which periodically removes outdated/down clusters. It will be stop when the `quit` channel is closed
 // @param pool is the map containing all the available clusters
 // @param timeout is the time interval after which a cluster must be removed from the pool
-func clustersTrackerRoutine(pool *utils.ConcurrentMap, timeout int16, interval int16) {
+func clustersTrackerRoutine(pool *pooling.Pool, timeout int16, interval int16) {
 
 	for {
 		select {
@@ -131,7 +129,7 @@ func clustersTrackerRoutine(pool *utils.ConcurrentMap, timeout int16, interval i
 			logrus.Info("Closing cluster tracker routine.")
 			return
 		default:
-			for pair := range pool.Iter() {
+			for pair := range pool.Clusters() {
 				clusterName := pair.Key
 				cluster := pair.Value.(model.ClusterBaseInterface)
 				var lastHeartbeat model.Metrics
@@ -144,7 +142,7 @@ func clustersTrackerRoutine(pool *utils.ConcurrentMap, timeout int16, interval i
 					lastHeartbeatInterval := int16(time.Now().Sub(lastHeartbeat.Timestamp).Seconds())
 					if lastHeartbeatInterval > timeout {
 						logrus.WithField("Name", clusterName).Info("Deleting cluster.")
-						pool.Delete(clusterName)
+						pool.RemoveCluster(clusterName)
 					}
 				}
 			}

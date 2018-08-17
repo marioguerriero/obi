@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc"
 	"github.com/spf13/viper"
 	"path/filepath"
-	)
+)
 
 
 func parseConfig() {

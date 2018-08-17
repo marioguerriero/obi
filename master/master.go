@@ -3,10 +3,9 @@ package main
 import (
 	"context"
 	"obi/master/pooling"
-	"obi/master/utils"
-	"obi/master/heartbeat"
+		"obi/master/heartbeat"
 	"github.com/sirupsen/logrus"
-)
+	)
 
 // ObiMaster structure representing one master instance for OBI
 type ObiMaster struct {
@@ -40,9 +39,9 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 // CreateMaster generates a new OBI master instance
 func CreateMaster() (*ObiMaster) {
 	// Create new cluster pooling object
-	pool := utils.NewConcurrentMap()
+	pool := pooling.GetPool()
 	p := pooling.New(pool)
-	hb := heartbeat.GetInstance(pool, 60, 30)
+	hb := heartbeat.New(pool, 60, 30)
 	hb.Start()
 
 	// Create and return OBI master object
