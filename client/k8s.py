@@ -1,4 +1,5 @@
 import os
+import sys
 
 import yaml
 
@@ -17,6 +18,14 @@ from logger import log
 import utils
 
 from generic_client import GenericClient
+
+
+class InvalidInfrastructureName(Exception):
+    """
+    This exception should be triggered when a mandatory field has been
+    omitted from a configuration file
+    """
+    pass
 
 
 class FieldMissingError(Exception):
@@ -65,7 +74,14 @@ class KubernetesClient(GenericClient):
         self._user_config = user_config
 
         # Load cluster configuration
-        k8s.config.load_kube_config()
+        config_path = os.path.join(
+            os.getenv('HOME'),
+            '.kube',
+            'config'
+        )
+        k8s.config.load_kube_config(
+            config_file=config_path,
+            persist_config=False)
 
         # Prepare client objects
         self._core_client = k8s.client.CoreV1Api()
@@ -116,9 +132,13 @@ class KubernetesClient(GenericClient):
         :return:
         """
         # Obtain connection information
-        host, port = self._get_connection_information(
-            self._user_config['kubernetesNamespace'],
-            name=kwargs['job_infrastructure'])
+        try:
+            host, port = self._get_connection_information(
+                self._user_config['kubernetesNamespace'],
+                name=kwargs['job_infrastructure'])
+        except InvalidInfrastructureName as e:
+            log.fatal(e)
+            sys.exit(1)
 
         # Check if the job type is valid or not
         sup_types = [t['name'] for t in self._user_config['supportedJobTypes']]
@@ -922,15 +942,14 @@ class KubernetesClient(GenericClient):
             return None
 
         if deployment is None and name is not None:
-            deployment = self._get_deployment_object(namespace, name)
+            # deployment = self._get_deployment_object(namespace, name)
             try:
                 deployment = self._apps_client.read_namespaced_deployment(
                     name, namespace)
             except k8s.client.rest.ApiException as e:
-                log.error(
-                    "Exception when calling "
-                    "AppsV1Api->read_namespaced_deployment "
-                    ": %s\n" % e)
+                raise InvalidInfrastructureName(
+                    'Infrastructure {} does not exist'
+                    .format(name))
 
         # Read service object associated to the deployment
         s_name = deployment.metadata.annotations[
