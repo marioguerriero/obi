@@ -28,7 +28,7 @@ type Autoscaler struct {
 
 // New is the constructor of Autoscaler struct
 // @param algorithm is the algorithm to follow during scaling policy execution
-// @param timeoutInterval is the time interval to wait before triggering the scaling-check action again
+// @param timeout is the time interval to wait before triggering the scaling-check action again
 // @param sustainedTimeoutInterval is the time interval to wait before triggering the scaling action again, when a
 // 	`scale-up` or `scale-down` was triggered
 // @param cluster is the scalable cluster to be managed

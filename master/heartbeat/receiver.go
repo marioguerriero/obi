@@ -113,6 +113,8 @@ func receiverRoutine(pool *pooling.Pool) {
 				pool.AddCluster(newCluster, a)
 
 				logrus.WithField("clusterName", m.GetClusterName()).Info("Added cluster in the pool")
+			} else {
+				logrus.WithField("Error", err).Error("Existing cluster not inserted in the pool")
 			}
 		}
 	}
