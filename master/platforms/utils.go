@@ -3,6 +3,7 @@ package platforms
 import (
 	"obi/master/model"
 		"github.com/sirupsen/logrus"
+		"fmt"
 )
 
 // NewExistingCluster is a factory method to create one of the many platform instances when the resources are already
@@ -24,6 +25,7 @@ func NewExistingCluster(platform string, clusterName string) (model.ClusterBaseI
 		)
 	default:
 		logrus.WithField("platform", platform).Error("Platform unknown")
+		return nil, fmt.Errorf("impossible to create a new cluster for type '%s'", platform)
 	}
 	return newCluster, err
 }
