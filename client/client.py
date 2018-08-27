@@ -1,13 +1,8 @@
 #!/usr/bin/env python3
 import os
-import threading
-import traceback
 
 import yaml
-import sys
-
 from client_args import args, CMD_DESCRIBE, CMD_GET, CMD_CREATE, CMD_DELETE
-
 from logger import log
 
 # Define some constant values
