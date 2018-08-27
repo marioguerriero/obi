@@ -562,6 +562,12 @@ class KubernetesClient(GenericClient):
             container
         ])
 
+        # Node selector
+        template_spec.node_selector = {
+            self._user_config['nodeSelectorKey']:
+                self._user_config['nodeSelectorValue']
+        }
+
         # Volume for SA secret
         volume_secret = k8s.client.V1Volume(name=volume_secret_mount_name)
         volume_secret.secret = k8s.client.V1SecretVolumeSource()
@@ -649,10 +655,11 @@ class KubernetesClient(GenericClient):
 
         # Spec object
         spec = k8s.client.V1ServiceSpec()
-        spec.type = 'LoadBalancer'
+        spec.type = 'NodePort'
         port = k8s.client.V1ServicePort(
             port=self._user_config['defaultHeartbeatPort']
         )
+        port.target_port = self._user_config['defaultHeartbeatPort']
         port.protocol = 'UDP'
         spec.ports = [
             port
@@ -664,8 +671,9 @@ class KubernetesClient(GenericClient):
         service.spec = spec
 
         try:
-            self._core_client.create_namespaced_service(
+            s = self._core_client.create_namespaced_service(
                 namespace, service, pretty='true')
+            print(s)
             # Wait for the service to be fully initialized with an IP address
             while True:
                 status = self._core_client.read_namespaced_service_status(
@@ -818,6 +826,12 @@ class KubernetesClient(GenericClient):
         template_spec = k8s.client.V1PodSpec(containers=[
             container
         ])
+
+        # Node selector
+        template_spec.node_selector = {
+            self._user_config['nodeSelectorKey']:
+                self._user_config['nodeSelectorValue']
+        }
 
         # Volume for config map
         volume_config_map = k8s.client.V1Volume(

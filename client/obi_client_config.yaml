@@ -62,3 +62,7 @@ serviceTypeMetadata: type
 masterServiceType: master=service
 heartbeatServiceType: heartbeat-service
 predictorServiceType: predictor-service
+
+# Node on which schedule the pods
+nodeSelectorKey: cloud.google.com/gke-nodepool
+nodeSelectorValue: base
