@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+import os
+import threading
+import traceback
 
 import yaml
 import sys
@@ -61,5 +64,4 @@ if __name__ == '__main__':
         from local import LocalClient as ClientClass
     # Execute command
     run(cfg)
-    sys.stdout.flush()
-    sys.exit(0)
+    os._exit(0)
