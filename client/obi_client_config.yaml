@@ -7,6 +7,9 @@ defaultMasterPort: 8081
 defaultHeartbeatPort: 8080
 defaultPredictorPort: 8008
 
+# IP address of the machine hosting the heartbeat service
+heartbeatServiceIp: 10.156.0.24
+
 # Default selector name used by services to attach to deployments
 defaultServiceSelectorName: app
 

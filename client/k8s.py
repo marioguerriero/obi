@@ -81,7 +81,7 @@ class KubernetesClient(GenericClient):
         )
         k8s.config.load_kube_config(
             config_file=config_path,
-            persist_config=False)
+            persist_config=True)
 
         # Prepare client objects
         self._core_client = k8s.client.CoreV1Api()
@@ -671,18 +671,19 @@ class KubernetesClient(GenericClient):
         service.spec = spec
 
         try:
-            s = self._core_client.create_namespaced_service(
+            srv = self._core_client.create_namespaced_service(
                 namespace, service, pretty='true')
-            print(s)
-            # Wait for the service to be fully initialized with an IP address
-            while True:
-                status = self._core_client.read_namespaced_service_status(
-                    name, namespace)
-                if status.status.load_balancer.ingress is not None \
-                        and status.status.load_balancer.ingress[0].ip \
-                        is not None:
-                    return (status.status.load_balancer.ingress[0].ip,
-                            port.port)
+            return (self._user_config['heartbeatServiceIp'],
+                    srv.spec.ports[0].node_port)
+            # # Wait for the service to be fully initialized with an IP address
+            # while True:
+            #     status = self._core_client.read_namespaced_service_status(
+            #         name, namespace)
+            #     if status.status.load_balancer.ingress is not None \
+            #             and status.status.load_balancer.ingress[0].ip \
+            #             is not None:
+            #         return (status.status.load_balancer.ingress[0].ip,
+            #                 port.port)
         except k8s.client.rest.ApiException as e:
             log.error(
                 "Exception when calling CoreV1Api->create_namespaced_service: "
