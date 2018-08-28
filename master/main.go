@@ -48,7 +48,7 @@ func main() {
 	// Create gRPC server
 	grpcServer := grpc.NewServer()
 	RegisterObiMasterServer(grpcServer, master)
-	logrus.WithField("obi-master-old", *master).Info("Successfully registered OBI Master server")
+	logrus.Info("Successfully registered OBI Master server")
 
 	// TODO: Use encrypted TLS connection
 

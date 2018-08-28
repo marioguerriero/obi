@@ -7,7 +7,7 @@ import (
 
 // Scalable is the interface that must be implemented from a scalable cluster
 type Scalable interface {
-	Scale(nodes int32, down bool)
+	Scale(nodes int32, toAdd bool)
 }
 
 // ClusterBase is the base class for any type of cluster

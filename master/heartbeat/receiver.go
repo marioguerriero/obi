@@ -9,7 +9,7 @@ import (
 	"obi/master/platforms"
 	"obi/master/autoscaler"
 	"obi/master/pooling"
-)
+	)
 
 // Receiver class with properties
 type Receiver struct {

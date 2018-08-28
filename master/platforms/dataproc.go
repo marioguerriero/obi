@@ -250,9 +250,10 @@ func (c *DataprocCluster) AllocateResources() error {
 					{
 						ExecutableFile: InitializationAction,
 					},
-				},
-				SoftwareConfig: &dataprocpb.SoftwareConfig{
-					ImageVersion: "1.3",
+					{
+						// TODO: remove this temporary line
+						ExecutableFile: "gs://dhg-obi/tmp.sh",
+					},
 				},
 			},
 		},

@@ -24,7 +24,7 @@ func (m *ObiMaster) ListInfrastructures(ctx context.Context,
 // SubmitJob remote procedure call used to submit a job to one of the OBI infrastructures
 func (m *ObiMaster) SubmitJob(ctx context.Context,
 		jobRequest *SubmitJobRequest) (*EmptyResponse, error) {
-	logrus.WithField("request", *jobRequest).Info("Received job request")
+	logrus.WithField("path", jobRequest.Job.ExecutablePath).Info("Received job request")
 
 	switch jobRequest.Job.Type {
 	case Job_PYSPARK:
