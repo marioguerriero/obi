@@ -116,8 +116,8 @@ func applyPolicy(metricsWindow *utils.ConcurrentSlice, algorithm ScalingAlgorith
 
 				if hb.PendingContainers > 0 {
 					memoryContainer := hb.PendingMemory / hb.PendingContainers
-					containersAllocating := hb.AvailableMemory / memoryContainer
-					pendingGrowth := float32(hb.PendingContainers - containersAllocating - previousMetrics.PendingContainers)
+					containersWillAllocated := hb.AvailableMemory / memoryContainer
+					pendingGrowth := float32(hb.PendingContainers - containersWillAllocated - previousMetrics.PendingContainers)
 					if pendingGrowth > 0 {
 						pendingGrowthRate += pendingGrowth
 					}

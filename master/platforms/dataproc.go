@@ -118,9 +118,9 @@ func (c *DataprocCluster) Scale(nodes int32, toAdd bool) {
 	}
 
 	if toAdd {
-		newSize = int32(c.WorkerNodes + nodes)
+		newSize = int32(c.PreemptibleNodes + nodes)
 	} else {
-		newSize = int32(c.WorkerNodes - nodes)
+		newSize = int32(c.PreemptibleNodes - nodes)
 	}
 
 	req := &dataprocpb.UpdateClusterRequest{
@@ -129,9 +129,6 @@ func (c *DataprocCluster) Scale(nodes int32, toAdd bool) {
 		ClusterName: c.Name,
 		Cluster: &dataprocpb.Cluster{
 			Config: &dataprocpb.ClusterConfig{
-				WorkerConfig: &dataprocpb.InstanceGroupConfig{
-					NumInstances: newSize,
-				},
 				SecondaryWorkerConfig: &dataprocpb.InstanceGroupConfig{
 					NumInstances: newSize,
 				},
@@ -139,7 +136,6 @@ func (c *DataprocCluster) Scale(nodes int32, toAdd bool) {
 		},
 		UpdateMask:  &field_mask.FieldMask{
 			Paths: []string{
-				"config.worker_config.num_instances",
 				"config.secondary_worker_config.num_instances",
 			},
 		},
@@ -239,7 +235,6 @@ func (c *DataprocCluster) AllocateResources() error {
 			Config: &dataprocpb.ClusterConfig{
 				GceClusterConfig: &dataprocpb.GceClusterConfig{
 					ZoneUri: c.Zone,
-					// TODO: set address and port in config file
 					Metadata: map[string]string{
 						"obi-hb-host": c.HeartbeatHost,
 						"obi-hb-port": strconv.Itoa(c.HeartbeatPort),
