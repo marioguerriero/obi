@@ -242,19 +242,20 @@ func (c *DataprocCluster) AllocateResources() error {
 						"obi-hb-port": strconv.Itoa(c.HeartbeatPort),
 					},
 				},
+				MasterConfig: &dataprocpb.InstanceGroupConfig{
+					ImageUri: "projects/dhg-data-intelligence-ops/global/images/dhg-di-v6",
+				},
 				WorkerConfig: &dataprocpb.InstanceGroupConfig{
+					ImageUri: "projects/dhg-data-intelligence-ops/global/images/dhg-di-v6",
 					NumInstances: int32(c.WorkerNodes),
 				},
 				SecondaryWorkerConfig: &dataprocpb.InstanceGroupConfig{
+					ImageUri: "projects/dhg-data-intelligence-ops/global/images/dhg-di-v6",
 					NumInstances: int32(c.PreemptibleNodes),
 				},
 				InitializationActions: []*dataprocpb.NodeInitializationAction{
 					{
 						ExecutableFile: InitializationAction,
-					},
-					{
-						// TODO: remove this temporary line
-						ExecutableFile: "gs://dhg-obi/tmp.sh",
 					},
 				},
 			},
