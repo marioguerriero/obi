@@ -152,6 +152,8 @@ func (c *DataprocCluster) Scale(nodes int32, toAdd bool) {
 		logrus.WithField("error", err).Error("'Wait' method call for UpdateCluster operation failed")
 		return
 	}
+
+	c.PreemptibleNodes = newSize
 	logrus.WithFields(logrus.Fields{
 		"clusterName": c.Name,
 		"newSize": newSize,

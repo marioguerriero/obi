@@ -72,7 +72,7 @@ func autoscalerRoutine(as *Autoscaler) {
 			)
 
 			var nodes int32 = 1
-			for shouldScaleUp && nodes < 128 {
+			for shouldScaleUp && nodes < 64 {
 				as.managedCluster.Scale(nodes, true)
 				time.Sleep(time.Duration(as.SustainedTimeout) * time.Second)
 				shouldScaleUp, shouldScaleDown = applyPolicy(
@@ -83,7 +83,7 @@ func autoscalerRoutine(as *Autoscaler) {
 			}
 
 			for shouldScaleDown {
-				as.managedCluster.Scale(1, true)
+				as.managedCluster.Scale(1, false)
 				time.Sleep(time.Duration(as.SustainedTimeout) * time.Second)
 				_, shouldScaleDown = applyPolicy(
 					as.managedCluster.(model.ClusterBaseInterface).GetMetricsWindow(),
@@ -111,6 +111,7 @@ func applyPolicy(metricsWindow *utils.ConcurrentSlice, algorithm ScalingAlgorith
 			hb := obj.Value.(model.Metrics)
 
 			if previousMetrics != (model.Metrics{}) {
+				fmt.Printf("Allocated containers: %d\n", hb.TotalContainersAllocated)
 				fmt.Printf("Released containers: %d\n", hb.TotalContainersReleased)
 				fmt.Printf("Released containers before: %d\n", previousMetrics.TotalContainersReleased)
 				throughput += float32(hb.TotalContainersReleased - previousMetrics.TotalContainersReleased)
@@ -138,6 +139,8 @@ func applyPolicy(metricsWindow *utils.ConcurrentSlice, algorithm ScalingAlgorith
 			fmt.Printf("Pending rate: %f\n", pendingGrowthRate)
 			if throughput < pendingGrowthRate {
 				return true, false
+			} else if (pendingGrowthRate == 0) || (throughput > pendingGrowthRate) {
+				return false, true
 			}
 		} else {
 			fmt.Println("No metrics available")
