@@ -8,7 +8,7 @@ ENV SERVICE_HOST 0.0.0.0
 # Add necessary files
 ADD * /
 ADD models/ /models/
-ADD profiles/ /profiles/
+ADD predictors /profiles/
 
 # Install dependencies
 RUN pip install -r /requirements.txt

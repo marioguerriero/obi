@@ -81,7 +81,7 @@ class KubernetesClient(GenericClient):
         )
         k8s.config.load_kube_config(
             config_file=config_path,
-            persist_config=True)
+            persist_config=False)
 
         # Prepare client objects
         self._core_client = k8s.client.CoreV1Api()
