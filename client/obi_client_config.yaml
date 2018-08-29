@@ -69,3 +69,6 @@ predictorServiceType: predictor-service
 # Node on which schedule the pods
 nodeSelectorKey: cloud.google.com/gke-nodepool
 nodeSelectorValue: base
+
+# Predictor GCS configuration bucket (if any)
+predictorBucket: dhg-obi

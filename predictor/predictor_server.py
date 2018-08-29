@@ -9,7 +9,8 @@ import time
 
 from logger import log
 
-import profile_utils
+import predictors
+import predictor_utils
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
@@ -30,9 +31,10 @@ class PredictorServer(obi_predictor_service_pb2_grpc.ObiPredictorServicer):
         log.info('Received request {}'.format(req))
 
         # Select the correct predictor
-        predictor = profile_utils.infer_profile(req)
+        predictor_name = predictor_utils.infer_predictor_name(req)
+        predictor = predictors.get_predictor_instance(predictor_name)
         # Generate predictions
-        predictions = predictor.generate_predictions(req.Metrics)
+        predictions = predictor.predict(req.Metrics)
         # Return predictions to the user
         res = obi_predictor_service_pb2.PredictionResponse()
         res.Duration = predictions[0]

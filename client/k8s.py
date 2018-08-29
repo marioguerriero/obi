@@ -81,7 +81,7 @@ class KubernetesClient(GenericClient):
         )
         k8s.config.load_kube_config(
             config_file=config_path,
-            persist_config=True)
+            persist_config=False)
 
         # Prepare client objects
         self._core_client = k8s.client.CoreV1Api()
@@ -811,6 +811,38 @@ class KubernetesClient(GenericClient):
                 self._user_config['kubernetesNamespace'])
         ))
         container.image = self._user_config['predictorImage']
+        container.security_context = k8s.client.V1SecurityContext(
+            privileged=True)
+        container.security_context.capabilities = k8s.client.V1Capabilities(
+            add='SYS_ADMIN')
+
+        # Mount GCS bucket to pods
+        bucket_dir = None
+        if self._user_config['predictorBucket'] is not None:
+            bucket_dir = os.path.join('/mnt',
+                                      self._user_config['predictorBucket'])
+            container.lifecycle = k8s.client.V1Lifecycle()
+            # Add mount operation on container start up
+            container.lifecycle.post_start = k8s.client.V1Handler()
+            container.lifecycle.post_start._exec = k8s.client.V1ExecAction(
+                command=['gcsfuse', '-o', 'nonempty',
+                         self._user_config['predictorBucket'],
+                         bucket_dir]
+            )
+            # Add unmount operation on container deletion
+            container.lifecycle.pre_stop = k8s.client.V1Handler()
+            container.lifecycle.pre_stop._exec = k8s.client.V1ExecAction(
+                command=['fusermount', '-u',
+                         bucket_dir]
+            )
+
+        # Environment variables
+        env_bucket = k8s.client.V1EnvVar(
+            name='BUCKET_DIRECTORY', value=bucket_dir)
+
+        container.env = [
+            env_bucket
+        ]
 
         # Volume mount for config map
         volume_mount_config_map_name = self._object_name_generator(
