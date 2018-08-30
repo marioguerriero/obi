@@ -1,4 +1,4 @@
-FROM golang
+FROM eu.gcr.io/dhg-data-intelligence-ops/obi-master-env
 
 # Set some configuration environment variables
 ENV SRC_DIR /go/src/obi/master
@@ -10,7 +10,7 @@ WORKDIR /app
 ADD . $SRC_DIR
 
 # Compile executable
-RUN cd $SRC_DIR; go get .; go build -o master; cp master /app/
+RUN cd $SRC_DIR; go build -o master; cp master /app/
 
 # Expose external port for the heartbeat services
 EXPOSE 8080/udp

@@ -15,7 +15,9 @@ message Job {
     enum JobType {
         PYSPARK = 0;
     }
-    JobType type = 4;
+    JobType type = 2;
+    int32 duration = 3;
+    float failureProbability = 4;
 }
 
 // Request/Response messages

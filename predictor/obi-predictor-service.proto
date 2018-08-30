@@ -3,7 +3,7 @@ syntax = "proto3";
 package main;
 
 service ObiPredictor {
-    rpc RequestPrediction(MetricsSnasphot) returns (PredictionResponse) {}
+    rpc RequestPrediction(PredictionRequest) returns (PredictionResponse) {}
 }
 
 message MetricsSnasphot {
@@ -35,7 +35,7 @@ message MetricsSnasphot {
 
 // Request/Response messages
 
-message RequestPredictionRequest {
+message PredictionRequest {
     MetricsSnasphot Metrics = 1;
     string JobFilePath = 2;
     string JobArgs = 3;
