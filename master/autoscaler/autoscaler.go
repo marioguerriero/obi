@@ -82,6 +82,7 @@ func autoscalerRoutine(as *Autoscaler) {
 				nodes = nodes << 1
 			}
 
+			nodes = 1
 			for shouldScaleDown {
 				as.managedCluster.Scale(1, false)
 				time.Sleep(time.Duration(as.SustainedTimeout) * time.Second)
@@ -89,6 +90,7 @@ func autoscalerRoutine(as *Autoscaler) {
 					as.managedCluster.(model.ClusterBaseInterface).GetMetricsWindow(),
 					as.Algorithm,
 				)
+				nodes = nodes << 1
 			}
 			time.Sleep(time.Duration(as.Timeout) * time.Second)
 		}
