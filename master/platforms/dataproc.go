@@ -110,17 +110,21 @@ func NewExistingDataprocCluster(projectID string, region string, zone string, cl
 func (c *DataprocCluster) Scale(nodes int32, toAdd bool) {
 	var newSize int32
 
+	if toAdd {
+		newSize = int32(c.PreemptibleNodes + nodes)
+	} else {
+		newSize = int32(c.PreemptibleNodes - nodes)
+	}
+
+	if newSize < 0 {
+		return
+	}
+
 	ctx := context.Background()
 	controller, err := dataproc.NewClusterControllerClient(ctx)
 	if err != nil {
 		logrus.WithField("error", err).Error("'NewClusterControllerClient' method call failed")
 		return
-	}
-
-	if toAdd {
-		newSize = int32(c.PreemptibleNodes + nodes)
-	} else {
-		newSize = int32(c.PreemptibleNodes - nodes)
 	}
 
 	req := &dataprocpb.UpdateClusterRequest{
