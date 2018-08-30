@@ -84,7 +84,10 @@ func autoscalerRoutine(as *Autoscaler) {
 
 			nodes = 1
 			for shouldScaleDown {
-				as.managedCluster.Scale(nodes, false)
+				noSecondaryWorkers := as.managedCluster.Scale(nodes, false)
+				if noSecondaryWorkers {
+					break
+				}
 				time.Sleep(time.Duration(as.SustainedTimeout) * time.Second)
 				_, shouldScaleDown = applyPolicy(
 					as.managedCluster.(model.ClusterBaseInterface).GetMetricsWindow(),

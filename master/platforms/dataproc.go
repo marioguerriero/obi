@@ -11,7 +11,8 @@ import (
 	"strconv"
 	"github.com/spf13/viper"
 	"obi/master/utils"
-	)
+	"math"
+)
 
 // InitializationAction initialization script for installing necessary requirements
 const InitializationAction = "gs://dhg-obi/cluster-script/init_action.sh"
@@ -107,24 +108,23 @@ func NewExistingDataprocCluster(projectID string, region string, zone string, cl
 // Scale is for scaling up the cluster, i.e. add new nodes to increase size
 // @param nodes is the number of nodes to add
 // @param direction is for specifying if there is the need to add o remove nodes
-func (c *DataprocCluster) Scale(nodes int32, toAdd bool) {
+func (c *DataprocCluster) Scale(nodes int32, toAdd bool) bool {
 	var newSize int32
 
 	if toAdd {
 		newSize = int32(c.PreemptibleNodes + nodes)
 	} else {
-		newSize = int32(c.PreemptibleNodes - nodes)
-	}
-
-	if newSize < 0 {
-		return
+		if c.PreemptibleNodes == 0 {
+			return true
+		}
+		newSize = int32(math.Max(0, float64(c.PreemptibleNodes - nodes)))
 	}
 
 	ctx := context.Background()
 	controller, err := dataproc.NewClusterControllerClient(ctx)
 	if err != nil {
 		logrus.WithField("error", err).Error("'NewClusterControllerClient' method call failed")
-		return
+		return false
 	}
 
 	req := &dataprocpb.UpdateClusterRequest{
@@ -148,13 +148,13 @@ func (c *DataprocCluster) Scale(nodes int32, toAdd bool) {
 	op, err := controller.UpdateCluster(ctx, req)
 	if err != nil {
 		logrus.WithField("error", err).Error("'UpdateCluster' method call failed")
-		return
+		return false
 	}
 
 	_, err = op.Wait(ctx)
 	if err != nil {
 		logrus.WithField("error", err).Error("'Wait' method call for UpdateCluster operation failed")
-		return
+		return false
 	}
 
 	c.PreemptibleNodes = newSize
@@ -162,6 +162,11 @@ func (c *DataprocCluster) Scale(nodes int32, toAdd bool) {
 		"clusterName": c.Name,
 		"newSize": newSize,
 	}).Info("Scaling completed.")
+
+	if c.PreemptibleNodes == 0 {
+		return true
+	}
+	return false
 }
 
 // <-- end implementation of `Scalable` interface -->
