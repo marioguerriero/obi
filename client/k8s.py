@@ -814,13 +814,12 @@ class KubernetesClient(GenericClient):
         container.security_context = k8s.client.V1SecurityContext(
             privileged=True)
         container.security_context.capabilities = k8s.client.V1Capabilities(
-            add='SYS_ADMIN')
+            add=['SYS_ADMIN'])
 
         # Mount GCS bucket to pods
         bucket_dir = None
         if self._user_config['predictorBucket'] is not None:
-            bucket_dir = os.path.join('/mnt',
-                                      self._user_config['predictorBucket'])
+            bucket_dir = os.path.join('/mnt')
             container.lifecycle = k8s.client.V1Lifecycle()
             # Add mount operation on container start up
             container.lifecycle.post_start = k8s.client.V1Handler()

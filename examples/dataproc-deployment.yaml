@@ -3,7 +3,7 @@
 # required unless specified.
 
 # Optional. The name of the infrastructure
-name: dataproc
+name: dataproc-predictor-test
 
 # Optional. Namespace used to identify deployment objects in certain platforms
 # e.g. Kubernetes. It is not required if the deployment type is local. If the

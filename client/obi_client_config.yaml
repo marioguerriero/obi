@@ -5,7 +5,7 @@ masterPort: 8081
 # Default ports on which services will listen
 defaultMasterPort: 8081
 defaultHeartbeatPort: 8080
-defaultPredictorPort: 8008
+defaultPredictorPort: 8080
 
 # IP address of the machine hosting the heartbeat service
 heartbeatServiceIp: 10.156.0.24

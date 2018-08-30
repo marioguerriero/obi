@@ -1,7 +1,7 @@
-from generic_predictor import GenericDurationPredictor
+from .generic_predictor import GenericPredictor
 
 
-class CsvRecreatePredictor(GenericDurationPredictor):
+class CsvRecreatePredictor(GenericPredictor):
 
     def __init__(self):
         pass

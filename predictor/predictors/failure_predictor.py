@@ -1,7 +1,7 @@
-from generic_predictor import GenericDurationPredictor
+from .generic_predictor import GenericPredictor
 
 
-class FailurePredictor(GenericDurationPredictor):
+class FailurePredictor(GenericPredictor):
     """
     This class defines the methods to generate failure probability given a job
     and its respective profile.

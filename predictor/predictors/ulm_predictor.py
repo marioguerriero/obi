@@ -1,7 +1,7 @@
-from generic_predictor import GenericDurationPredictor
+from .generic_predictor import GenericPredictor
 
 
-class UlmPredictor(GenericDurationPredictor):
+class UlmPredictor(GenericPredictor):
 
     def __init__(self):
         pass

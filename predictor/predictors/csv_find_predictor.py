@@ -1,6 +1,7 @@
 import os
+import yaml
 
-from generic_predictor import GenericDurationPredictor
+from .generic_predictor import GenericPredictor
 
 import numpy as np
 
@@ -8,13 +9,21 @@ from scipy.special import inv_boxcox
 from sklearn.externals import joblib
 
 
-class CsvFindPredictor(GenericDurationPredictor):
+class CsvFindPredictor(GenericPredictor):
 
     def __init__(self):
+        base_dir = os.path.join(os.environ['BUCKET_DIRECTORY'],
+                                'models',
+                                'csv_find')
+
         # Load pre-trained model
-        base_dir = os.environ['BUCKET_DIRECTORY']
-        model_path = os.path.join(base_dir, 'models', 'csv_find.pkl')
-        self.model = joblib.load(model_path)
+        model_path = os.path.join(base_dir, 'model.pkl')
+        self._model = joblib.load(model_path)
+
+        # Load configuration file
+        config_path = os.path.join(base_dir, 'config.yaml')
+        config_f = open(config_path, 'r')
+        self._config = yaml.load(config_f)
 
     def predict(self, metrics, input_info):
         """
@@ -36,7 +45,7 @@ class CsvFindPredictor(GenericDurationPredictor):
         ])
 
         # Generate predictions
-        prediction = self.model.predict(features)
+        prediction = self._model.predict(features)
 
         # Apply inverse Boxcox function on generate prediction
-        return inv_boxcox(prediction)
+        return inv_boxcox(prediction, self._config['boxcoxMaxLog'])

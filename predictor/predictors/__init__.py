@@ -1,10 +1,10 @@
-from failure_predictor import FailurePredictor
+from .failure_predictor import FailurePredictor
 
-from csv_find_predictor import CsvFindPredictor
-from csv_find_predictor import CsvUpdatePredictor
-from csv_find_predictor import CsvRecreatePredictor
+from .csv_find_predictor import CsvFindPredictor
+from .csv_update_predictor import CsvUpdatePredictor
+from .csv_recreate_predictor import CsvRecreatePredictor
 
-from csv_find_predictor import UlmPredictor
+from .ulm_predictor import UlmPredictor
 
 _DURATION_PREDICTORS = {
     'csv_find': CsvFindPredictor(),
