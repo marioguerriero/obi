@@ -3,7 +3,7 @@
 # required unless specified.
 
 # Optional. The name of the infrastructure
-name: dataproc-predictor-test
+name: dataproc
 
 # Optional. Namespace used to identify deployment objects in certain platforms
 # e.g. Kubernetes. It is not required if the deployment type is local. If the
@@ -13,7 +13,7 @@ namespace: obi
 
 # This is the service account file path for which the client will
 # create a secret to be attached to the infrastructure deployment
-serviceAccountPath: /Users/m.guerriero/code/dataproc-sa.json
+serviceAccountPath: /Users/l.lombardo/Documents/dataproc-sa.json
 
 # Google Cloud's project ID under which the Dataproc instance is registered
 projectId: dhg-data-intelligence-ops
