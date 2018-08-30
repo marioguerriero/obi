@@ -59,6 +59,7 @@ predictorServiceName: predictor-service-name
 predictorDeploymentName: predictor-deployment-name
 serviceAccountSecretName: service-account-secret
 masterConfigMapName: master-config-map
+predictorConfigMapName: predictor-config-map
 
 # Extra metadata for services
 serviceTypeMetadata: type
