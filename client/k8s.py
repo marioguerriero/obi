@@ -280,35 +280,44 @@ class KubernetesClient(GenericClient):
         :return:
         """
         # Get requested infrastructure deployment
-        deployment = self._get_deployment_object(
+        master_deployment = self._get_deployment_object(
             self._user_config['kubernetesNamespace'],
             kwargs['infrastructure_name'])
+
+        # Get predicgor deployment
+        predictor_deployment = self._get_deployment_object(
+            self._user_config['kubernetesNamespace'],
+            master_deployment.metadata.annotations[
+                self._user_config['predictorDeploymentName']])
 
         # Collect names of the objects which should be deleted
         deployment_names = [
             kwargs['infrastructure_name'],
-            deployment.metadata.annotations[
+            master_deployment.metadata.annotations[
                 self._user_config['predictorDeploymentName']]
         ]
 
         service_names = [
-            deployment.metadata.annotations[
+            master_deployment.metadata.annotations[
                 self._user_config['masterServiceName']],
-            deployment.metadata.annotations[
+            master_deployment.metadata.annotations[
                 self._user_config['heartbeatServiceName']],
-            deployment.metadata.annotations[
+            master_deployment.metadata.annotations[
                 self._user_config['predictorServiceName']]
         ]
 
         secret_names = [
-            deployment.metadata.annotations[
+            master_deployment.metadata.annotations[
                 self._user_config['serviceAccountSecretName']
             ]
         ]
 
         configmaps = [
-            deployment.metadata.annotations[
+            master_deployment.metadata.annotations[
                 self._user_config['masterConfigMapName']
+            ],
+            predictor_deployment.metadata.annotations[
+                self._user_config['predictorConfigMapName']
             ]
         ]
 
@@ -787,7 +796,8 @@ class KubernetesClient(GenericClient):
         metadata.namespace = namespace
         metadata.annotations = {
             self._user_config['typeMetadata']:
-                self._user_config['predictorType']
+                self._user_config['predictorType'],
+            self._user_config['predictorConfigMapName']: config_map_name
         }
         deployment.metadata = metadata
 
