@@ -44,6 +44,14 @@ class MissingServiceForInfrastructure(Exception):
     pass
 
 
+class ServiceUnreachableException(Exception):
+    """
+    This exception is triggered when the user tries to contact the OBI master
+    but it is not reachable
+    """
+    pass
+
+
 class KubernetesClient(GenericClient):
     #############
     #  START: Abstract methods from GenericClient
@@ -140,6 +148,9 @@ class KubernetesClient(GenericClient):
         except InvalidInfrastructureName as e:
             log.fatal(e)
             sys.exit(1)
+        except ServiceUnreachableException as sue:
+            log.fatal(sue)
+            sys.exit(1)
 
         # Check if the job type is valid or not
         sup_types = [t['name'] for t in self._user_config['supportedJobTypes']]
@@ -149,15 +160,12 @@ class KubernetesClient(GenericClient):
                                                        sup_types))
 
         # Build submit job request object
-        job = master_rpc_service_pb2.Job()
-        job.executablePath = kwargs['job_path']
-        job.type = utils.map_job_type(kwargs['job_type'])
-
-        infrastructure = master_rpc_service_pb2.Infrastructure()
-
-        req = master_rpc_service_pb2.SubmitJobRequest(
-            job=job,
-            infrastructure=infrastructure)
+        req = master_rpc_service_pb2.JobSubmissionRequest(
+            executablePath=kwargs['job_path'],
+            infrastructure=kwargs['job_infrastructure'],
+            type=utils.map_job_type(kwargs['job_type']),
+            priority=0
+        )
 
         # Create connection object
         with grpc.insecure_channel('{}:{}'.format(host, port)) as channel:
@@ -373,8 +381,12 @@ class KubernetesClient(GenericClient):
         raw_format = '{:25} {:15} {:>10}'
         print(raw_format.format('INFRASTRUCTURE', 'IP', 'PORT'))
         for d in deployments:
-            ip, port = self._get_connection_information(
-                namespace, deployment=d)
+            try:
+                ip, port = self._get_connection_information(
+                    namespace, deployment=d)
+            except ServiceUnreachableException as e:
+                log.fatal(e)
+                sys.exit(1)
             print(raw_format.format(d.metadata.name, ip, port))
 
     def _describe_job(self, **kwargs):
@@ -1014,8 +1026,10 @@ class KubernetesClient(GenericClient):
         try:
             service = self._core_client.read_namespaced_service(
                 s_name, namespace)
-            return (service.status.load_balancer.ingress[0].ip,
-                    service.spec.ports[0].port)
+            if service.status.load_balancer.ingress is not None:
+                return (service.status.load_balancer.ingress[0].ip,
+                        service.spec.ports[0].port)
+            raise ServiceUnreachableException('Service unreachable')
         except k8s.client.rest.ApiException as e:
             log.error(
                 "Exception when calling CoreV1Api->read_namespaced_service: "

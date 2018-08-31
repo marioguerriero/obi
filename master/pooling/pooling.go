@@ -65,7 +65,7 @@ func (p *Pooling) schedulingRoutine() {
 	// Endless loop controlling available queues
 	for {
 		// I need to read keys every time because a new priority value may be added
-		var h *utils.MinHeap
+		h := new(utils.MinHeap)
 		heap.Init(h)
 		for p := range p.scheduleQueues {
 			h.Push(p)
@@ -105,6 +105,8 @@ func (p *Pooling) ScheduleJob(job *model.Job, priority int32) error {
 
 // SubmitJob remote procedure call used to submit a job to one of the OBI infrastructures
 func (p *Pooling) SubmitJob(job *model.Job) error {
+	logrus.WithField("job", job.Id).Info("Submitting job for execution")
+
 	switch job.Type {
 	case model.JOB_TYPE_PYSPARK:
 		p.SubmitPySparkJob("obi-test", job) // TODO: use real pooling feature
@@ -120,6 +122,7 @@ func (p *Pooling) SubmitJob(job *model.Job) error {
 func (p *Pooling) SubmitPySparkJob(clusterName string, job *model.Job) {
 	// Assign job to the given cluster
 	job.AssignedCluster = clusterName
+	logrus.WithField("cluster", clusterName).WithField("job", *job).Info("Submitting PySpark job")
 
 	// Schedule some jobs
 	if obj, ok := p.pool.GetCluster("obi-test"); ok {

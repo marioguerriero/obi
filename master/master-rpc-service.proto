@@ -26,11 +26,12 @@ message ListInfrastructuresResponse {
 
 message JobSubmissionRequest {
     string executablePath = 1;
+    string infrastructure = 2;
     enum JobType {
         PYSPARK = 0;
     }
-    JobType type = 2;
-    int32 duration = 3;
-    float failureProbability = 4;
-    int32 priority = 5;
+    JobType type = 3;
+    int32 duration = 4;
+    float failureProbability = 5;
+    int32 priority = 6;
 }

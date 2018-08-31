@@ -9,5 +9,5 @@ def map_job_type(job_type):
     :return:
     """
     if job_type == 'PySpark':
-        return master_rpc_service_pb2.Job.PYSPARK
+        return master_rpc_service_pb2.JobSubmissionRequest.PYSPARK
     return None
