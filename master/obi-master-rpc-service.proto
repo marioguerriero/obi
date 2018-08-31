@@ -3,21 +3,11 @@ syntax = "proto3";
 package main;
 
 service ObiMaster {
-    rpc SubmitJob (SubmitJobRequest) returns (EmptyResponse) {}
+    rpc SubmitJob (JobSubmissionRequest) returns (EmptyResponse) {}
 }
 
 message Infrastructure {
 
-}
-
-message Job {
-    string executablePath = 1;
-    enum JobType {
-        PYSPARK = 0;
-    }
-    JobType type = 2;
-    int32 duration = 3;
-    float failureProbability = 4;
 }
 
 // Request/Response messages
@@ -34,7 +24,13 @@ message ListInfrastructuresResponse {
     repeated Infrastructure infrastructure = 1;
 }
 
-message SubmitJobRequest {
-    Job job = 1;
-    int32 priority = 2;
+message JobSubmissionRequest {
+    string executablePath = 1;
+    enum JobType {
+        PYSPARK = 0;
+    }
+    JobType type = 2;
+    int32 duration = 3;
+    float failureProbability = 4;
+    int32 priority = 5;
 }

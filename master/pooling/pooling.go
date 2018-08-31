@@ -1,18 +1,21 @@
 package pooling
 
 import (
+	"container/heap"
+	"errors"
 	"github.com/golang-collections/go-datastructures/queue"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"obi/master/autoscaler"
 	"obi/master/model"
 	"obi/master/platforms"
+	"obi/master/utils"
 )
 
 // Pooling class with properties
 type Pooling struct {
 	pool           *Pool
-	scheduleQueues map[int]*queue.Queue
+	scheduleQueues map[int32]*queue.Queue
 }
 
 // New is the constructor of Pooling struct
@@ -45,7 +48,7 @@ func New(pool *Pool) *Pooling {
 	// Create Pooling object
 	pooling := &Pooling{
 		pool,
-		make(map[int]*queue.Queue),
+		make(map[int32]*queue.Queue),
 	}
 
 	// Start scheduling routine
@@ -61,12 +64,34 @@ func New(pool *Pool) *Pooling {
 func (p *Pooling) schedulingRoutine() {
 	// Endless loop controlling available queues
 	for {
-		// I need to read keys everytime because a new prioritty value may be added
+		// I need to read keys every time because a new priority value may be added
+		var h *utils.MinHeap
+		heap.Init(h)
+		for p := range p.scheduleQueues {
+			h.Push(p)
+		}
+
+		// Scan queues in priority order
+		for h.Len() > 0 {
+			priority, err := h.PopInt()
+			if err != nil {
+				// If the priority value is invalid just skip this queue
+				continue
+			}
+			// Pop and submit job
+			q := p.scheduleQueues[priority]
+			if q.Len() > 0 {
+				items, _ := q.Get(1)
+				job := items[0]
+				p.SubmitJob(job.(*model.Job))
+				break
+			}
+		}
 	}
 }
 
 // ScheduleJob submits a new job to the pooling scheduling queues
-func (p *Pooling) ScheduleJob(job model.Job, priority int) error {
+func (p *Pooling) ScheduleJob(job *model.Job, priority int32) error {
 	// Check if queue for the given priority level already exists,
 	// if not, create it
 	_, ok := p.scheduleQueues[priority]
@@ -78,14 +103,27 @@ func (p *Pooling) ScheduleJob(job model.Job, priority int) error {
 	return p.scheduleQueues[priority].Put(job)
 }
 
+// SubmitJob remote procedure call used to submit a job to one of the OBI infrastructures
+func (p *Pooling) SubmitJob(job *model.Job) error {
+	switch job.Type {
+	case model.JOB_TYPE_PYSPARK:
+		p.SubmitPySparkJob("obi-test", job) // TODO: use real pooling feature
+	default:
+		return errors.New("invalid job type")
+	}
+	return nil
+}
+
 // SubmitPySparkJob is for submitting a new Spark job in Python environment
 // @param clusterName is the name of the cluster where to run the new job
 // @param scriptURI is the script path
-func (p *Pooling) SubmitPySparkJob(clusterName string, scriptURI string) {
+func (p *Pooling) SubmitPySparkJob(clusterName string, job *model.Job) {
+	// Assign job to the given cluster
+	job.AssignedCluster = clusterName
 
 	// Schedule some jobs
 	if obj, ok := p.pool.GetCluster("obi-test"); ok {
 		cluster := obj.(model.ClusterBaseInterface)
-		cluster.SubmitJob(scriptURI)
+		cluster.SubmitJob(job.ExecutablePath)
 	}
 }

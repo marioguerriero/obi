@@ -7,7 +7,9 @@ import (
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"log"
+	"math/rand"
 	"obi/master/heartbeat"
+	"obi/master/model"
 	"obi/master/pooling"
 )
 
@@ -28,25 +30,38 @@ func (m *ObiMaster) ListInfrastructures(ctx context.Context,
 
 // SubmitJob remote procedure call used to submit a job to one of the OBI infrastructures
 func (m *ObiMaster) SubmitJob(ctx context.Context,
-		jobRequest *SubmitJobRequest) (*EmptyResponse, error) {
-	logrus.WithField("path", jobRequest.Job.ExecutablePath).Info("Received job request")
+		jobRequest *JobSubmissionRequest) (*EmptyResponse, error) {
+	logrus.WithField("path", jobRequest.ExecutablePath).Info("Received job request")
 
 	// Generate predictions before submitting the job
 	resp, err := (*m.PredictorClient).RequestPrediction(
 		context.Background(), &PredictionRequest{
-			JobFilePath: jobRequest.Job.ExecutablePath,
+			JobFilePath: jobRequest.ExecutablePath,
 		}) // TODO: read metrics for executor cluster
 	if err != nil {
 		logrus.WithField("response", resp).Warning("Could not generate predictions")
 	}
+	duration, failure := 0, 0.0 // TODO: use predicted values
+
+	// Create job object to be submitted to the pooling component
+	var jobType model.JobType
+	switch jobRequest.Type {
+	case JobSubmissionRequest_PYSPARK:
+		jobType = model.JOB_TYPE_PYSPARK
+	default:
+		jobType = model.JOB_TYPE_UNDEFINED
+	}
+
+	job := &model.Job{
+		Id: rand.Int(),
+		ExecutablePath: jobRequest.ExecutablePath,
+		Type: jobType,
+		PredictedDuration: int64(duration),
+		FailureProbability: float32(failure),
+	}
 
 	// Send job execution request
-	switch jobRequest.Job.Type {
-	case Job_PYSPARK:
-		m.Pooling.SubmitPySparkJob("obi-test", jobRequest.Job.ExecutablePath)
-	default:
-		logrus.WithField("job-type", jobRequest.Job.Type).Error("Unsupported job type")
-	}
+	m.Pooling.ScheduleJob(job, jobRequest.Priority)
 
 	return new(EmptyResponse), nil
 }
