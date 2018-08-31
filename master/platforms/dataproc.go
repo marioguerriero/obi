@@ -108,17 +108,13 @@ func NewExistingDataprocCluster(projectID string, region string, zone string, cl
 // Scale is for scaling up the cluster, i.e. add new nodes to increase size
 // @param nodes is the number of nodes to add
 // @param direction is for specifying if there is the need to add o remove nodes
-func (c *DataprocCluster) Scale(nodes int32, toAdd bool) bool {
+func (c *DataprocCluster) Scale(delta int32) bool {
 	var newSize int32
 
-	if toAdd {
-		newSize = int32(c.PreemptibleNodes + nodes)
-	} else {
-		if c.PreemptibleNodes == 0 {
-			return true
-		}
-		newSize = int32(math.Max(0, float64(c.PreemptibleNodes - nodes)))
+	if delta < 0 && c.PreemptibleNodes == 0 {
+		return true
 	}
+	newSize = int32(math.Max(0, float64(c.PreemptibleNodes + delta)))
 
 	ctx := context.Background()
 	controller, err := dataproc.NewClusterControllerClient(ctx)
