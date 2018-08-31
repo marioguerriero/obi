@@ -68,32 +68,34 @@ func autoscalerRoutine(as *Autoscaler) {
 				"Closing autoscaler routine.")
 			return
 		default:
-			expCount = 0
 			deltaNodes = applyPolicy(
 					as.managedCluster.(model.ClusterBaseInterface).GetMetricsWindow(),
 					as.Algorithm,
 			)
 
-			for deltaNodes > 0 && deltaNodes < 64 {
+			if deltaNodes != 0 {
 				as.managedCluster.Scale(deltaNodes)
-				time.Sleep(time.Duration(as.SustainedTimeout) * time.Second)
-				deltaNodes = applyPolicy(
-					as.managedCluster.(model.ClusterBaseInterface).GetMetricsWindow(),
-					as.Algorithm,
-				)
 			}
-
-			for deltaNodes < 0 {
-				noSecondaryWorkers := as.managedCluster.Scale(deltaNodes)
-				if noSecondaryWorkers {
-					break
-				}
-				time.Sleep(time.Duration(as.SustainedTimeout) * time.Second)
-				deltaNodes = applyPolicy(
-					as.managedCluster.(model.ClusterBaseInterface).GetMetricsWindow(),
-					as.Algorithm,
-				)
-			}
+			//for deltaNodes > 0 && deltaNodes < 64 {
+			//	as.managedCluster.Scale(deltaNodes)
+			//	time.Sleep(time.Duration(as.SustainedTimeout) * time.Second)
+			//	deltaNodes = applyPolicy(
+			//		as.managedCluster.(model.ClusterBaseInterface).GetMetricsWindow(),
+			//		as.Algorithm,
+			//	)
+			//}
+			//
+			//for deltaNodes < 0 {
+			//	noSecondaryWorkers := as.managedCluster.Scale(deltaNodes)
+			//	if noSecondaryWorkers {
+			//		break
+			//	}
+			//	time.Sleep(time.Duration(as.SustainedTimeout) * time.Second)
+			//	deltaNodes = applyPolicy(
+			//		as.managedCluster.(model.ClusterBaseInterface).GetMetricsWindow(),
+			//		as.Algorithm,
+			//	)
+			//}
 			time.Sleep(time.Duration(as.Timeout) * time.Second)
 		}
 	}
@@ -156,6 +158,9 @@ func applyPolicy(metricsWindow *utils.ConcurrentSlice, algorithm ScalingAlgorith
 					expCount = expCount << 1
 				}
 			} else {
+				expCount = 0
+			}
+			if expCount == 64 || expCount == -64 {
 				expCount = 0
 			}
 			return expCount

@@ -31,14 +31,14 @@ func New(pool *Pool) *Pooling {
 
 	cluster := platforms.NewDataprocCluster(cb, viper.GetString("projectId"),
 		viper.GetString("zone"),
-		viper.GetString("region"), 1, 0.3)
+		viper.GetString("region"), 0, 0.3)
 
 	// Allocate cluster resources
 	err := cluster.AllocateResources()
 
 	if err == nil {
 		// Instantiate a new autoscaler for the new cluster and start monitoring
-		a := autoscaler.New(autoscaler.WorkloadBased, 60, 30, cluster)
+		a := autoscaler.New(autoscaler.TimeBased, 60, 30, cluster)
 		a.StartMonitoring()
 
 		// Add to pool
