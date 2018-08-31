@@ -152,7 +152,26 @@ func applyPolicy(metricsWindow *utils.ConcurrentSlice, algorithm ScalingAlgorith
 		}
 		logrus.Info("Applying workload-based policy")
 	case TimeBased:
-		// TODO
+		var count int32
+		var memoryUsage int32
+		workerMemory := 15000.0
+
+		for obj := range metricsWindow.Iter() {
+			if obj.Value == nil {
+				continue
+			}
+
+			hb := obj.Value.(model.Metrics)
+			memoryUsage += hb.PendingMemory - hb.AvailableMemory
+			count++
+		}
+
+		if count > 0 {
+			workers := float64(memoryUsage / count) / workerMemory
+			fmt.Printf("Exact workers: %f\n", workers)
+		} else {
+			fmt.Println("No metrics available")
+		}
 		logrus.Info("Applying time-based policy")
 	default:
 		logrus.WithField("algorithm", algorithm).Error("Unknown algorithm")
