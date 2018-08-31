@@ -68,7 +68,6 @@ func CreateMaster() (*ObiMaster) {
 		log.Fatalf("fail to dial: %v", err)
 	}
 	pClient := NewObiPredictorClient(conn)
-	logrus.WithField("address", serverAddr).Info("Connection")
 	// Create and return OBI master object
 	master := ObiMaster {
 		Pooling: p,

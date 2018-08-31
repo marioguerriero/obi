@@ -35,7 +35,7 @@ func New(pool *Pool) *Pooling {
 
 	if err == nil {
 		// Instantiate a new autoscaler for the new cluster and start monitoring
-		a := autoscaler.New(autoscaler.WorkloadBased, 30, 15, cluster)
+		a := autoscaler.New(autoscaler.WorkloadBased, 60, 30, cluster)
 		a.StartMonitoring()
 
 		// Add to pool
