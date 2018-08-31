@@ -9,7 +9,7 @@ service ObiMaster {
 message Infrastructure {
 
 }
- d
+
 // Request/Response messages
 
 message EmptyRequest {
