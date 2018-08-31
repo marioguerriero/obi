@@ -49,6 +49,9 @@ secretMountPath: /etc/sa
 # Where to mount the configuration file within master's container
 configMountPath: /etc/config
 
+# Where to mount the persistent volume used for failure recovery
+persistentVolumeMountPath: /mnt/pv
+
 # Extra metadata for deployments
 typeMetadata: type
 masterType: master
@@ -59,6 +62,7 @@ predictorServiceName: predictor-service-name
 predictorDeploymentName: predictor-deployment-name
 serviceAccountSecretName: service-account-secret
 masterConfigMapName: master-config-map
+masterVolumeClaimName: master-volume-claim
 predictorConfigMapName: predictor-config-map
 
 # Extra metadata for services
