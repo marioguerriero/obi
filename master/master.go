@@ -47,9 +47,9 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 	var jobType model.JobType
 	switch jobRequest.Type {
 	case JobSubmissionRequest_PYSPARK:
-		jobType = model.JOB_TYPE_PYSPARK
+		jobType = model.JobTypePyspark
 	default:
-		jobType = model.JOB_TYPE_UNDEFINED
+		jobType = model.JobTypeUndefined
 	}
 
 	job := &model.Job{

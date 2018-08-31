@@ -12,12 +12,14 @@ func (h MinHeap) Len() int           { return len(h) }
 func (h MinHeap) Less(i, j int) bool { return h[i] < h[j] }
 func (h MinHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
 
+// Push min heap push function
 func (h *MinHeap) Push(x interface{}) {
 	// Push and Pop use pointer receivers because they modify the slice's length,
 	// not just its contents.
 	*h = append(*h, x.(int32))
 }
 
+// Pop min heap pop function
 func (h *MinHeap) Pop() interface{} {
 	old := *h
 	n := len(old)
@@ -26,6 +28,7 @@ func (h *MinHeap) Pop() interface{} {
 	return x
 }
 
+// Pop pops an integer value from the heap
 func (h *MinHeap) PopInt() (int32, error) {
 	intType := reflect.TypeOf(int32(0))
 

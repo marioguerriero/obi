@@ -108,7 +108,7 @@ func (p *Pooling) SubmitJob(job *model.Job) error {
 	logrus.WithField("job", job.Id).Info("Submitting job for execution")
 
 	switch job.Type {
-	case model.JOB_TYPE_PYSPARK:
+	case model.JobTypePyspark:
 		p.SubmitPySparkJob("obi-test", job) // TODO: use real pooling feature
 	default:
 		return errors.New("invalid job type")
