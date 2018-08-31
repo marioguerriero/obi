@@ -1,5 +1,5 @@
-import obi_predictor_service_pb2
-import obi_predictor_service_pb2_grpc
+import predictor_service_pb2
+import predictor_service_pb2_grpc
 
 import grpc
 
@@ -15,7 +15,7 @@ import predictor_utils
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 
-class PredictorServer(obi_predictor_service_pb2_grpc.ObiPredictorServicer):
+class PredictorServer(predictor_service_pb2_grpc.ObiPredictorServicer):
     """
     This class implement the server side mechanisms for providing predictive
     feature to OBI through remote procedure call
@@ -36,7 +36,7 @@ class PredictorServer(obi_predictor_service_pb2_grpc.ObiPredictorServicer):
         # Generate predictions
         predictions = predictor.predict(req.Metrics)
         # Return predictions to the user
-        res = obi_predictor_service_pb2.PredictionResponse()
+        res = predictor_service_pb2.PredictionResponse()
         res.Duration = predictions[0]
         res.FailureProbability = predictions[1]
         log.info('Generated predictions: {}'.format(res))
@@ -48,7 +48,7 @@ def serve():
     Instantiate and keep the server alive
     """
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    obi_predictor_service_pb2_grpc.add_ObiPredictorServicer_to_server(
+    predictor_service_pb2_grpc.add_ObiPredictorServicer_to_server(
         PredictorServer(), server)
     host = os.environ['SERVICE_HOST']
     port = int(os.environ['SERVICE_PORT'])

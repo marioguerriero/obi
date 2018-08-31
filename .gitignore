@@ -27,7 +27,7 @@ client/__pycache__/
 master/heartbeat/message.pb.go
 master/heartbeat/message_pb2.py
 
-predictor/obi_predictor_service_pb2.py
-predictor/obi_predictor_service_pb2_grpc.py
+predictor/predictor_service_pb2.py
+predictor/predictor_service_pb2_grpc.py
 
 examples/dataproc-deployment.yaml
