@@ -3,20 +3,20 @@ package model
 // JobStatus defines the status of a job
 type JobStatus int
 const (
-	// JobStatusRunning
+	// JobStatusRunning attached to a job when it is running
 	JobStatusRunning = iota
-	// JobStatusPending
+	// JobStatusPending attached to a job when it is waiting to be executed
 	JobStatusPending = iota
-	// JobStatusFailed
+	// JobStatusFailed attached to a job when it failed
 	JobStatusFailed  = iota
 )
 
 // JobType defines the type of a job, e.g. PySpark, MapReduce, etc.
 type JobType int
 const (
-	// JobTypePySpark
+	// JobTypePySpark Python Spark job type
 	JobTypePySpark   = iota
-	// JobTypeUndefined
+	// JobTypeUndefined unsupported/unrecognized job type
 	JobTypeUndefined = iota
 )
 
