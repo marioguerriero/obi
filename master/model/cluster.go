@@ -1,8 +1,8 @@
 package model
 
 import (
-	"sync"
 	"obi/master/utils"
+	"sync"
 )
 
 // Scalable is the interface that must be implemented from a scalable cluster

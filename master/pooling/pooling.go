@@ -1,16 +1,18 @@
 package pooling
 
 import (
-	"obi/master/model"
-	"github.com/spf13/viper"
-	"obi/master/platforms"
-	"obi/master/autoscaler"
+	"github.com/golang-collections/go-datastructures/queue"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
+	"obi/master/autoscaler"
+	"obi/master/model"
+	"obi/master/platforms"
 )
 
 // Pooling class with properties
 type Pooling struct {
-	pool *Pool
+	pool           *Pool
+	scheduleQueues map[int]*queue.Queue
 }
 
 // New is the constructor of Pooling struct
@@ -40,10 +42,40 @@ func New(pool *Pool) *Pooling {
 		pool.AddCluster(cluster, a)
 	}
 
-	logrus.Info("Created pool of clusters")
-	return &Pooling{
+	// Create Pooling object
+	pooling := &Pooling{
 		pool,
+		make(map[int]*queue.Queue),
 	}
+
+	// Start scheduling routine
+	logrus.Info("Initialize scheduling routine")
+	go pooling.schedulingRoutine()
+
+	// Return created pooling object
+	logrus.Info("Created pool of clusters")
+	return pooling
+}
+
+// This routine periodically scans queues from top to low priority and schedules its contained job
+func (p *Pooling) schedulingRoutine() {
+	// Endless loop controlling available queues
+	for {
+		// I need to read keys everytime because a new prioritty value may be added
+	}
+}
+
+// ScheduleJob submits a new job to the pooling scheduling queues
+func (p *Pooling) ScheduleJob(job model.Job, priority int) error {
+	// Check if queue for the given priority level already exists,
+	// if not, create it
+	_, ok := p.scheduleQueues[priority]
+	if !ok {
+		p.scheduleQueues[priority] = queue.New(32)
+	}
+
+	// Add job to the request schedule queue
+	return p.scheduleQueues[priority].Put(job)
 }
 
 // SubmitPySparkJob is for submitting a new Spark job in Python environment

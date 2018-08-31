@@ -36,4 +36,5 @@ message ListInfrastructuresResponse {
 
 message SubmitJobRequest {
     Job job = 1;
+    int32 priority = 2;
 }
