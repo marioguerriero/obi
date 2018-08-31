@@ -105,7 +105,7 @@ func (p *Pooling) ScheduleJob(job *model.Job, priority int32) error {
 
 // SubmitJob remote procedure call used to submit a job to one of the OBI infrastructures
 func (p *Pooling) SubmitJob(job *model.Job) error {
-	logrus.WithField("job", job.Id).Info("Submitting job for execution")
+	logrus.WithField("job", job.ID).Info("Submitting job for execution")
 
 	switch job.Type {
 	case model.JobTypePySpark:

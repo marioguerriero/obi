@@ -22,11 +22,11 @@ const (
 
 // Job models the job abstraction of OBI
 type Job struct {
-	Id int
-	ExecutablePath string
-	Type JobType
-	Status JobStatus
-	AssignedCluster string
-	PredictedDuration int64
+	ID                 int
+	ExecutablePath     string
+	Type               JobType
+	Status             JobStatus
+	AssignedCluster    string
+	PredictedDuration  int64
 	FailureProbability float32
 }

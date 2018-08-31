@@ -53,10 +53,10 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 	}
 
 	job := &model.Job{
-		Id: rand.Int(),
-		ExecutablePath: jobRequest.ExecutablePath,
-		Type: jobType,
-		PredictedDuration: int64(duration),
+		ID:                 rand.Int(),
+		ExecutablePath:     jobRequest.ExecutablePath,
+		Type:               jobType,
+		PredictedDuration:  int64(duration),
 		FailureProbability: float32(failure),
 	}
 

@@ -28,7 +28,7 @@ func (h *MinHeap) Pop() interface{} {
 	return x
 }
 
-// Pop pops an integer value from the heap
+// PopInt pops an integer value from the heap
 func (h *MinHeap) PopInt() (int32, error) {
 	intType := reflect.TypeOf(int32(0))
 
