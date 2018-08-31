@@ -26,6 +26,8 @@ type Autoscaler struct {
 	managedCluster model.Scalable
 }
 
+var expCount int32
+
 // New is the constructor of Autoscaler struct
 // @param algorithm is the algorithm to follow during scaling policy execution
 // @param timeout is the time interval to wait before triggering the scaling-check action again
@@ -58,7 +60,7 @@ func (as *Autoscaler) StopMonitoring() {
 // the `quit` channel
 // @param as is the autoscaler
 func autoscalerRoutine(as *Autoscaler) {
-	var shouldScaleUp, shouldScaleDown bool
+	var deltaNodes int32
 	for {
 		select {
 		case <-as.quit:
@@ -66,41 +68,38 @@ func autoscalerRoutine(as *Autoscaler) {
 				"Closing autoscaler routine.")
 			return
 		default:
-			shouldScaleUp, shouldScaleDown = applyPolicy(
+			expCount = 0
+			deltaNodes = applyPolicy(
 					as.managedCluster.(model.ClusterBaseInterface).GetMetricsWindow(),
 					as.Algorithm,
 			)
 
-			var nodes int32 = 1
-			for shouldScaleUp && nodes < 64 {
-				as.managedCluster.Scale(nodes, true)
+			for deltaNodes > 0 && deltaNodes < 64 {
+				as.managedCluster.Scale(deltaNodes)
 				time.Sleep(time.Duration(as.SustainedTimeout) * time.Second)
-				shouldScaleUp, shouldScaleDown = applyPolicy(
+				deltaNodes = applyPolicy(
 					as.managedCluster.(model.ClusterBaseInterface).GetMetricsWindow(),
 					as.Algorithm,
 				)
-				nodes = nodes << 1
 			}
 
-			nodes = 1
-			for shouldScaleDown {
-				noSecondaryWorkers := as.managedCluster.Scale(nodes, false)
+			for deltaNodes < 0 {
+				noSecondaryWorkers := as.managedCluster.Scale(deltaNodes)
 				if noSecondaryWorkers {
 					break
 				}
 				time.Sleep(time.Duration(as.SustainedTimeout) * time.Second)
-				_, shouldScaleDown = applyPolicy(
+				deltaNodes = applyPolicy(
 					as.managedCluster.(model.ClusterBaseInterface).GetMetricsWindow(),
 					as.Algorithm,
 				)
-				nodes = nodes << 1
 			}
 			time.Sleep(time.Duration(as.Timeout) * time.Second)
 		}
 	}
 }
 
-func applyPolicy(metricsWindow *utils.ConcurrentSlice, algorithm ScalingAlgorithm) (bool, bool) {
+func applyPolicy(metricsWindow *utils.ConcurrentSlice, algorithm ScalingAlgorithm) int32 {
 	switch algorithm {
 	case WorkloadBased:
 		var previousMetrics model.Metrics
@@ -143,10 +142,23 @@ func applyPolicy(metricsWindow *utils.ConcurrentSlice, algorithm ScalingAlgorith
 			fmt.Printf("Throughput: %f\n", throughput)
 			fmt.Printf("Pending rate: %f\n", pendingGrowthRate)
 			if throughput < pendingGrowthRate {
-				return true, false
+				// scale up
+				if expCount <= 0 {
+					expCount = 1
+				} else {
+					expCount = expCount << 1
+				}
 			} else if (pendingGrowthRate == 0) || (throughput > pendingGrowthRate) {
-				return false, true
+				// scale down
+				if expCount >= 0 {
+					expCount = -1
+				} else {
+					expCount = expCount << 1
+				}
+			} else {
+				expCount = 0
 			}
+			return expCount
 		} else {
 			fmt.Println("No metrics available")
 		}
@@ -169,6 +181,7 @@ func applyPolicy(metricsWindow *utils.ConcurrentSlice, algorithm ScalingAlgorith
 		if count > 0 {
 			workers := float64(memoryUsage / count) / workerMemory
 			fmt.Printf("Exact workers: %f\n", workers)
+			return int32(workers)
 		} else {
 			fmt.Println("No metrics available")
 		}
@@ -176,5 +189,5 @@ func applyPolicy(metricsWindow *utils.ConcurrentSlice, algorithm ScalingAlgorith
 	default:
 		logrus.WithField("algorithm", algorithm).Error("Unknown algorithm")
 	}
-	return false, false
+	return 0
 }
