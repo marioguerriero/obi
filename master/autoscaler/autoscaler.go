@@ -160,7 +160,7 @@ func applyPolicy(metricsWindow *utils.ConcurrentSlice, algorithm ScalingAlgorith
 			} else {
 				expCount = 0
 			}
-			if expCount == 64 || expCount == -64 {
+			if expCount == 64 || expCount < 0 {
 				expCount = 0
 			}
 			return expCount
