@@ -9,7 +9,8 @@ import (
 	"obi/master/platforms"
 	"obi/master/autoscaler"
 	"obi/master/pooling"
-	)
+	"obi/master/autoscaler/policies"
+)
 
 // Receiver class with properties
 type Receiver struct {
@@ -109,7 +110,7 @@ func receiverRoutine(pool *pooling.Pool) {
 
 			newCluster, err := platforms.NewExistingCluster(m.GetServiceType(), m.GetClusterName())
 			if err == nil {
-				a := autoscaler.New(autoscaler.WorkloadBased, 30, 15, newCluster.(model.Scalable))
+				a := autoscaler.New(policies.Workload, 30, 15, newCluster.(model.Scalable))
 				pool.AddCluster(newCluster, a)
 
 				logrus.WithField("clusterName", m.GetClusterName()).Info("Added cluster in the pool")
