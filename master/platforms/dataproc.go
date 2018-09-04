@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/viper"
 	"obi/master/utils"
 	"math"
+	"strings"
 )
 
 // InitializationAction initialization script for installing necessary requirements
@@ -176,7 +177,7 @@ func (c *DataprocCluster) GetName() string {
 }
 
 // SubmitJob is for sending a new job to Dataproc
-func (c *DataprocCluster) SubmitJob(scriptURI string) error {
+func (c *DataprocCluster) SubmitJob(job m.Job) error {
 	ctx := context.Background()
 	controller, err := dataproc.NewJobControllerClient(ctx)
 	if err != nil {
@@ -195,7 +196,8 @@ func (c *DataprocCluster) SubmitJob(scriptURI string) error {
 			},
 			TypeJob: &dataprocpb.Job_PysparkJob{
 				PysparkJob: &dataprocpb.PySparkJob{
-					MainPythonFileUri: scriptURI,
+					MainPythonFileUri: job.ExecutablePath,
+					Args: strings.Fields(job.Args),
 				},
 			},
 		},

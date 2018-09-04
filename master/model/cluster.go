@@ -24,7 +24,7 @@ type ClusterBase struct {
 // ClusterBaseInterface defines the primitive methods that must be implemented for any type of cluster
 type ClusterBaseInterface interface {
 	GetName() string
-	SubmitJob(string) error
+	SubmitJob(Job) error
 	GetMetricsWindow() *utils.ConcurrentSlice
 	AddMetricsSnapshot(Metrics)
 	AllocateResources() error

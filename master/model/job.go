@@ -29,4 +29,5 @@ type Job struct {
 	AssignedCluster    string
 	PredictedDuration  int64
 	FailureProbability float32
+	Args 			   string
 }
