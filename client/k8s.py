@@ -152,12 +152,16 @@ class KubernetesClient(GenericClient):
                                                        sup_types))
 
         # Build submit job request object
+        job_args = kwargs['job_args']
+        if job_args is not None:
+            job_args = job_args[1:]
+            job_args = ' '.join(job_args)
         req = master_rpc_service_pb2.JobSubmissionRequest(
             executablePath=kwargs['job_path'],
             infrastructure=kwargs['job_infrastructure'],
             type=utils.map_job_type(kwargs['job_type']),
             priority=0,
-            jobArgs=kwargs['job_args']
+            jobArgs=job_args
         )
 
         # Create connection object
