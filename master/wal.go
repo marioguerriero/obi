@@ -22,7 +22,7 @@ type WAL struct {
 	Path string
 }
 
-// WalRecord defines the necessary information to be stored in a WAL record
+// WALRecord defines the necessary information to be stored in a WAL record
 type WALRecord struct {
 	Job model.Job
 	Type WALRecordType
