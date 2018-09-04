@@ -644,7 +644,7 @@ class KubernetesClient(GenericClient):
             name=volume_mount_pv_name)
         persistent_volume.persistent_volume_claim \
             = k8s.client.V1PersistentVolumeClaimVolumeSource(
-                claim_name=volume_claim_name)
+            claim_name=volume_claim_name)
 
         template_spec.volumes = [
             volume_secret, volume_config_map, persistent_volume
@@ -791,8 +791,8 @@ class KubernetesClient(GenericClient):
                              access_mode=['ReadWriteOnce'],
                              storage_request='1Gi'):
         """
-        This function is used to generate a volume claim with the given name and
-        parameters
+        This function is used to generate a volume claim with the
+        given name and parameters
         :param name:
         :return:
         """
@@ -1101,8 +1101,7 @@ class KubernetesClient(GenericClient):
                     name, namespace)
             except k8s.client.rest.ApiException as e:
                 raise InvalidInfrastructureName(
-                    'Infrastructure {} does not exist'
-                        .format(name))
+                    'Infrastructure {} does not exist'.format(name))
 
         # Read service object associated to the deployment
         s_name = deployment.metadata.annotations[
@@ -1208,7 +1207,8 @@ class KubernetesClient(GenericClient):
         except k8s.client.rest.ApiException as e:
             log.error(
                 "Exception when calling "
-                "CoreV1Api->delete_namespaced_persistent_volume_claim: %s\n" % e)
+                "CoreV1Api->delete_namespaced_persistent_volume_claim: "
+                "%s\n" % e)
     #############
     #  END: Generic utility functions
     #############
