@@ -13,7 +13,7 @@ const (
 	WALPending = iota
 	// WALFailed identify a record for a failed job
 	WALFailed = iota
-	// WALComplete identify a record for a completed job
+	// WALCompleted identify a record for a completed job
 	WALCompleted = iota
 )
 
@@ -22,6 +22,7 @@ type WAL struct {
 	Path string
 }
 
+// WalRecord defines the necessary information to be stored in a WAL record
 type WALRecord struct {
 	Job model.Job
 	Type WALRecordType
