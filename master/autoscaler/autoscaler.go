@@ -164,8 +164,6 @@ func applyPolicy(metricsWindow *utils.ConcurrentSlice, algorithm ScalingAlgorith
 				expCount = 0
 			}
 			return expCount
-		} else {
-			fmt.Println("No metrics available")
 		}
 		logrus.Info("Applying workload-based policy")
 	case TimeBased:
@@ -187,8 +185,6 @@ func applyPolicy(metricsWindow *utils.ConcurrentSlice, algorithm ScalingAlgorith
 			workers := float64(memoryUsage / count) / workerMemory
 			fmt.Printf("Exact workers: %f\n", workers)
 			return int32(workers)
-		} else {
-			fmt.Println("No metrics available")
 		}
 		logrus.Info("Applying time-based policy")
 	default:
