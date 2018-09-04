@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// RandomString generates a random string of the given length
 func RandomString(len int) string {
 	bytes := make([]byte, len)
 	rand.Seed(time.Now().UTC().UnixNano())
