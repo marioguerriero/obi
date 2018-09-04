@@ -82,14 +82,6 @@ class KubernetesClient(GenericClient):
         self._user_config = user_config
 
         # Load cluster configuration
-        config_path = os.path.join(
-            os.getenv('HOME'),
-            '.kube',
-            'config'
-        )
-        # k8s.config.load_kube_config(
-        #     config_file=config_path,
-        #     persist_config=False)
         k8s.config.load_kube_config()
 
         # Prepare client objects
@@ -644,7 +636,7 @@ class KubernetesClient(GenericClient):
             name=volume_mount_pv_name)
         persistent_volume.persistent_volume_claim \
             = k8s.client.V1PersistentVolumeClaimVolumeSource(
-            claim_name=volume_claim_name)
+                claim_name=volume_claim_name)
 
         template_spec.volumes = [
             volume_secret, volume_config_map, persistent_volume
