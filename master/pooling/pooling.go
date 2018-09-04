@@ -3,6 +3,7 @@ package pooling
 import (
 	"container/heap"
 	"errors"
+	"fmt"
 	"github.com/golang-collections/go-datastructures/queue"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -22,31 +23,10 @@ type Pooling struct {
 // New is the constructor of Pooling struct
 // @param pool contains the available clusters to use for job deployments
 func New(pool *Pool) *Pooling {
-	// TODO: Implement pooling. For the moment only a cluster to use
-
-	logrus.Info("Creating pooling")
-	cb := model.NewClusterBase("obi-test", 2,
-		"dataproc",
-		viper.GetString("heartbeatHost"),
-		viper.GetInt("heartbeatPort"))
-
-	cluster := platforms.NewDataprocCluster(cb, viper.GetString("projectId"),
-		viper.GetString("zone"),
-		viper.GetString("region"), 0)
-
-	// Allocate cluster resources
-	err := cluster.AllocateResources()
-
-	if err == nil {
-		// Instantiate a new autoscaler for the new cluster and start monitoring
-		a := autoscaler.New(policies.Workload, 60, 30, cluster)
-		a.StartMonitoring()
-
-		// Add to pool
-		pool.AddCluster(cluster, a)
-	}
+	// TODO: Implement pooling
 
 	// Create Pooling object
+	logrus.Info("Creating cluster pooling")
 	pooling := &Pooling{
 		pool,
 		make(map[int32]*queue.Queue),
@@ -59,6 +39,42 @@ func New(pool *Pool) *Pooling {
 	// Return created pooling object
 	logrus.Info("Created pool of clusters")
 	return pooling
+}
+
+func (p *Pooling) newCluster(name, platform string) error {
+	logrus.WithField("cluster-name", name).Info("Creating new cluster")
+
+	switch platform {
+	case "dataproc":
+		return p.newDataprocCluster(name)
+	default:
+		logrus.WithField("platform-type", platform).Error("Invalid platform type")
+		return errors.New("invalid platform type")
+	}
+}
+
+func (p *Pooling) newDataprocCluster(name string) error {
+	cb := model.NewClusterBase(name, 2, "dataproc",
+		viper.GetString("heartbeatHost"),
+		viper.GetInt("heartbeatPort"))
+
+	cluster := platforms.NewDataprocCluster(cb, viper.GetString("projectId"),
+		viper.GetString("zone"),
+		viper.GetString("region"), 0)
+
+	// Allocate cluster resources
+	err := cluster.AllocateResources()
+	if err != nil {
+		return err
+	}
+
+	// Instantiate a new autoscaler for the new cluster and start monitoring
+	a := autoscaler.New(policies.Workload, 60, 30, cluster)
+	a.StartMonitoring()
+
+	// Add to pool
+	p.pool.AddCluster(cluster, a)
+	return nil
 }
 
 // This routine periodically scans queues from top to low priority and schedules its contained job
@@ -108,9 +124,19 @@ func (p *Pooling) ScheduleJob(job *model.Job, priority int32) error {
 func (p *Pooling) SubmitJob(job *model.Job) error {
 	logrus.WithField("job", job.ID).Info("Submitting job for execution")
 
+	// TODO: this should not be done here
+	job.Platform = "dataproc"
+
+	// Create new cluster
+	clusterName := fmt.Sprintf("obi-%s", utils.RandomString(10))
+	p.newCluster(clusterName, job.Platform)
+
+	job.AssignedCluster = clusterName
+
+	// Submit job
 	switch job.Type {
 	case model.JobTypePySpark:
-		p.SubmitPySparkJob("obi-test", job) // TODO: use real pooling feature
+		p.SubmitPySparkJob(clusterName, job) // TODO: use real pooling feature
 	default:
 		return errors.New("invalid job type")
 	}
@@ -120,14 +146,13 @@ func (p *Pooling) SubmitJob(job *model.Job) error {
 // SubmitPySparkJob is for submitting a new Spark job in Python environment
 // @param clusterName is the name of the cluster where to run the new job
 // @param scriptURI is the script path
-func (p *Pooling) SubmitPySparkJob(clusterName string, job *model.Job) {
+func (p *Pooling) SubmitPySparkJob(cluster string, job *model.Job) {
 	// Assign job to the given cluster
-	job.AssignedCluster = clusterName
-	logrus.WithField("cluster", clusterName).WithField("job", *job).Info("Submitting PySpark job")
+	logrus.WithField("cluster", cluster).WithField("job", *job).Info("Submitting PySpark job")
 
 	// Schedule some jobs
-	if obj, ok := p.pool.GetCluster("obi-test"); ok {
+	if obj, ok := p.pool.GetCluster(cluster); ok {
 		cluster := obj.(model.ClusterBaseInterface)
-		cluster.SubmitJob(job.ExecutablePath)
+		cluster.SubmitJob(job)
 	}
 }
