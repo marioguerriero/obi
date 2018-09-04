@@ -56,6 +56,9 @@ create_job_args.add_argument('-i', help='Infrastructure on which execute the '
                                         'configuration file will be used',
                              type=str, required=True,
                              dest='job_infrastructure')
+create_job_args.add_argument('--args', help='Job arguments',
+                             type=str, required=False,
+                             dest='job_args')
 
 # Create infrastructure arguments
 create_infrastructure_args = \
@@ -97,9 +100,6 @@ delete_job_args_subparsers = delete_args_subparsers.add_parser('job',
                                                                     'given '
                                                                     'its name')
 delete_job_args_subparsers.add_argument('job_name', type=str)
-
-# Any other argument should follow the --
-parser.parse_args(['--'])
 
 # Finalize command line argument parsing
 args = parser.parse_args()

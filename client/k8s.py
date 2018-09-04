@@ -164,7 +164,8 @@ class KubernetesClient(GenericClient):
             executablePath=kwargs['job_path'],
             infrastructure=kwargs['job_infrastructure'],
             type=utils.map_job_type(kwargs['job_type']),
-            priority=0
+            priority=0,
+            jobArgs=kwargs['job_args']
         )
 
         # Create connection object
