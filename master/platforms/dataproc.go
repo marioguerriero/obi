@@ -25,7 +25,6 @@ type DataprocCluster struct {
 	Zone string
 	Region string
 	PreemptibleNodes int32
-	PreemptiveNodesRatio float32
 }
 
 // NewDataprocCluster is the constructor of DataprocCluster struct
@@ -35,15 +34,18 @@ type DataprocCluster struct {
 // @param zone is a specific area inside region (e.g. europe-west3-b)
 // @param preemptibleRatio in the percentage of preemptible VMs that has to be present inside the cluster
 // return the pointer to the new DataprocCluster instance
-func NewDataprocCluster(baseInfo *m.ClusterBase, projectID, zone, region string,
-		preemptibleNodes int32, preemptibleRatio float32) *DataprocCluster {
+func NewDataprocCluster(
+		baseInfo *m.ClusterBase,
+		projectID, zone,
+		region string,
+		preemptibleNodes int32,
+    ) *DataprocCluster {
 	return &DataprocCluster{
 		baseInfo,
 		projectID,
 		zone,
 		region,
 		preemptibleNodes,
-		preemptibleRatio,
 	}
 }
 
@@ -96,7 +98,6 @@ func NewExistingDataprocCluster(projectID string, region string, zone string, cl
 			zone,
 			region,
 			preemptibleNodes,
-			0.0,
 		}
 	}
 	return newCluster, nil
