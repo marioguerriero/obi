@@ -12,15 +12,20 @@ import (
 	"obi/master/utils"
 )
 
-var timeoutScalingFactor int32
-
-var timeoutRecord *predictor.AutoscalerData
-
 const TimeoutScalingStep = 1
 const TimeoutScalingThreshold = 40
 
+type TimeoutAutoscaler struct {
+	scalingFactor int32
+	record        *predictor.AutoscalerData
+}
+
+func NewTimeout() *TimeoutAutoscaler {
+	return &TimeoutAutoscaler{}
+}
+
 // Workload scales the cluster when the resource utilization is too high
-func Timeout(metricsWindow *utils.ConcurrentSlice) int32 {
+func (a* TimeoutAutoscaler) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 	var previousMetrics model.Metrics
 	var throughput float32
 	var pendingGrowthRate float32
@@ -67,27 +72,27 @@ func Timeout(metricsWindow *utils.ConcurrentSlice) int32 {
 
 		// Scale up one at each time interval until we reach a threshold
 		if previousMetrics.NumberOfNodes < TimeoutScalingThreshold {
-			timeoutScalingFactor = TimeoutScalingStep
+			a.scalingFactor = TimeoutScalingStep
 		} else {
-			timeoutScalingFactor = 0
+			a.scalingFactor = 0
 		}
 	}
 
 	// If I am scaling
-	if timeoutScalingFactor != 0 && timeoutRecord == nil {
+	if a.scalingFactor != 0 && a.record == nil {
 		// If I am starting to scale, prepare data point
-		timeoutRecord = &predictor.AutoscalerData{
+		a.record = &predictor.AutoscalerData{
 			Nodes: previousMetrics.NumberOfNodes,
-			ScalingFactor: timeoutScalingFactor,
+			ScalingFactor: a.scalingFactor,
 			PerformanceBefore: performance,
 			MetricsBefore: MetricsToSnapshot(&previousMetrics),
 		}
 	} else {
 		// If I have scaled, send data point
-		timeoutRecord.MetricsAfter = MetricsToSnapshot(&previousMetrics)
-		timeoutRecord.PerformanceAfter = performance
+		a.record.MetricsAfter = MetricsToSnapshot(&previousMetrics)
+		a.record.PerformanceAfter = performance
 		// Send data point
-		logrus.WithField("data", *timeoutRecord).Info("Sending autoscaler data to predictor")
+		logrus.WithField("data", *a.record).Info("Sending autoscaler data to predictor")
 		serverAddr := fmt.Sprintf("%s:%s",
 			viper.GetString("predictorHost"),
 			viper.GetString("predictorPort"))
@@ -96,10 +101,10 @@ func Timeout(metricsWindow *utils.ConcurrentSlice) int32 {
 			log.Fatalf("fail to dial: %v", err)
 		}
 		pClient := predictor.NewObiPredictorClient(conn)
-		pClient.CollectAutoscalerData(context.Background(), timeoutRecord)
+		pClient.CollectAutoscalerData(context.Background(), a.record)
 		// Clear data point
-		timeoutRecord = nil
+		a.record = nil
 	}
 
-	return timeoutScalingFactor + previousMetrics.NumberOfNodes
+	return a.scalingFactor + previousMetrics.NumberOfNodes
 }
