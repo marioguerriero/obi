@@ -9,11 +9,16 @@ import (
 
 // Autoscaler class with properties
 type Autoscaler struct {
-	PolicyHandler func(*utils.ConcurrentSlice) int32
+	Policy Policy
 	Timeout int16
 	SustainedTimeout int16
 	quit chan struct{}
 	managedCluster model.Scalable
+}
+
+// Policy defines the primitive methods that must be implemented for any type of autoscaling policy
+type Policy interface {
+	Apply(*utils.ConcurrentSlice) int32
 }
 
 // New is the constructor of Autoscaler struct
@@ -24,7 +29,7 @@ type Autoscaler struct {
 // @param cluster is the scalable cluster to be managed
 // return the pointer to the instance
 func New(
-	policy func(*utils.ConcurrentSlice) int32,
+	policy Policy,
 	timeout int16,
 	sustainedTimeout int16,
 	cluster model.Scalable,
@@ -61,7 +66,7 @@ func autoscalerRoutine(as *Autoscaler) {
 				"Closing autoscaler routine.")
 			return
 		default:
-			delta = as.PolicyHandler(as.managedCluster.(model.ClusterBaseInterface).GetMetricsWindow())
+			delta = as.Policy.Apply(as.managedCluster.(model.ClusterBaseInterface).GetMetricsWindow())
 
 			if delta != 0 {
 				as.managedCluster.Scale(delta)

@@ -69,7 +69,8 @@ func (p *Pooling) newDataprocCluster(name string) error {
 	}
 
 	// Instantiate a new autoscaler for the new cluster and start monitoring
-	a := autoscaler.New(policies.Workload, 60, 30, cluster)
+	policy := policies.NewWorkload()
+	a := autoscaler.New(policy, 60, 30, cluster)
 	a.StartMonitoring()
 
 	// Add to pool
