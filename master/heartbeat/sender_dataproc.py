@@ -1,5 +1,5 @@
-import os
 import json
+import os
 import socket
 import sys
 import urllib.request
@@ -11,7 +11,7 @@ CLUSTER_NAME = HOSTNAME[:-2]
 
 # Before doing anything, make sure that the current node is the master-old
 GET_MASTER_CMD = '/usr/share/google/get_metadata_value ' \
-                 'attributes/dataproc-master-old '
+                 'attributes/dataproc-master '
 master_name = os.popen(GET_MASTER_CMD).read()
 if master_name != HOSTNAME:
     # If we are not in the master-old we should not send any heartbeat
@@ -86,6 +86,11 @@ def compute_hb():
     hb.PendingMB = metrics['PendingMB']
     hb.PendingVCores = metrics['PendingVCores']
     hb.PendingContainers = metrics['PendingContainers']
+
+    # Collect number of nodes
+    n_nodes = os.popen("yarn node -list 2> /dev/null | grep 'Total Nodes:' "
+                       "| egrep -o '[0-9]+'").read()
+    hb.NumberOfNodes = int(n_nodes)
 
     # Set service type to dataproc
     hb.ServiceType = 'dataproc'

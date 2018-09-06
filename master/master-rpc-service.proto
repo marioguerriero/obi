@@ -31,7 +31,8 @@ message JobSubmissionRequest {
         PYSPARK = 0;
     }
     JobType type = 3;
-    int32 duration = 4;
-    float failureProbability = 5;
-    int32 priority = 6;
+    string jobArgs = 4;
+    int32 duration = 5;
+    float failureProbability = 6;
+    int32 priority = 7;
 }

@@ -26,7 +26,9 @@ type Job struct {
 	ExecutablePath     string
 	Type               JobType
 	Status             JobStatus
+	Platform 		   string
 	AssignedCluster    string
 	PredictedDuration  int64
 	FailureProbability float32
+	Args 			   string
 }

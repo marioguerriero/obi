@@ -82,14 +82,6 @@ class KubernetesClient(GenericClient):
         self._user_config = user_config
 
         # Load cluster configuration
-        config_path = os.path.join(
-            os.getenv('HOME'),
-            '.kube',
-            'config'
-        )
-        # k8s.config.load_kube_config(
-        #     config_file=config_path,
-        #     persist_config=False)
         k8s.config.load_kube_config()
 
         # Prepare client objects
@@ -160,11 +152,16 @@ class KubernetesClient(GenericClient):
                                                        sup_types))
 
         # Build submit job request object
+        job_args = kwargs['job_args']
+        if job_args is not None:
+            job_args = job_args[1:]
+            job_args = ' '.join(job_args)
         req = master_rpc_service_pb2.JobSubmissionRequest(
             executablePath=kwargs['job_path'],
             infrastructure=kwargs['job_infrastructure'],
             type=utils.map_job_type(kwargs['job_type']),
-            priority=0
+            priority=0,
+            jobArgs=job_args
         )
 
         # Create connection object
@@ -790,8 +787,8 @@ class KubernetesClient(GenericClient):
                              access_mode=['ReadWriteOnce'],
                              storage_request='1Gi'):
         """
-        This function is used to generate a volume claim with the given name and
-        parameters
+        This function is used to generate a volume claim with the
+        given name and parameters
         :param name:
         :return:
         """
@@ -1100,8 +1097,7 @@ class KubernetesClient(GenericClient):
                     name, namespace)
             except k8s.client.rest.ApiException as e:
                 raise InvalidInfrastructureName(
-                    'Infrastructure {} does not exist'
-                        .format(name))
+                    'Infrastructure {} does not exist'.format(name))
 
         # Read service object associated to the deployment
         s_name = deployment.metadata.annotations[
@@ -1207,7 +1203,8 @@ class KubernetesClient(GenericClient):
         except k8s.client.rest.ApiException as e:
             log.error(
                 "Exception when calling "
-                "CoreV1Api->delete_namespaced_persistent_volume_claim: %s\n" % e)
+                "CoreV1Api->delete_namespaced_persistent_volume_claim: "
+                "%s\n" % e)
     #############
     #  END: Generic utility functions
     #############

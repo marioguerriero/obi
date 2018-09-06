@@ -12,6 +12,8 @@ import (
 	"github.com/spf13/viper"
 	"obi/master/utils"
 	"math"
+	"strings"
+	"time"
 )
 
 // InitializationAction initialization script for installing necessary requirements
@@ -176,7 +178,7 @@ func (c *DataprocCluster) GetName() string {
 }
 
 // SubmitJob is for sending a new job to Dataproc
-func (c *DataprocCluster) SubmitJob(scriptURI string) error {
+func (c *DataprocCluster) SubmitJob(job *m.Job) error {
 	ctx := context.Background()
 	controller, err := dataproc.NewJobControllerClient(ctx)
 	if err != nil {
@@ -195,13 +197,37 @@ func (c *DataprocCluster) SubmitJob(scriptURI string) error {
 			},
 			TypeJob: &dataprocpb.Job_PysparkJob{
 				PysparkJob: &dataprocpb.PySparkJob{
-					MainPythonFileUri: scriptURI,
+					MainPythonFileUri: job.ExecutablePath,
+					Args: strings.Fields(job.Args),
 				},
 			},
 		},
 	}
 
-	_, err = controller.SubmitJob(ctx, req)
+	dataprocJob, err := controller.SubmitJob(ctx, req)
+
+	// Start routine to kill the cluster once the job is finished
+	go func() {
+		for {
+			time.Sleep(time.Minute)
+			// Query job controller
+			j, _ := controller.GetJob(ctx, &dataprocpb.GetJobRequest{
+				ProjectId: c.ProjectID,
+				Region:    c.Region,
+				JobId:     dataprocJob.Reference.JobId,
+			})
+			if j.Status.State == dataprocpb.JobStatus_DONE {
+				// If the cluster's job is finished, delete the cluster
+				clusterController, _ := dataproc.NewClusterControllerClient(ctx)
+				clusterController.DeleteCluster(ctx, &dataprocpb.DeleteClusterRequest{
+					ProjectId:   c.ProjectID,
+					Region:      c.Region,
+					ClusterName: c.Name,
+				})
+				logrus.WithField("cluster-name", c.Name).Info("Delete Dataproc cluster")
+			}
+		}
+	}()
 
 	if err != nil {
 		logrus.WithField("error", err).Error("'SubmitJob' method call failed")
@@ -209,7 +235,6 @@ func (c *DataprocCluster) SubmitJob(scriptURI string) error {
 	}
 	logrus.WithField("clusterName", c.Name).Info("New job deployed")
 	return nil
-
 }
 
 // GetMetricsWindow is for getting last metrics of the cluster

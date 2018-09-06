@@ -58,6 +58,7 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 		Type:               jobType,
 		PredictedDuration:  int64(duration),
 		FailureProbability: float32(failure),
+		Args: 				jobRequest.JobArgs,
 	}
 
 	// Send job execution request
