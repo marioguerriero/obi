@@ -92,15 +92,38 @@ func receiverRoutine(pool *pooling.Pool) {
 		}
 
 		newMetrics := model.Metrics{
-			Timestamp: time.Now(),
-			PendingContainers: m.GetPendingContainers(),
-			PendingMB: m.GetPendingMB(),
-			AvailableMB: m.GetAvailableMB(),
-			AppAttemptFirstContainerAllocationDelayAvgTime: m.GetAppAttemptFirstContainerAllocationDelayAvgTime(),
-			AggregateContainersAllocated: m.GetAggregateContainersAllocated(),
-			AggregateContainersReleased: m.GetAggregateContainersReleased(),
+			time.Now(),
+			m.GetPendingContainers(),
+			m.GetPendingMB(),
+			m.GetAvailableMB(),
+			m.GetAppAttemptFirstContainerAllocationDelayAvgTime(),
+			m.GetAggregateContainersAllocated(),
+			m.GetAggregateContainersReleased(),
+			m.GetAMResourceLimitMB(),
+			m.GetAMResourceLimitVCores(),
+			m.GetUsedAMResourceMB(),
+			m.GetUsedAMResourceVCores(),
+			m.GetAppsSubmitted(),
+			m.GetAppsRunning(),
+			m.GetAppsPending(),
+			m.GetAppsCompleted(),
+			m.GetAppsKilled(),
+			m.GetAppsFailed(),
+			m.GetAggregateContainersPreempted(),
+			m.GetActiveApplications(),
+			m.GetAppAttemptFirstContainerAllocationDelayNumOps(),
+			m.GetAppAttemptFirstContainerAllocationDelayAvgTime(),
+			m.GetAllocatedMB(),
+			m.GetAllocatedVCores(),
+			m.GetAllocatedContainers(),
+			m.GetAggregateContainersAllocated(),
+			m.GetAggregateContainersReleased(),
+			m.GetAvailableMB(),
+			m.GetAvailableMB(),
+			m.GetPendingMB(),
+			m.GetPendingVCores(),
+			m.GetNumberOfNodes(),
 		}
-		MergeHeartbeatMetric(m, &newMetrics)
 
 		if value, ok := pool.GetCluster(m.GetClusterName()); ok {
 			cluster := value.(model.ClusterBaseInterface)

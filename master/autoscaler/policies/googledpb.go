@@ -7,14 +7,16 @@ import (
 	"obi/master/utils"
 )
 
-// WorkloadPolicy contains all useful state-variable to apply the policy
+// GooglePolicy contains all useful state-variable to apply the policy
 type GooglePolicy struct {
 }
 
+// NewGoogle is the constructor of the GooglePolicy struct
 func NewGoogle() *GooglePolicy {
 	return &GooglePolicy{}
 }
 
+// Apply is the implementation of the Policy interface
 func (p *GooglePolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 	var count int32
 	var memoryUsage int32
