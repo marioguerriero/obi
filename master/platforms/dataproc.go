@@ -1,17 +1,17 @@
 package platforms
 
 import (
-	dataprocpb "google.golang.org/genproto/googleapis/cloud/dataproc/v1"
 	"cloud.google.com/go/dataproc/apiv1"
-	"google.golang.org/genproto/protobuf/field_mask"
 	"context"
-		m "obi/master/model"
-	"google.golang.org/api/iterator"
 	"github.com/sirupsen/logrus"
-	"strconv"
 	"github.com/spf13/viper"
-	"obi/master/utils"
+	"google.golang.org/api/iterator"
+	dataprocpb "google.golang.org/genproto/googleapis/cloud/dataproc/v1"
+	"google.golang.org/genproto/protobuf/field_mask"
 	"math"
+	m "obi/master/model"
+	"obi/master/utils"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -117,7 +117,7 @@ func (c *DataprocCluster) Scale(delta int32) bool {
 	if delta < 0 && c.PreemptibleNodes == 0 {
 		return true
 	}
-	newSize = int32(math.Max(0, float64(c.PreemptibleNodes + delta)))
+	newSize = int32(math.Max(0, float64(c.WorkerNodes + delta)))
 
 	ctx := context.Background()
 	controller, err := dataproc.NewClusterControllerClient(ctx)
@@ -132,14 +132,14 @@ func (c *DataprocCluster) Scale(delta int32) bool {
 		ClusterName: c.Name,
 		Cluster: &dataprocpb.Cluster{
 			Config: &dataprocpb.ClusterConfig{
-				SecondaryWorkerConfig: &dataprocpb.InstanceGroupConfig{
+				WorkerConfig: &dataprocpb.InstanceGroupConfig{
 					NumInstances: newSize,
 				},
 			},
 		},
 		UpdateMask:  &field_mask.FieldMask{
 			Paths: []string{
-				"config.secondary_worker_config.num_instances",
+				"config.worker_config.num_instances",
 			},
 		},
 	}
@@ -156,13 +156,13 @@ func (c *DataprocCluster) Scale(delta int32) bool {
 		return false
 	}
 
-	c.PreemptibleNodes = newSize
+	c.WorkerNodes= newSize
 	logrus.WithFields(logrus.Fields{
 		"clusterName": c.Name,
 		"newSize": newSize,
 	}).Info("Scaling completed.")
 
-	if c.PreemptibleNodes == 0 {
+	if c.WorkerNodes == 0 {
 		return true
 	}
 	return false

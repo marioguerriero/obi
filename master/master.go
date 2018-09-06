@@ -11,13 +11,14 @@ import (
 	"obi/master/heartbeat"
 	"obi/master/model"
 	"obi/master/pooling"
+	"obi/master/predictor"
 )
 
 // ObiMaster structure representing one master instance for OBI
 type ObiMaster struct {
 	Pooling *pooling.Pooling
 	HeartbeatReceiver *heartbeat.Receiver
-	PredictorClient *ObiPredictorClient
+	PredictorClient *predictor.ObiPredictorClient
 }
 
 // ListInfrastructures RPC for listing the available infrastructure services
@@ -35,7 +36,7 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 
 	// Generate predictions before submitting the job
 	resp, err := (*m.PredictorClient).RequestPrediction(
-		context.Background(), &PredictionRequest{
+		context.Background(), &predictor.PredictionRequest{
 			JobFilePath: jobRequest.ExecutablePath,
 		}) // TODO: read metrics for executor cluster
 	if err != nil {
@@ -83,7 +84,7 @@ func CreateMaster() (*ObiMaster) {
 	if err != nil {
 		log.Fatalf("fail to dial: %v", err)
 	}
-	pClient := NewObiPredictorClient(conn)
+	pClient := predictor.NewObiPredictorClient(conn)
 	// Create and return OBI master object
 	master := ObiMaster {
 		Pooling: p,

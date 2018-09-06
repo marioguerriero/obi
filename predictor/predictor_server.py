@@ -42,6 +42,16 @@ class PredictorServer(predictor_service_pb2_grpc.ObiPredictorServicer):
         log.info('Generated predictions: {}'.format(res))
         return res
 
+    def CollectAutoscalerData(self, data, ctx):
+        """
+        Collect data sent from OBI to train smart autoscalers
+        :param data:
+        :param ctx:
+        :return:
+        """
+        log.info(data)
+        return None
+
 
 def serve():
     """
