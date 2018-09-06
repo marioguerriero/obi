@@ -843,7 +843,9 @@ class KubernetesClient(GenericClient):
                 self._user_config['kubernetesNamespace']))
         self._create_config_map(
             config_map_name_pred,
-            namespace)  # This is empty for now
+            namespace,
+            bucketMountPath=self._user_config['predictorBucketMountPath']
+        )  # This is empty for now
 
         # Create deployment for predictive component
         self._create_predictive_deployment(name, namespace, label,
@@ -922,7 +924,7 @@ class KubernetesClient(GenericClient):
         # Mount GCS bucket to pods
         bucket_dir = None
         if self._user_config['predictorBucket'] is not None:
-            bucket_dir = os.path.join('/mnt')
+            bucket_dir = self._user_config['predictorBucketMountPath']
             container.lifecycle = k8s.client.V1Lifecycle()
             # Add mount operation on container start up
             container.lifecycle.post_start = k8s.client.V1Handler()
@@ -942,8 +944,14 @@ class KubernetesClient(GenericClient):
         env_bucket = k8s.client.V1EnvVar(
             name='BUCKET_DIRECTORY', value=bucket_dir)
 
+        env_config = k8s.client.V1EnvVar(
+            name='CONFIG_PATH', value=os.path.join(
+                self._user_config['configMountPath'],
+                self._user_config['defaultConfigMapName'])
+        )
+
         container.env = [
-            env_bucket
+            env_bucket, env_config
         ]
 
         # Volume mount for config map

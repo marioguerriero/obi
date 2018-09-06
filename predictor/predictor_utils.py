@@ -1,3 +1,7 @@
+import datetime
+import random
+import string
+
 predictor_matchers = {
     'csv_find': {
         'file_names': ['find_changed']
@@ -12,6 +16,40 @@ predictor_matchers = {
         'file_names': ['ulm']
     },
 }
+
+autoscaler_dataset_header = [
+    'Node', 'ScalingFatctor',
+    # Metrics before 'scaling
+    'MetricsBefore.AMResourceLimitMB', 'MetricsBefore.AMResourceLimitVCores',
+    'MetricsBefore.UsedAMResourceMB', 'MetricsBefore.UsedAMResourceVCores',
+    'MetricsBefore.AppsSubmitted', 'MetricsBefore.AppsRunning',
+    'MetricsBefore.AppsPending', 'MetricsBefore.AppsCompleted',
+    'MetricsBefore.AppsKilled', 'MetricsBefore.AppsFailed',
+    'MetricsBefore.AggregateContainersPreempted', 'MetricsBefore.ActiveApplications',
+    'MetricsBefore.AppAttemptFirstContainerAllocationDelayNumOps',
+    'MetricsBefore.AppAttemptFirstContainerAllocationDelayAvgTime',
+    'MetricsBefore.AllocatedMB', 'MetricsBefore.AllocatedVCores',
+    'MetricsBefore.AllocatedContainers', 'MetricsBefore.AggregateContainersAllocated',
+    'MetricsBefore.AggregateContainersReleased', 'MetricsBefore.AvailableMB',
+    'MetricsBefore.AvailableVCores', 'MetricsBefore.PendingMB',
+    'MetricsBefore.PendingVCores', 'MetricsBefore.PendingContainers',
+    # Metrics after scaling
+    'MetricsAfter.AMResourceLimitMB', 'MetricsAfter.AMResourceLimitVCores',
+    'MetricsAfter.UsedAMResourceMB', 'MetricsAfter.UsedAMResourceVCores',
+    'MetricsAfter.AppsSubmitted', 'MetricsAfter.AppsRunning',
+    'MetricsAfter.AppsPending', 'MetricsAfter.AppsCompleted',
+    'MetricsAfter.AppsKilled', 'MetricsAfter.AppsFailed',
+    'MetricsAfter.AggregateContainersPreempted', 'MetricsAfter.ActiveApplications',
+    'MetricsAfter.AppAttemptFirstContainerAllocationDelayNumOps',
+    'MetricsAfter.AppAttemptFirstContainerAllocationDelayAvgTime',
+    'MetricsAfter.AllocatedMB', 'MetricsAfter.AllocatedVCores',
+    'MetricsAfter.AllocatedContainers', 'MetricsAfter.AggregateContainersAllocated',
+    'MetricsAfter.AggregateContainersReleased', 'MetricsAfter.AvailableMB',
+    'MetricsAfter.AvailableVCores', 'MetricsAfter.PendingMB',
+    'MetricsAfter.PendingVCores', 'MetricsAfter.PendingContainers',
+    # Performance metric before and after
+    'PerformanceBefore', 'PerformanceAfter'
+]
 
 
 def hamming_similarity(s1, s2):
@@ -51,3 +89,15 @@ def infer_predictor_name(req):
     # TODO
 
     return None
+
+
+def random_string(prefix='obi', n=15):
+    """
+    Generates a random string of length n
+    :param n:
+    :param prefix:
+    :return:
+    """
+    return '{}-{}'.format(prefix,
+                          datetime.datetime.today().strftime('%Y-%m-%d')) \
+           + ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(n))

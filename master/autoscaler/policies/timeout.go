@@ -13,17 +13,22 @@ import (
 )
 
 const TimeoutScalingStep = 1
-const TimeoutScalingThreshold = 40
+// TimeoutLength number of metric windows to receive before scaling
+const TimeoutLength = 10
+// TimeoutPolicyUpperBound maximum number of scaling factor
+const TimeoutPolicyUpperBound = 40
 
 type TimeoutPolicy struct {
 	scalingFactor int32
 	record        *predictor.AutoscalerData
+	count		  int
 }
 
 func NewTimeout() *TimeoutPolicy {
 	return &TimeoutPolicy{
 		0,
 		nil,
+		TimeoutLength,
 	}
 }
 
@@ -53,7 +58,8 @@ func (p *TimeoutPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 				fmt.Printf("Pending containers: %d\n", hb.PendingContainers)
 				memoryContainer := hb.PendingMemory / hb.PendingContainers
 				containersWillConsumed := hb.AvailableMemory / memoryContainer
-				pendingGrowth := float32(hb.PendingContainers - containersWillConsumed - previousMetrics.PendingContainers)
+				pendingGrowth := float32(
+					hb.PendingContainers - containersWillConsumed - previousMetrics.PendingContainers)
 				if pendingGrowth > 0 {
 					pendingGrowthRate += pendingGrowth
 				}
@@ -74,25 +80,25 @@ func (p *TimeoutPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 		fmt.Printf("Pending rate: %f\n", pendingGrowthRate)
 
 		// Scale up one at each time interval until we reach p threshold
-		if previousMetrics.NumberOfNodes < TimeoutScalingThreshold {
+		if p.count-1 == 0 && previousMetrics.NumberOfNodes < TimeoutPolicyUpperBound {
 			p.scalingFactor = TimeoutScalingStep
 		} else {
 			p.scalingFactor = 0
 		}
 	}
 
-	// If I am scaling
-	if p.record == nil {
-		// If I am starting to scale, prepare data point
+	if p.count == 1 {
+		// Before scaling, save metrics
 		p.record = &predictor.AutoscalerData{
 			Nodes:             previousMetrics.NumberOfNodes,
-			ScalingFactor:     p.scalingFactor,
 			PerformanceBefore: performance,
 			MetricsBefore:     MetricsToSnapshot(&previousMetrics),
 		}
-	} else {
+	} else if p.count <= 0 {
+		// Store scaling factor
+		p.record.ScalingFactor = p.scalingFactor
 		// If I have scaled, send data point
-		p.record.MetricsAfter = MetricsToSnapshot(&previousMetrics) // FIXME
+		p.record.MetricsAfter = MetricsToSnapshot(&previousMetrics)
 		p.record.PerformanceAfter = performance
 		// Send data point
 		logrus.WithField("data", *p.record).Info("Sending autoscaler data to predictor")
@@ -107,7 +113,11 @@ func (p *TimeoutPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 		pClient.CollectAutoscalerData(context.Background(), p.record)
 		// Clear data point
 		p.record = nil
+		// Reset counter
+		p.count = TimeoutLength
 	}
+
+	p.count--
 
 	return p.scalingFactor + previousMetrics.NumberOfNodes
 }

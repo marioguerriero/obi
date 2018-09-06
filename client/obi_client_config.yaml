@@ -77,3 +77,4 @@ nodeSelectorValue: base
 
 # Predictor GCS configuration bucket (if any)
 predictorBucket: dhg-obi
+predictorBucketMountPath: /mnt/dhg-obi
