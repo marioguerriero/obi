@@ -14,7 +14,7 @@ import (
 
 const TimeoutScalingStep = 1
 // TimeoutLength number of metric windows to receive before scaling
-const TimeoutLength = 10
+const TimeoutLength = 1
 // TimeoutPolicyUpperBound maximum number of scaling factor
 const TimeoutPolicyUpperBound = 40
 
@@ -69,7 +69,7 @@ func (p *TimeoutPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 		}
 		previousMetrics = hb
 	}
-
+	logrus.WithField("count",p.count).Info("counting")
 	if count > 0 {
 		throughput /= float32(count)
 		pendingGrowthRate /= float32(count)
@@ -85,15 +85,19 @@ func (p *TimeoutPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 		} else {
 			p.scalingFactor = 0
 		}
-	}
 
-	if p.count == 1 {
+		p.count--
+	}
+	logrus.WithField("count",p.count).Info("counting")
+
+	if p.count == 0 {
 		// Before scaling, save metrics
 		p.record = &predictor.AutoscalerData{
 			Nodes:             previousMetrics.NumberOfNodes,
 			PerformanceBefore: performance,
 			MetricsBefore:     MetricsToSnapshot(&previousMetrics),
 		}
+		logrus.WithField("data", p.record).Info("Created dataset record")
 	} else if p.count <= 0 {
 		// Store scaling factor
 		p.record.ScalingFactor = p.scalingFactor
@@ -117,7 +121,5 @@ func (p *TimeoutPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 		p.count = TimeoutLength
 	}
 
-	p.count--
-
-	return p.scalingFactor + previousMetrics.NumberOfNodes
+	return p.scalingFactor
 }

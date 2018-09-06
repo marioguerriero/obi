@@ -73,7 +73,7 @@ class PredictorServer(predictor_service_pb2_grpc.ObiPredictorServicer):
 
         # Build a list to be appended to a CSV file
         point = [
-            data.Node, data.ScalingFatctor,
+            data.Nodes, data.ScalingFactor,
             # Metrics before scaling
             data.MetricsBefore.AMResourceLimitMB, data.MetricsBefore.AMResourceLimitVCores,
             data.MetricsBefore.UsedAMResourceMB, data.MetricsBefore.UsedAMResourceVCores,
