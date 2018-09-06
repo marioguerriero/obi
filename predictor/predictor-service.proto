@@ -1,9 +1,19 @@
 syntax = "proto3";
 
-package main;
+package predictor;
 
 service ObiPredictor {
     rpc RequestPrediction(PredictionRequest) returns (PredictionResponse) {}
+    rpc CollectAutoscalerData(AutoscalerData) returns (EmptyResponse) {}
+}
+
+message AutoscalerData {
+    int32 Nodes = 1;
+    int32 ScalingFactor = 2;
+    MetricsSnasphot MetricsBefore = 3;
+	MetricsSnasphot MetricsAfter = 4;
+	float PerformanceBefore = 5;
+	float PerformanceAfter = 6;
 }
 
 message MetricsSnasphot {
@@ -31,6 +41,7 @@ message MetricsSnasphot {
     int32 PendingMB = 23;
     int32 PendingVCores = 24;
     int32 PendingContainers = 25;
+    int32 NumberOfNodes = 26;
 }
 
 // Request/Response messages
@@ -44,4 +55,8 @@ message PredictionRequest {
 message PredictionResponse {
     int32 Duration = 1;
     float FailureProbability = 2;
+}
+
+message EmptyResponse {
+
 }

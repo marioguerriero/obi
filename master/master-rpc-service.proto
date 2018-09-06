@@ -16,10 +16,6 @@ message EmptyRequest {
 
 }
 
-message EmptyResponse {
-
-}
-
 message ListInfrastructuresResponse {
     repeated Infrastructure infrastructure = 1;
 }

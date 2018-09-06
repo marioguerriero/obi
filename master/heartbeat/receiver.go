@@ -1,15 +1,15 @@
 package heartbeat
 
 import (
-	"obi/master/model"
-	"net"
-	"github.com/sirupsen/logrus"
 	"github.com/golang/protobuf/proto"
-	"time"
-	"obi/master/platforms"
+	"github.com/sirupsen/logrus"
+	"net"
 	"obi/master/autoscaler"
-	"obi/master/pooling"
 	"obi/master/autoscaler/policies"
+	"obi/master/model"
+	"obi/master/platforms"
+	"obi/master/pooling"
+	"time"
 )
 
 // Receiver class with properties
@@ -92,14 +92,15 @@ func receiverRoutine(pool *pooling.Pool) {
 		}
 
 		newMetrics := model.Metrics{
-			time.Now(),
-			m.GetPendingContainers(),
-			m.GetPendingMB(),
-			m.GetAvailableMB(),
-			m.GetAppAttemptFirstContainerAllocationDelayAvgTime(),
-			m.GetAggregateContainersAllocated(),
-			m.GetAggregateContainersReleased(),
+			Timestamp: time.Now(),
+			PendingContainers: m.GetPendingContainers(),
+			PendingMB: m.GetPendingMB(),
+			AvailableMB: m.GetAvailableMB(),
+			AppAttemptFirstContainerAllocationDelayAvgTime: m.GetAppAttemptFirstContainerAllocationDelayAvgTime(),
+			AggregateContainersAllocated: m.GetAggregateContainersAllocated(),
+			AggregateContainersReleased: m.GetAggregateContainersReleased(),
 		}
+		MergeHeartbeatMetric(m, &newMetrics)
 
 		if value, ok := pool.GetCluster(m.GetClusterName()); ok {
 			cluster := value.(model.ClusterBaseInterface)
