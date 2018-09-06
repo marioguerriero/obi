@@ -5,6 +5,7 @@ import grpc
 
 from concurrent import futures
 import os
+import sys
 import time
 
 import yaml
@@ -24,14 +25,13 @@ if config_path is not None:
         config = yaml.load(f)
 else:
     log.fatal('Unable to read configuration file {}'.format(config_path))
+    sys.exit(1)
 
 # Create autoscaler dataset path name
 AUTOSCALER_DATASET_PATH = os.path.join(
-    [
-        config['bucketMountPath'],
-        'autoscaler-dataset',
-        predictor_utils.random_string(prefix='obi-autoscaler')
-    ]
+    config['bucketMountPath'],
+    'autoscaler-dataset',
+    predictor_utils.random_string(prefix='obi-autoscaler')
 )
 
 

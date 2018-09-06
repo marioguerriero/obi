@@ -929,9 +929,10 @@ class KubernetesClient(GenericClient):
             # Add mount operation on container start up
             container.lifecycle.post_start = k8s.client.V1Handler()
             container.lifecycle.post_start._exec = k8s.client.V1ExecAction(
-                command=['gcsfuse', '-o', 'nonempty',
-                         self._user_config['predictorBucket'],
-                         bucket_dir]
+                command=['sh', '-c',
+                         'mkdir -p {} && gcsfuse -o nonempty {} {}'.format(
+                             bucket_dir, self._user_config['predictorBucket'],
+                             bucket_dir)]
             )
             # Add unmount operation on container deletion
             container.lifecycle.pre_stop = k8s.client.V1Handler()
