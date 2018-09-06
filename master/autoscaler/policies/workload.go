@@ -25,13 +25,9 @@ func Workload(metricsWindow *utils.ConcurrentSlice) int32 {
 		hb := obj.Value.(model.Metrics)
 
 		if previousMetrics != (model.Metrics{}) {
-			fmt.Printf("Allocated containers: %d\n", hb.TotalContainersAllocated)
-			fmt.Printf("Released containers: %d\n", hb.TotalContainersReleased)
-			fmt.Printf("Released containers before: %d\n", previousMetrics.TotalContainersReleased)
 			throughput += float32(hb.TotalContainersReleased - previousMetrics.TotalContainersReleased)
 
 			if hb.PendingContainers > 0 {
-				fmt.Printf("Pending containers: %d\n", hb.PendingContainers)
 				memoryContainer := hb.PendingMemory / hb.PendingContainers
 				containersWillConsumed := hb.AvailableMemory / memoryContainer
 				pendingGrowth := float32(hb.PendingContainers - containersWillConsumed - previousMetrics.PendingContainers)
