@@ -2,7 +2,7 @@ package model
 
 import (
 	"time"
-)
+	)
 
 // Metrics is the struct composing an any type cluster to save last snapshot about metrics
 type Metrics struct {
