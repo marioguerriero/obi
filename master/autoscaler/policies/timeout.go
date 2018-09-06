@@ -16,6 +16,9 @@ var timeoutScalingFactor int32
 
 var timeoutRecord *predictor.AutoscalerData
 
+const TimeoutScalingStep = 1
+const TimeoutScalingThreshold = 40
+
 // Workload scales the cluster when the resource utilization is too high
 func Timeout(metricsWindow *utils.ConcurrentSlice) int32 {
 	var previousMetrics model.Metrics
@@ -62,25 +65,10 @@ func Timeout(metricsWindow *utils.ConcurrentSlice) int32 {
 		fmt.Printf("Throughput: %f\n", throughput)
 		fmt.Printf("Pending rate: %f\n", pendingGrowthRate)
 
-		// Decide whether to scale or not
-		if throughput < pendingGrowthRate {
-			// scale up
-			if timeoutScalingFactor <= 0 {
-				timeoutScalingFactor = 1
-			} else {
-				timeoutScalingFactor = timeoutScalingFactor << 1
-			}
-		} else if (pendingGrowthRate == 0) || (throughput > pendingGrowthRate) {
-			// scale down
-			if timeoutScalingFactor >= 0 {
-				timeoutScalingFactor = -1
-			} else {
-				timeoutScalingFactor = timeoutScalingFactor << 1
-			}
+		// Scale up one at each time interval until we reach a threshold
+		if previousMetrics.NumberOfNodes < TimeoutScalingThreshold {
+			timeoutScalingFactor = TimeoutScalingStep
 		} else {
-			timeoutScalingFactor = 0
-		}
-		if timeoutScalingFactor == 64 || timeoutScalingFactor < 0 {
 			timeoutScalingFactor = 0
 		}
 	}
@@ -99,6 +87,7 @@ func Timeout(metricsWindow *utils.ConcurrentSlice) int32 {
 		timeoutRecord.MetricsAfter = MetricsToSnapshot(&previousMetrics)
 		timeoutRecord.PerformanceAfter = performance
 		// Send data point
+		logrus.WithField("data", *timeoutRecord).Info("Sending autoscaler data to predictor")
 		serverAddr := fmt.Sprintf("%s:%s",
 			viper.GetString("predictorHost"),
 			viper.GetString("predictorPort"))
@@ -112,5 +101,5 @@ func Timeout(metricsWindow *utils.ConcurrentSlice) int32 {
 		timeoutRecord = nil
 	}
 
-	return timeoutScalingFactor
+	return timeoutScalingFactor + previousMetrics.NumberOfNodes
 }
