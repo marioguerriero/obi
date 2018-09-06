@@ -7,8 +7,15 @@ import (
 	"obi/master/utils"
 )
 
-// Googlepdb is the beta autoscaling policy implemented at Google in Dataproc
-func Googlepdb(metricsWindow *utils.ConcurrentSlice) int32 {
+// WorkloadPolicy contains all useful state-variable to apply the policy
+type GooglePolicy struct {
+}
+
+func NewGoogle() *GooglePolicy {
+	return &GooglePolicy{}
+}
+
+func (p *GooglePolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 	var count int32
 	var memoryUsage int32
 	workerMemory := 15000.0

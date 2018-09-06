@@ -111,7 +111,8 @@ func receiverRoutine(pool *pooling.Pool) {
 
 			newCluster, err := platforms.NewExistingCluster(m.GetServiceType(), m.GetClusterName())
 			if err == nil {
-				a := autoscaler.New(policies.Workload, 30, 15, newCluster.(model.Scalable))
+				policy := policies.NewWorkload()
+				a := autoscaler.New(policy, 30, 15, newCluster.(model.Scalable))
 				pool.AddCluster(newCluster, a)
 
 				logrus.WithField("clusterName", m.GetClusterName()).Info("Added cluster in the pool")

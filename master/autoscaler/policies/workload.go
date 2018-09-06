@@ -7,10 +7,17 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var expCount int32
+// WorkloadPolicy contains all useful state-variable to apply the policy
+type WorkloadPolicy struct {
+	expCount int32
+}
+
+func NewWorkload() *WorkloadPolicy {
+	return &WorkloadPolicy{}
+}
 
 // Workload scales the cluster when the resource utilization is too high
-func Workload(metricsWindow *utils.ConcurrentSlice) int32 {
+func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 	var previousMetrics model.Metrics
 	var throughput float32
 	var pendingGrowthRate float32
@@ -49,24 +56,24 @@ func Workload(metricsWindow *utils.ConcurrentSlice) int32 {
 		fmt.Printf("Pending rate: %f\n", pendingGrowthRate)
 		if throughput < pendingGrowthRate {
 			// scale up
-			if expCount <= 0 {
-				expCount = 1
+			if p.expCount <= 0 {
+				p.expCount = 1
 			} else {
-				expCount = expCount << 1
+				p.expCount = p.expCount << 1
 			}
 		} else if (pendingGrowthRate == 0) || (throughput > pendingGrowthRate) {
 			// scale down
-			if expCount >= 0 {
-				expCount = -1
+			if p.expCount >= 0 {
+				p.expCount = -1
 			} else {
-				expCount = expCount << 1
+				p.expCount = p.expCount << 1
 			}
 		} else {
-			expCount = 0
+			p.expCount = 0
 		}
-		if expCount == 64 || expCount < 0 {
-			expCount = 0
+		if p.expCount == 64 || p.expCount < 0 {
+			p.expCount = 0
 		}
 	}
-	return expCount
+	return p.expCount
 }
