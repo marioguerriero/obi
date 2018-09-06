@@ -12,11 +12,12 @@ type WorkloadPolicy struct {
 	expCount int32
 }
 
+// NewWorkload is the constructor of the WorkloadPolicy struct
 func NewWorkload() *WorkloadPolicy {
 	return &WorkloadPolicy{}
 }
 
-// Workload scales the cluster when the resource utilization is too high
+// Apply is the implementation of the Policy interface
 func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 	var previousMetrics model.Metrics
 	var throughput float32
