@@ -101,4 +101,3 @@ delete_job_args_subparsers.add_argument('job_name', type=str)
 
 # Finalize command line argument parsing
 args = parser.parse_args()
-print(args)
