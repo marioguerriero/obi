@@ -53,7 +53,7 @@ func (as *Autoscaler) StopMonitoring() {
 // the `quit` channel
 // @param as is the autoscaler
 func autoscalerRoutine(as *Autoscaler) {
-	var newSize int32
+	var delta int32
 	for {
 		select {
 		case <-as.quit:
@@ -61,10 +61,10 @@ func autoscalerRoutine(as *Autoscaler) {
 				"Closing autoscaler routine.")
 			return
 		default:
-			newSize = as.PolicyHandler(as.managedCluster.(model.ClusterBaseInterface).GetMetricsWindow())
+			delta = as.PolicyHandler(as.managedCluster.(model.ClusterBaseInterface).GetMetricsWindow())
 
-			if newSize != 0 {
-				as.managedCluster.Scale(newSize)
+			if delta != 0 {
+				as.managedCluster.Scale(delta)
 			}
 			time.Sleep(time.Duration(as.Timeout) * time.Second)
 		}
