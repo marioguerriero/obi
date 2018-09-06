@@ -1,11 +1,11 @@
 package autoscaler
 
 import (
-	"time"
-	"obi/master/model"
 	"github.com/sirupsen/logrus"
+	"obi/master/model"
 	"obi/master/utils"
-	)
+	"time"
+)
 
 // Autoscaler class with properties
 type Autoscaler struct {
