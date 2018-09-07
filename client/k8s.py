@@ -832,7 +832,8 @@ class KubernetesClient(GenericClient):
                       "%s\n" % e)
 
     def _create_predictive_component(self, name, service_name,
-                                     namespace, project_id, gcs_secret_name, label):
+                                     namespace, project_id,
+                                     gcs_secret_name, label):
         """
         This function creates and deploys all the k8s objects required for the
         predictive component. It then returns IP address and port information

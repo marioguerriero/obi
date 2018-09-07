@@ -103,7 +103,8 @@ def random_string(prefix='obi', suffix='-test', n=15):
     :param prefix:
     :return:
     """
+    characters = string.ascii_uppercase + string.digits
     return '{}-{}'.format(prefix,
                           datetime.datetime.today().strftime('%Y-%m-%d')) \
-           + ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(n)) \
+           + ''.join(random.choice(characters) for _ in range(n)) \
            + suffix
