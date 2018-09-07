@@ -857,20 +857,23 @@ class KubernetesClient(GenericClient):
         )  # This is empty for now
 
         # Create deployment for predictive component
-        self._create_predictive_deployment(name, namespace, project_id, gcs_secret_name,
+        self._create_predictive_deployment(name, namespace, project_id,
+                                           gcs_secret_name,
                                            label, config_map_name_pred)
 
         # Return host and port to contact the predictor component
         return pred_host, pred_port
 
-    def _create_predictive_deployment(self, name, namespace, project_id, gcs_secret_name,
+    def _create_predictive_deployment(self, name, namespace, project_id,
+                                      gcs_secret_name,
                                       label, config_map_name_pred):
         """
         Build and generate deployment for the OBI predictive component
         :return:
         """
         # Get deployment object
-        deployment = self._build_predictor_deployment(name, namespace, project_id,
+        deployment = self._build_predictor_deployment(name, namespace,
+                                                      project_id,
                                                       gcs_secret_name, label,
                                                       config_map_name_pred)
 
