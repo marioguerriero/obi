@@ -77,7 +77,7 @@ class PredictorServer(predictor_service_pb2_grpc.ObiPredictorServicer):
             # Metrics before scaling
             data.MetricsBefore.AMResourceLimitMB,
             data.MetricsBefore.AMResourceLimitVCores,
-            d   ata.MetricsBefore.UsedAMResourceMB,
+            data.MetricsBefore.UsedAMResourceMB,
             data.MetricsBefore.UsedAMResourceVCores,
             data.MetricsBefore.AppsSubmitted, data.MetricsBefore.AppsRunning,
             data.MetricsBefore.AppsPending, data.MetricsBefore.AppsCompleted,
