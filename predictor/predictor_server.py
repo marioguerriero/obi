@@ -124,7 +124,7 @@ class PredictorServer(predictor_service_pb2_grpc.ObiPredictorServicer):
         print(df)
         if os.path.exists(AUTOSCALER_DATASET_PATH):
             with open(AUTOSCALER_DATASET_PATH, 'a') as ds:
-                df.to_csv(ds, header=False)
+                df.to_csv(ds, header=False, index=False)
         else:
             with open(AUTOSCALER_DATASET_PATH, 'w') as ds:
                 df.to_csv(ds, index=False)

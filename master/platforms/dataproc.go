@@ -225,6 +225,7 @@ func (c *DataprocCluster) SubmitJob(job *m.Job) error {
 					ClusterName: c.Name,
 				})
 				logrus.WithField("cluster-name", c.Name).Info("Delete Dataproc cluster")
+				return
 			}
 		}
 	}()
