@@ -16,7 +16,7 @@ const TimeoutScalingStep = 1
 // TimeoutLength number of metric windows to receive before scaling
 const TimeoutLength = 1
 // TimeoutPolicyUpperBound maximum number of scaling factor
-const TimeoutPolicyUpperBound = 40
+const TimeoutPolicyUpperBound = 60
 
 type TimeoutPolicy struct {
 	scalingFactor int32
