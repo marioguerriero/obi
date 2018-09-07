@@ -12,18 +12,22 @@ import (
 	"obi/master/utils"
 )
 
+// TimeoutScalingStep constant value by which scale at each timeout
 const TimeoutScalingStep = 1
 // TimeoutLength number of metric windows to receive before scaling
 const TimeoutLength = 1
 // TimeoutPolicyUpperBound maximum number of scaling factor
 const TimeoutPolicyUpperBound = 60
 
+// TimeoutPolicy this policy scales the cluster each time it receives
+// a certain amount of activations
 type TimeoutPolicy struct {
 	scalingFactor int32
 	record        *predictor.AutoscalerData
 	count		  int
 }
 
+// NewTimeout creates a new timeout policy for autoscaler
 func NewTimeout() *TimeoutPolicy {
 	return &TimeoutPolicy{
 		0,
