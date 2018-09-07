@@ -193,6 +193,13 @@ class KubernetesClient(GenericClient):
             else self._user_config['kubernetesNamespace']
         log.info('Kubernetes namespace: {}'.format(namespace))
 
+        # Check if infrastructure already exist
+        deployments = self._get_master_deployments(namespace)
+        deployment_names = [d.metadata.name for d in deployments]
+        if name in deployment_names:
+            log.fatal('Infrastructure "{}" already exist'.format(name))
+            sys.exit(1)
+
         # Check if the mandatory fields were specified
         fields = ['dataprocServiceAccountPath', 'gcsServiceAccountPath',
                   'projectId', 'region', 'zone']

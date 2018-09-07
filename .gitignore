@@ -33,3 +33,5 @@ predictor/predictor_service_pb2_grpc.py
 examples/dataproc-deployment.yaml
 
 master/predictor/predictor-service.pb.go
+
+client/data-collector.sh
