@@ -75,39 +75,52 @@ class PredictorServer(predictor_service_pb2_grpc.ObiPredictorServicer):
         point = [
             data.Nodes, data.ScalingFactor,
             # Metrics before scaling
-            data.MetricsBefore.AMResourceLimitMB, data.MetricsBefore.AMResourceLimitVCores,
-            data.MetricsBefore.UsedAMResourceMB, data.MetricsBefore.UsedAMResourceVCores,
+            data.MetricsBefore.AMResourceLimitMB,
+            data.MetricsBefore.AMResourceLimitVCores,
+            d   ata.MetricsBefore.UsedAMResourceMB,
+            data.MetricsBefore.UsedAMResourceVCores,
             data.MetricsBefore.AppsSubmitted, data.MetricsBefore.AppsRunning,
             data.MetricsBefore.AppsPending, data.MetricsBefore.AppsCompleted,
             data.MetricsBefore.AppsKilled, data.MetricsBefore.AppsFailed,
-            data.MetricsBefore.AggregateContainersPreempted, data.MetricsBefore.ActiveApplications,
+            data.MetricsBefore.AggregateContainersPreempted,
+            data.MetricsBefore.ActiveApplications,
             data.MetricsBefore.AppAttemptFirstContainerAllocationDelayNumOps,
             data.MetricsBefore.AppAttemptFirstContainerAllocationDelayAvgTime,
             data.MetricsBefore.AllocatedMB, data.MetricsBefore.AllocatedVCores,
-            data.MetricsBefore.AllocatedContainers, data.MetricsBefore.AggregateContainersAllocated,
-            data.MetricsBefore.AggregateContainersReleased, data.MetricsBefore.AvailableMB,
+            data.MetricsBefore.AllocatedContainers,
+            data.MetricsBefore.AggregateContainersAllocated,
+            data.MetricsBefore.AggregateContainersReleased,
+            data.MetricsBefore.AvailableMB,
             data.MetricsBefore.AvailableVCores, data.MetricsBefore.PendingMB,
-            data.MetricsBefore.PendingVCores, data.MetricsBefore.PendingContainers,
+            data.MetricsBefore.PendingVCores,
+            data.MetricsBefore.PendingContainers,
             # Metrics after scaling
-            data.MetricsAfter.AMResourceLimitMB, data.MetricsAfter.AMResourceLimitVCores,
-            data.MetricsAfter.UsedAMResourceMB, data.MetricsAfter.UsedAMResourceVCores,
+            data.MetricsAfter.AMResourceLimitMB,
+            data.MetricsAfter.AMResourceLimitVCores,
+            data.MetricsAfter.UsedAMResourceMB,
+            data.MetricsAfter.UsedAMResourceVCores,
             data.MetricsAfter.AppsSubmitted, data.MetricsAfter.AppsRunning,
             data.MetricsAfter.AppsPending, data.MetricsAfter.AppsCompleted,
             data.MetricsAfter.AppsKilled, data.MetricsAfter.AppsFailed,
-            data.MetricsAfter.AggregateContainersPreempted, data.MetricsAfter.ActiveApplications,
+            data.MetricsAfter.AggregateContainersPreempted,
+            data.MetricsAfter.ActiveApplications,
             data.MetricsAfter.AppAttemptFirstContainerAllocationDelayNumOps,
             data.MetricsAfter.AppAttemptFirstContainerAllocationDelayAvgTime,
             data.MetricsAfter.AllocatedMB, data.MetricsAfter.AllocatedVCores,
-            data.MetricsAfter.AllocatedContainers, data.MetricsAfter.AggregateContainersAllocated,
-            data.MetricsAfter.AggregateContainersReleased, data.MetricsAfter.AvailableMB,
+            data.MetricsAfter.AllocatedContainers,
+            data.MetricsAfter.AggregateContainersAllocated,
+            data.MetricsAfter.AggregateContainersReleased,
+            data.MetricsAfter.AvailableMB,
             data.MetricsAfter.AvailableVCores, data.MetricsAfter.PendingMB,
-            data.MetricsAfter.PendingVCores, data.MetricsAfter.PendingContainers,
+            data.MetricsAfter.PendingVCores,
+            data.MetricsAfter.PendingContainers,
             # Performance metric before and after
             data.PerformanceBefore, data.PerformanceAfter
         ]
 
         # Persist the received data
-        df = pd.DataFrame([point], columns=predictor_utils.autoscaler_dataset_header)
+        df = pd.DataFrame([point],
+                          columns=predictor_utils.autoscaler_dataset_header)
         print(df)
         if os.path.exists(AUTOSCALER_DATASET_PATH):
             with open(AUTOSCALER_DATASET_PATH, 'a') as ds:
