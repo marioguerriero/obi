@@ -7,9 +7,11 @@ import (
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"log"
+	"math/rand"
 	"obi/master/model"
 	"obi/master/predictor"
 	"obi/master/utils"
+	"time"
 )
 
 // TimeoutScalingStep constant value by which scale at each timeout
@@ -17,7 +19,7 @@ const TimeoutScalingStep = 1
 // TimeoutLength number of metric windows to receive before scaling
 const TimeoutLength = 1
 // TimeoutPolicyUpperBound maximum number of scaling factor
-const TimeoutPolicyUpperBound = 60
+const TimeoutPolicyUpperBound = 30
 
 // TimeoutPolicy this policy scales the cluster each time it receives
 // a certain amount of activations
@@ -29,6 +31,9 @@ type TimeoutPolicy struct {
 
 // NewTimeout creates a new timeout policy for autoscaler
 func NewTimeout() *TimeoutPolicy {
+	// For later random number generation
+	rand.Seed(time.Now().UTC().UnixNano())
+
 	return &TimeoutPolicy{
 		0,
 		nil,
@@ -85,7 +90,7 @@ func (p *TimeoutPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 
 		// Scale up one at each time interval until we reach p threshold
 		if p.count == 0 && previousMetrics.NumberOfNodes < TimeoutPolicyUpperBound {
-			p.scalingFactor = TimeoutScalingStep
+			p.scalingFactor = rand.Int31n(4) + 1//TimeoutScalingStep
 		} else {
 			p.scalingFactor = 0
 		}

@@ -216,7 +216,9 @@ func (c *DataprocCluster) SubmitJob(job *m.Job) error {
 				Region:    c.Region,
 				JobId:     dataprocJob.Reference.JobId,
 			})
-			if j.Status.State == dataprocpb.JobStatus_DONE {
+			if j.Status.State == dataprocpb.JobStatus_DONE ||
+				j.Status.State == dataprocpb.JobStatus_ERROR ||
+				j.Status.State == dataprocpb.JobStatus_CANCELLED {
 				// If the cluster's job is finished, delete the cluster
 				clusterController, _ := dataproc.NewClusterControllerClient(ctx)
 				clusterController.DeleteCluster(ctx, &dataprocpb.DeleteClusterRequest{
