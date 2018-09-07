@@ -577,6 +577,7 @@ class KubernetesClient(GenericClient):
                 self._user_config['kubernetesNamespace'])
         ))
         container.image = self._user_config['masterImage']
+        container.image_pull_policy = 'Always'
 
         # Volume mount for secret
         volume_secret_mount_name = self._object_name_generator(
@@ -937,6 +938,7 @@ class KubernetesClient(GenericClient):
                 self._user_config['kubernetesNamespace'])
         ))
         container.image = self._user_config['predictorImage']
+        container.image_pull_policy = 'Always'
         container.security_context = k8s.client.V1SecurityContext(
             privileged=True)
         container.security_context.capabilities = k8s.client.V1Capabilities(
