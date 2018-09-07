@@ -69,7 +69,7 @@ func (p *TimeoutPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 		}
 		previousMetrics = hb
 	}
-	logrus.WithField("count",p.count).Info("counting")
+
 	if count > 0 {
 		throughput /= float32(count)
 		pendingGrowthRate /= float32(count)
@@ -80,7 +80,7 @@ func (p *TimeoutPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 		fmt.Printf("Pending rate: %f\n", pendingGrowthRate)
 
 		// Scale up one at each time interval until we reach p threshold
-		if p.count-1 == 0 && previousMetrics.NumberOfNodes < TimeoutPolicyUpperBound {
+		if p.count == 0 && previousMetrics.NumberOfNodes < TimeoutPolicyUpperBound {
 			p.scalingFactor = TimeoutScalingStep
 		} else {
 			p.scalingFactor = 0
@@ -88,19 +88,17 @@ func (p *TimeoutPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 
 		p.count--
 	}
-	logrus.WithField("count",p.count).Info("counting")
 
 	if p.count == 0 {
 		// Before scaling, save metrics
 		p.record = &predictor.AutoscalerData{
 			Nodes:             previousMetrics.NumberOfNodes,
 			PerformanceBefore: performance,
+			ScalingFactor:     p.scalingFactor,
 			MetricsBefore:     MetricsToSnapshot(&previousMetrics),
 		}
 		logrus.WithField("data", p.record).Info("Created dataset record")
-	} else if p.count <= 0 {
-		// Store scaling factor
-		p.record.ScalingFactor = p.scalingFactor
+	} else if p.count == -1 { // Delay after scaling metrics computation
 		// If I have scaled, send data point
 		p.record.MetricsAfter = MetricsToSnapshot(&previousMetrics)
 		p.record.PerformanceAfter = performance

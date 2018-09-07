@@ -13,7 +13,12 @@ namespace: obi
 
 # This is the service account file path for which the client will
 # create a secret to be attached to the infrastructure deployment
-serviceAccountPath: /Users/m.guerriero/code/dataproc-sa.json
+dataprocServiceAccountPath: /Users/m.guerriero/code/dataproc-sa.json
+
+# This is the service account file path for which the client will
+# create a secret to be attached to the infrastructure deployment
+# to be used when it needs GCS permissions
+gcsServiceAccountPath: /Users/m.guerriero/code/gcs-service-account.json
 
 # Google Cloud's project ID under which the Dataproc instance is registered
 projectId: dhg-data-intelligence-ops

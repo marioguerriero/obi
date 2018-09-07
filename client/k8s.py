@@ -194,14 +194,18 @@ class KubernetesClient(GenericClient):
         log.info('Kubernetes namespace: {}'.format(namespace))
 
         # Check if the mandatory fields were specified
-        fields = ['serviceAccountPath', 'projectId', 'region', 'zone']
+        fields = ['dataprocServiceAccountPath', 'gcsServiceAccountPath',
+                  'projectId', 'region', 'zone']
         for f in fields:
             if f not in deployment:
                 raise FieldMissingError('"{}" field is mandatory'.format(f))
 
         # Generate secret
-        secret_name = self._create_secret_from_file(
-            namespace, deployment['serviceAccountPath'])
+        dataproc_secret_name = self._create_secret_from_file(
+            namespace, deployment['dataprocServiceAccountPath'])
+
+        gcs_secret_name = self._create_secret_from_file(
+            namespace, deployment['gcsServiceAccountPath'])
 
         # Generate label to be used to match services to master deployment
         master_selector = self._object_name_generator(
@@ -246,6 +250,8 @@ class KubernetesClient(GenericClient):
             self._create_predictive_component(predictor_deployment_name,
                                               predictor_service_name,
                                               namespace,
+                                              deployment['projectId'],
+                                              gcs_secret_name,
                                               predictor_selector)
         log.info('Predictor component created')
 
@@ -273,7 +279,7 @@ class KubernetesClient(GenericClient):
         # Create deployment
         self._create_infrastructure_deployment(
             name, namespace, deployment['projectId'],
-            secret_name,
+            dataproc_secret_name,
             master_selector,
             config_map_name,
             master_service_name,
@@ -324,6 +330,9 @@ class KubernetesClient(GenericClient):
         secret_names = [
             master_deployment.metadata.annotations[
                 self._user_config['serviceAccountSecretName']
+            ],
+            predictor_deployment.metadata.annotations[
+                self._user_config['predictorServiceAccountName']
             ]
         ]
 
@@ -823,7 +832,7 @@ class KubernetesClient(GenericClient):
                       "%s\n" % e)
 
     def _create_predictive_component(self, name, service_name,
-                                     namespace, label):
+                                     namespace, project_id, gcs_secret_name, label):
         """
         This function creates and deploys all the k8s objects required for the
         predictive component. It then returns IP address and port information
@@ -848,21 +857,21 @@ class KubernetesClient(GenericClient):
         )  # This is empty for now
 
         # Create deployment for predictive component
-        self._create_predictive_deployment(name, namespace, label,
-                                           config_map_name_pred)
+        self._create_predictive_deployment(name, namespace, project_id, gcs_secret_name,
+                                           label, config_map_name_pred)
 
         # Return host and port to contact the predictor component
         return pred_host, pred_port
 
-    def _create_predictive_deployment(self, name, namespace,
+    def _create_predictive_deployment(self, name, namespace, project_id, gcs_secret_name,
                                       label, config_map_name_pred):
         """
         Build and generate deployment for the OBI predictive component
         :return:
         """
         # Get deployment object
-        deployment = self._build_predictor_deployment(name, namespace,
-                                                      label,
+        deployment = self._build_predictor_deployment(name, namespace, project_id,
+                                                      gcs_secret_name, label,
                                                       config_map_name_pred)
 
         # Send deployment creation request
@@ -875,8 +884,8 @@ class KubernetesClient(GenericClient):
                 "CoreV1Api->create_namespaced_deployment: "
                 "%s" % e)
 
-    def _build_predictor_deployment(self, name, namespace,
-                                    label, config_map_name):
+    def _build_predictor_deployment(self, name, namespace, project_id,
+                                    gcs_secret_name, label, config_map_name):
         """
         This function builds and returns a deployment object for the
         predictive component of OBI
@@ -892,7 +901,8 @@ class KubernetesClient(GenericClient):
         metadata.annotations = {
             self._user_config['typeMetadata']:
                 self._user_config['predictorType'],
-            self._user_config['predictorConfigMapName']: config_map_name
+            self._user_config['predictorConfigMapName']: config_map_name,
+            self._user_config['predictorServiceAccountName']: gcs_secret_name
         }
         deployment.metadata = metadata
 
@@ -951,20 +961,37 @@ class KubernetesClient(GenericClient):
                 self._user_config['defaultConfigMapName'])
         )
 
+        env_proj = k8s.client.V1EnvVar(
+            name='GOOGLE_CLOUD_PROJECT', value=project_id)
+
+        env_gac = k8s.client.V1EnvVar(
+            name='GOOGLE_APPLICATION_CREDENTIALS', value=os.path.join(
+                self._user_config['secretMountPath'],
+                gcs_secret_name)
+        )
+
         container.env = [
-            env_bucket, env_config
+            env_bucket, env_config, env_proj, env_gac
         ]
 
         # Volume mount for config map
         volume_mount_config_map_name = self._object_name_generator(
-            prefix='{}-volumne-mount'.format(
+            prefix='{}-volume-mount'.format(
                 self._user_config['kubernetesNamespace']))
         volume_mount_config_map = k8s.client.V1VolumeMount(
             name=volume_mount_config_map_name,
             mount_path=self._user_config['configMountPath'])
 
+        # Volume mount for secret
+        volume_mount_secret_name = self._object_name_generator(
+            prefix='{}-volume-mount'.format(
+                self._user_config['kubernetesNamespace']))
+        volume_mount_secret = k8s.client.V1VolumeMount(
+            name=volume_mount_secret_name,
+            mount_path=self._user_config['secretMountPath'])
+
         container.volume_mounts = [
-            volume_mount_config_map
+            volume_mount_config_map, volume_mount_secret
         ]
 
         template_spec = k8s.client.V1PodSpec(containers=[
@@ -983,8 +1010,14 @@ class KubernetesClient(GenericClient):
         volume_config_map.config_map = k8s.client.V1ConfigMapVolumeSource()
         volume_config_map.config_map.name = config_map_name
 
+        # Volume for SA secret
+        volume_secret = k8s.client.V1Volume(
+            name=volume_mount_secret_name)
+        volume_secret.secret = k8s.client.V1SecretVolumeSource()
+        volume_secret.secret.secret_name = gcs_secret_name
+
         template_spec.volumes = [
-            volume_config_map
+            volume_config_map, volume_secret
         ]
         template.spec = template_spec
 

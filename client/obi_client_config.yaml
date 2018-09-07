@@ -16,6 +16,9 @@ defaultServiceSelectorName: app
 # Default name used by the deployments to retrieve their config map
 defaultConfigMapName: config-map.yaml
 
+# Default name used by the deployments to retrieve their config map
+defaultServiceAccountName: sa.json
+
 # Number of replicas to create when creating a new infrastructure
 masterReplicas: 1
 
@@ -64,6 +67,7 @@ serviceAccountSecretName: service-account-secret
 masterConfigMapName: master-config-map
 masterVolumeClaimName: master-volume-claim
 predictorConfigMapName: predictor-config-map
+predictorServiceAccountName: predictor-service-account
 
 # Extra metadata for services
 serviceTypeMetadata: type

@@ -31,7 +31,7 @@ else:
 AUTOSCALER_DATASET_PATH = os.path.join(
     config['bucketMountPath'],
     'autoscaler-dataset',
-    predictor_utils.random_string(prefix='obi-autoscaler')
+    predictor_utils.random_string(prefix='obi-autoscaler', suffix='.csv')
 )
 
 
@@ -107,9 +107,14 @@ class PredictorServer(predictor_service_pb2_grpc.ObiPredictorServicer):
         ]
 
         # Persist the received data
-        df = pd.DataFrame(point, columns=predictor_utils.autoscaler_dataset_header)
-        with open(AUTOSCALER_DATASET_PATH, 'a') as ds:
-            df.to_csv(ds)
+        df = pd.DataFrame([point], columns=predictor_utils.autoscaler_dataset_header)
+        print(df)
+        if os.path.exists(AUTOSCALER_DATASET_PATH):
+            with open(AUTOSCALER_DATASET_PATH, 'a') as ds:
+                df.to_csv(ds, header=False)
+        else:
+            with open(AUTOSCALER_DATASET_PATH, 'w') as ds:
+                df.to_csv(ds, index=False)
 
         return None
 

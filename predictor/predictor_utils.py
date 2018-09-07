@@ -91,13 +91,15 @@ def infer_predictor_name(req):
     return None
 
 
-def random_string(prefix='obi', n=15):
+def random_string(prefix='obi', suffix='-test', n=15):
     """
     Generates a random string of length n
+    :param suffix:
     :param n:
     :param prefix:
     :return:
     """
     return '{}-{}'.format(prefix,
                           datetime.datetime.today().strftime('%Y-%m-%d')) \
-           + ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(n))
+           + ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(n)) \
+           + suffix
