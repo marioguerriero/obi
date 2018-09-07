@@ -98,7 +98,7 @@ func (p *TimeoutPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 			MetricsBefore:     MetricsToSnapshot(&previousMetrics),
 		}
 		logrus.WithField("data", p.record).Info("Created dataset record")
-	} else if p.count == -1 { // Delay after scaling metrics computation
+	} else if p.count == -2 { // Delay after scaling metrics computation
 		// If I have scaled, send data point
 		p.record.MetricsAfter = MetricsToSnapshot(&previousMetrics)
 		p.record.PerformanceAfter = performance
@@ -117,6 +117,10 @@ func (p *TimeoutPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 		p.record = nil
 		// Reset counter
 		p.count = TimeoutLength
+	}
+
+	if p.scalingFactor != 0 && p.record != nil {
+		p.record.ScalingFactor = p.scalingFactor
 	}
 
 	return p.scalingFactor
