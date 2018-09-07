@@ -132,7 +132,7 @@ func (c *DataprocCluster) Scale(delta int32) bool {
 		ClusterName: c.Name,
 		Cluster: &dataprocpb.Cluster{
 			Config: &dataprocpb.ClusterConfig{
-				WorkerConfig: &dataprocpb.InstanceGroupConfig{
+				SecondaryWorkerConfig: &dataprocpb.InstanceGroupConfig{
 					NumInstances: newSize,
 				},
 			},
