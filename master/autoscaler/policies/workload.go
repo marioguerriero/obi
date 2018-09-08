@@ -72,7 +72,7 @@ func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 		} else {
 			p.expCount = 0
 		}
-		if p.expCount == 64 || p.expCount < 0 {
+		if p.expCount == 64 || p.expCount < -64 {
 			p.expCount = 0
 		}
 	}
