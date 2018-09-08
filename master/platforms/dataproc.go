@@ -117,7 +117,7 @@ func (c *DataprocCluster) Scale(delta int32) bool {
 	if delta < 0 && c.PreemptibleNodes == 0 {
 		return true
 	}
-	newSize = int32(math.Max(0, float64(c.WorkerNodes + delta)))
+	newSize = int32(math.Max(0, float64(c.PreemptibleNodes + delta)))
 
 	ctx := context.Background()
 	controller, err := dataproc.NewClusterControllerClient(ctx)
@@ -132,14 +132,14 @@ func (c *DataprocCluster) Scale(delta int32) bool {
 		ClusterName: c.Name,
 		Cluster: &dataprocpb.Cluster{
 			Config: &dataprocpb.ClusterConfig{
-				WorkerConfig: &dataprocpb.InstanceGroupConfig{
+				SecondaryWorkerConfig: &dataprocpb.InstanceGroupConfig{
 					NumInstances: newSize,
 				},
 			},
 		},
 		UpdateMask:  &field_mask.FieldMask{
 			Paths: []string{
-				"config.worker_config.num_instances",
+				"config.secondary_worker_config.num_instances",
 			},
 		},
 	}
@@ -156,13 +156,13 @@ func (c *DataprocCluster) Scale(delta int32) bool {
 		return false
 	}
 
-	c.WorkerNodes= newSize
+	c.PreemptibleNodes= newSize
 	logrus.WithFields(logrus.Fields{
 		"clusterName": c.Name,
 		"newSize": newSize,
-	}).Info("Scaling completed.")
+	}).Info("Scaling completed with secondary nodes.")
 
-	if c.WorkerNodes == 0 {
+	if c.PreemptibleNodes == 0 {
 		return true
 	}
 	return false
