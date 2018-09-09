@@ -17,7 +17,7 @@ import (
 // TimeoutScalingStep constant value by which scale at each timeout
 const TimeoutScalingStep = 1
 // TimeoutLength number of metric windows to receive before scaling
-const TimeoutLength = 1
+const TimeoutLength = 2
 // TimeoutPolicyUpperBound maximum number of scaling factor
 const TimeoutPolicyUpperBound = 30
 
@@ -85,12 +85,32 @@ func (p *TimeoutPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 
 		performance = throughput - pendingGrowthRate // I want to maximize this
 
+		if p.record != nil {
+			// If I have scaled, send data point
+			p.record.MetricsAfter = MetricsToSnapshot(&previousMetrics)
+			p.record.PerformanceAfter = performance
+			// Send data point
+			logrus.WithField("data", *p.record).Info("Sending autoscaler data to predictor")
+			serverAddr := fmt.Sprintf("%s:%s",
+				viper.GetString("predictorHost"),
+				viper.GetString("predictorPort"))
+			conn, err := grpc.Dial(serverAddr, grpc.WithInsecure()) // TODO: encrypt communication
+			if err != nil {
+				log.Fatalf("fail to dial: %v", err)
+			}
+			pClient := predictor.NewObiPredictorClient(conn)
+			pClient.CollectAutoscalerData(context.Background(), p.record)
+			// Clear data point
+			p.record = nil
+		}
+
 		fmt.Printf("Throughput: %f\n", throughput)
 		fmt.Printf("Pending rate: %f\n", pendingGrowthRate)
 
 		// Scale up one at each time interval until we reach p threshold
 		if p.count == 0 && previousMetrics.NumberOfNodes < TimeoutPolicyUpperBound {
-			p.scalingFactor = rand.Int31n(4) + 1//TimeoutScalingStep
+			p.scalingFactor = rand.Int31n(TimeoutScalingStep - 1) + 1
+			p.count = TimeoutLength
 		} else {
 			p.scalingFactor = 0
 		}
@@ -98,7 +118,7 @@ func (p *TimeoutPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 		p.count--
 	}
 
-	if p.count == 0 {
+	if p.scalingFactor != 0 && p.record == nil {
 		// Before scaling, save metrics
 		p.record = &predictor.AutoscalerData{
 			Nodes:             previousMetrics.NumberOfNodes,
@@ -107,29 +127,6 @@ func (p *TimeoutPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 			MetricsBefore:     MetricsToSnapshot(&previousMetrics),
 		}
 		logrus.WithField("data", p.record).Info("Created dataset record")
-	} else if p.count == -2 { // Delay after scaling metrics computation
-		// If I have scaled, send data point
-		p.record.MetricsAfter = MetricsToSnapshot(&previousMetrics)
-		p.record.PerformanceAfter = performance
-		// Send data point
-		logrus.WithField("data", *p.record).Info("Sending autoscaler data to predictor")
-		serverAddr := fmt.Sprintf("%s:%s",
-			viper.GetString("predictorHost"),
-			viper.GetString("predictorPort"))
-		conn, err := grpc.Dial(serverAddr, grpc.WithInsecure()) // TODO: encrypt communication
-		if err != nil {
-			log.Fatalf("fail to dial: %v", err)
-		}
-		pClient := predictor.NewObiPredictorClient(conn)
-		pClient.CollectAutoscalerData(context.Background(), p.record)
-		// Clear data point
-		p.record = nil
-		// Reset counter
-		p.count = TimeoutLength
-	}
-
-	if p.scalingFactor != 0 && p.record != nil {
-		p.record.ScalingFactor = p.scalingFactor
 	}
 
 	return p.scalingFactor

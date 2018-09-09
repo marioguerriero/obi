@@ -220,12 +220,7 @@ func (c *DataprocCluster) SubmitJob(job *m.Job) error {
 				j.Status.State == dataprocpb.JobStatus_ERROR ||
 				j.Status.State == dataprocpb.JobStatus_CANCELLED {
 				// If the cluster's job is finished, delete the cluster
-				clusterController, _ := dataproc.NewClusterControllerClient(ctx)
-				clusterController.DeleteCluster(ctx, &dataprocpb.DeleteClusterRequest{
-					ProjectId:   c.ProjectID,
-					Region:      c.Region,
-					ClusterName: c.Name,
-				})
+				c.delete(ctx)
 				logrus.WithField("cluster-name", c.Name).Info("Delete Dataproc cluster")
 				return
 			}
@@ -312,3 +307,15 @@ func (c *DataprocCluster) AllocateResources() error {
 }
 
 // <-- end implementation of `ClusterBaseInterface` interface -->
+
+// delete the given Dataproc cluster
+func (c *DataprocCluster) delete(ctx context.Context)  {
+	clusterController, _ := dataproc.NewClusterControllerClient(ctx)
+	clusterController.DeleteCluster(ctx, &dataprocpb.DeleteClusterRequest{
+		ProjectId:   c.ProjectID,
+		Region:      c.Region,
+		ClusterName: c.Name,
+	})
+	// Send delete even over cluster's channel
+	c.Events <- m.ClusterEvent_DELETE
+}

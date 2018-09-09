@@ -49,7 +49,7 @@ class PredictorServer(predictor_service_pb2_grpc.ObiPredictorServicer):
         :return:
         """
         log.info('Received request {}'.format(req))
-
+        return 0, 0 # FIXME
         # Select the correct predictor
         predictor_name = predictor_utils.infer_predictor_name(req)
         predictor = predictors.get_predictor_instance(predictor_name)
@@ -121,7 +121,6 @@ class PredictorServer(predictor_service_pb2_grpc.ObiPredictorServicer):
         # Persist the received data
         df = pd.DataFrame([point],
                           columns=predictor_utils.autoscaler_dataset_header)
-        print(df)
         if os.path.exists(AUTOSCALER_DATASET_PATH):
             with open(AUTOSCALER_DATASET_PATH, 'a') as ds:
                 df.to_csv(ds, header=False, index=False)
@@ -129,7 +128,7 @@ class PredictorServer(predictor_service_pb2_grpc.ObiPredictorServicer):
             with open(AUTOSCALER_DATASET_PATH, 'w') as ds:
                 df.to_csv(ds, index=False)
 
-        return None
+        return predictor_service_pb2.EmptyResponse()
 
 
 def serve():
