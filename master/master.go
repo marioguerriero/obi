@@ -57,14 +57,16 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 		ID:                 rand.Int(),
 		ExecutablePath:     jobRequest.ExecutablePath,
 		Type:               jobType,
+		Priority:           0,
+		AssignedCluster:    "",
 		PredictedDuration:  int64(duration),
 		FailureProbability: float32(failure),
-		Args: 				jobRequest.JobArgs,
+		Args:               jobRequest.JobArgs,
 	}
 
 	// Send job execution request
 	logrus.WithField("priority-level", jobRequest.Priority).Info("Schedule job for execution")
-	m.Pooling.ScheduleJob(job, jobRequest.Priority)
+	m.Pooling.ScheduleJob(job)
 
 	return new(EmptyResponse), nil
 }
@@ -73,11 +75,12 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 func CreateMaster() (*ObiMaster) {
 	// Create new cluster pooling object
 	pool := pooling.GetPool()
-	p := pooling.New(pool)
+	p := pooling.New(pool, 10)
 	hb := heartbeat.New(pool)
 
 	hb.Start()
 	pool.StartLivelinessMonitoring()
+	p.StartScheduling()
 
 	// Open connection to predictor server
 	serverAddr := fmt.Sprintf("%s:%s",
