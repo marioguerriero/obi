@@ -8,16 +8,18 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"obi/master/autoscaler"
+	"obi/master/autoscaler/policies"
 	"obi/master/model"
 	"obi/master/platforms"
 	"obi/master/utils"
-	"obi/master/autoscaler/policies"
+	"sync"
 )
 
 // Pooling class with properties
 type Pooling struct {
 	pool           *Pool
 	scheduleQueues map[int32]*queue.Queue
+	CreationLock sync.Mutex
 }
 
 // New is the constructor of Pooling struct
@@ -30,6 +32,7 @@ func New(pool *Pool) *Pooling {
 	pooling := &Pooling{
 		pool,
 		make(map[int32]*queue.Queue),
+		sync.Mutex{},
 	}
 
 	// Start scheduling routine
@@ -102,7 +105,11 @@ func (p *Pooling) schedulingRoutine() {
 			if q.Len() > 0 {
 				items, _ := q.Get(1)
 				job := items[0]
-				p.SubmitJob(job.(*model.Job))
+				go func() {
+					p.SubmitJob(job.(*model.Job))
+				}()
+				logrus.WithField("cluster", job.(*model.Job).AssignedCluster).Info(
+					"Extract job from queue for execution")
 				break
 			}
 		}
@@ -113,10 +120,13 @@ func (p *Pooling) schedulingRoutine() {
 func (p *Pooling) ScheduleJob(job *model.Job, priority int32) error {
 	// Check if queue for the given priority level already exists,
 	// if not, create it
+	p.CreationLock.Lock()
 	_, ok := p.scheduleQueues[priority]
 	if !ok {
 		p.scheduleQueues[priority] = queue.New(32)
+		logrus.WithField("level", priority).Info("Created new scheduling queue")
 	}
+	p.CreationLock.Unlock()
 
 	// Add job to the request schedule queue
 	return p.scheduleQueues[priority].Put(job)
