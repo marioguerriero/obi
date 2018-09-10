@@ -90,6 +90,7 @@ func (m *ObiMaster) SubmitExecutable(stream ObiMaster_SubmitExecutableServer) er
 		// Open file and create writer stream
 		if fileStream == nil {
 			filename = fmt.Sprintf("%s-%s", req.Filename, utils.RandomString(5))
+			logrus.WithField("filename", filename).Info("Storing local executable")
 			f, err := os.Create(filename)
 			defer f.Close()
 			if err != nil {
