@@ -3,7 +3,8 @@ syntax = "proto3";
 package main;
 
 service ObiMaster {
-    rpc SubmitJob (JobSubmissionRequest) returns (EmptyResponse) {}
+    rpc SubmitJob (JobSubmissionRequest) returns (Empty) {}
+    rpc SubmitExecutable(stream ExecutableSubmissionRequest) returns (ExecutableSubmissionResponse) {}
 }
 
 message Infrastructure {
@@ -12,7 +13,7 @@ message Infrastructure {
 
 // Request/Response messages
 
-message EmptyRequest {
+message Empty {
 
 }
 
@@ -31,4 +32,13 @@ message JobSubmissionRequest {
     int32 duration = 5;
     float failureProbability = 6;
     int32 priority = 7;
+}
+
+message ExecutableSubmissionRequest {
+    string filename = 1;
+    bytes chunk = 2;
+}
+
+message ExecutableSubmissionResponse {
+    string filename = 1;
 }

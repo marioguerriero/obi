@@ -167,6 +167,18 @@ class KubernetesClient(GenericClient):
         # Create connection object
         with grpc.insecure_channel('{}:{}'.format(host, port)) as channel:
             stub = master_rpc_service_pb2_grpc.ObiMasterStub(channel)
+            # Check if the user wants to execute a local script
+            is_local = True
+            try:
+                f = open(req.executablePath, 'r')
+                f.close()
+            except IOError:
+                is_local = False
+            if is_local:
+                # Upload the file
+                res = stub.SubmitExecutable(
+                    utils.executable_submission_iterator(req.executablePath))
+                req.executablePath = res.filename
             # Submit job creation request
             log.info('Sending job submission request')
             stub.SubmitJob(req)

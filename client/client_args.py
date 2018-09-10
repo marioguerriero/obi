@@ -60,8 +60,9 @@ create_job_args.add_argument('-p', help='Job priority level. If it is'
                                         'not specified the default priority'
                                         'level (0) is assumed. This is also'
                                         'the lowest priority level available.',
-                             type=int, required=True,
+                             type=int,
                              nargs='?',
+                             const=0,
                              default=0,
                              choices=range(0, 11),
                              dest='job_priority')

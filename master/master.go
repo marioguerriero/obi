@@ -1,17 +1,21 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
+	"io"
 	"log"
 	"math/rand"
 	"obi/master/heartbeat"
 	"obi/master/model"
 	"obi/master/pooling"
 	"obi/master/predictor"
+	"obi/master/utils"
+	"os"
 )
 
 // ObiMaster structure representing one master instance for OBI
@@ -25,13 +29,13 @@ type ObiMaster struct {
 // @param ctx
 // @param msg
 func (m *ObiMaster) ListInfrastructures(ctx context.Context,
-		msg *EmptyRequest) (*ListInfrastructuresResponse, error) {
+		msg *Empty) (*ListInfrastructuresResponse, error) {
 	return nil, nil
 }
 
 // SubmitJob remote procedure call used to submit a job to one of the OBI infrastructures
 func (m *ObiMaster) SubmitJob(ctx context.Context,
-		jobRequest *JobSubmissionRequest) (*EmptyResponse, error) {
+		jobRequest *JobSubmissionRequest) (*Empty, error) {
 	logrus.WithField("path", jobRequest.ExecutablePath).Info("Received job request")
 
 	// Generate predictions before submitting the job
@@ -68,7 +72,35 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 	logrus.WithField("priority-level", jobRequest.Priority).Info("Schedule job for execution")
 	m.Pooling.ScheduleJob(job)
 
-	return new(EmptyResponse), nil
+	return new(Empty), nil
+}
+
+// SubmitExecutable accepts and store an executable file
+func (m *ObiMaster) SubmitExecutable(stream ObiMaster_SubmitExecutableServer) error {
+	var filename string
+	var fileStream *bufio.Writer = nil
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			return stream.SendAndClose(&ExecutableSubmissionResponse{Filename:filename})
+		}
+		if err != nil {
+			return err
+		}
+		// Open file and create writer stream
+		if fileStream == nil {
+			filename = fmt.Sprintf("%s-%s", req.Filename, utils.RandomString(5))
+			f, err := os.Create(filename)
+			defer f.Close()
+			if err != nil {
+				return err
+			}
+			fileStream = bufio.NewWriter(f)
+			defer fileStream.Flush()
+		}
+		// Write to file
+		fileStream.Write(req.Chunk)
+	}
 }
 
 // CreateMaster generates a new OBI master instance

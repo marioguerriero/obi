@@ -39,7 +39,7 @@ func (p *LinearWorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32
 	var count int8
 	var performance float32
 
-	logrus.Info("Applying workload-based policy")
+	logrus.Info("Applying linear workload-based policy")
 	for obj := range metricsWindow.Iter() {
 		if obj.Value == nil {
 			continue
