@@ -22,3 +22,4 @@ def executable_submission_iterator(path):
                 filename=path,
                 chunk=data
             )
+            data = f.read(CHUNK_SIZE)

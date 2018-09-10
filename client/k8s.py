@@ -176,6 +176,8 @@ class KubernetesClient(GenericClient):
                 is_local = False
             if is_local:
                 # Upload the file
+                for a in utils.executable_submission_iterator(req.executablePath):
+                    print(a)
                 res = stub.SubmitExecutable(
                     utils.executable_submission_iterator(req.executablePath))
                 req.executablePath = res.filename

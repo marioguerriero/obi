@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"github.com/sirupsen/logrus"
@@ -16,6 +15,7 @@ import (
 	"obi/master/predictor"
 	"obi/master/utils"
 	"os"
+	"path/filepath"
 )
 
 // ObiMaster structure representing one master instance for OBI
@@ -78,29 +78,23 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 // SubmitExecutable accepts and store an executable file
 func (m *ObiMaster) SubmitExecutable(stream ObiMaster_SubmitExecutableServer) error {
 	var filename string
-	var fileStream *bufio.Writer = nil
+	var f *os.File = nil
+
 	for {
 		req, err := stream.Recv()
 		if err == io.EOF {
 			return stream.SendAndClose(&ExecutableSubmissionResponse{Filename:filename})
 		}
-		if err != nil {
-			return err
-		}
-		// Open file and create writer stream
-		if fileStream == nil {
-			filename = fmt.Sprintf("%s-%s", req.Filename, utils.RandomString(5))
+		if f == nil {
+			// Create file
+			filename = fmt.Sprintf("%s-%s", filepath.Base(req.Filename), utils.RandomString(5))
 			logrus.WithField("filename", filename).Info("Storing local executable")
-			f, err := os.Create(filename)
-			defer f.Close()
+			f, err = os.Create(filename)
 			if err != nil {
 				return err
 			}
-			fileStream = bufio.NewWriter(f)
-			defer fileStream.Flush()
 		}
-		// Write to file
-		fileStream.Write(req.Chunk)
+		f.WriteString(req.Chunk)
 	}
 }
 
