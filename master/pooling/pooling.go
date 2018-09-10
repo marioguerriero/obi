@@ -102,8 +102,13 @@ func schedulingRoutine(pooling *Pooling) {
 			} else {
 				// TODO: use another library for heap-based priority queue
 				job := obj[0].(*model.Job)
-				logrus.WithField("jobID", job.ID).Info("New job admitted for running")
-				pooling.SubmitJob(job)
+				logrus.WithFields(logrus.Fields{
+					"jobID": job.ID,
+					"priority": job.Priority,
+				}).Info("New job admitted for running")
+				go func() {
+					pooling.SubmitJob(job)
+				}()
 			}
 			time.Sleep(time.Duration(pooling.schedulerWindow) * time.Second)
 		}

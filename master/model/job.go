@@ -27,7 +27,7 @@ type Job struct {
 	ID                 int
 	ExecutablePath     string
 	Type               JobType
-	Priority           int8
+	Priority           int32
 	Status             JobStatus
 	Platform 		   string
 	AssignedCluster    string
