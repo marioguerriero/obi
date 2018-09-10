@@ -12,6 +12,9 @@ import (
 type Pool struct {
 	clusters sync.Map
 	autoscalers sync.Map
+	quit chan struct{}
+	killTimeout int16
+	sleepInterval int
 }
 
 // singleton instance
@@ -24,8 +27,12 @@ func GetPool() *Pool {
 		poolInstance = &Pool{
 			sync.Map{},
 			sync.Map{},
+			make(chan struct{}),
+			60,
+			30,
 		}
 	}
+
 	return poolInstance
 }
 
@@ -51,7 +58,7 @@ func (p *Pool) RemoveCluster(clusterName string) {
 
 // Clusters is for getting the list of all clusters inside the pool
 // return a channel containing the cluster objects
-func (p *Pool) LivelinessMonitor(timeout int16) {
+func (p *Pool) LivelinessCheck(timeout int16) {
 	p.clusters.Range(func(key interface{}, value interface{}) bool {
 		cluster := value.(model.ClusterBaseInterface)
 		var lastHeartbeat model.Metrics
@@ -78,6 +85,33 @@ func (p *Pool) LivelinessMonitor(timeout int16) {
 // return the optional object and a bool to check if it is present
 func (p *Pool) GetCluster(clusterName string) (interface{}, bool) {
 	return p.clusters.Load(clusterName)
+}
+
+func (p *Pool) StartLivelinessMonitoring() {
+	logrus.Info("Starting cluster tracker routine.")
+	go livelinessMonitorRoutine(poolInstance)
+}
+
+func (p *Pool) StopLivelinessMonitoring() {
+	logrus.Info("Stopping cluster tracker routine.")
+	close(p.quit)
+}
+
+// goroutine which periodically removes outdated/down clusters. It will be stop when the `quit` channel is closed
+// @param pool contains all the clusters to track
+// @param timeout is the time interval after which a cluster must be removed from the pool
+func livelinessMonitorRoutine(pool *Pool) {
+
+	for {
+		select {
+		case <-pool.quit:
+			logrus.Info("Closing liveliness monitor routine.")
+			return
+		default:
+			pool.LivelinessCheck(pool.killTimeout)
+			time.Sleep(time.Duration(pool.sleepInterval) * time.Second)
+		}
+	}
 }
 
 

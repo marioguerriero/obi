@@ -15,8 +15,6 @@ import (
 // Receiver class with properties
 type Receiver struct {
 	pool *pooling.Pool
-	DeleteTimeout int16
-	TrackerInterval int16
 }
 
 // channel to interrupt the heartbeat receiver routine
@@ -30,11 +28,9 @@ var conn *net.UDPConn
 // @param deleteTimeout is the time interval after which a cluster is assumed down
 // @param trackerInterval is the time interval for which the clusters tracker is triggered
 // return the pointer to the instance
-func New(pool *pooling.Pool, deleteTimeout int16, trackerInterval int16) *Receiver {
+func New(pool *pooling.Pool) *Receiver {
 	r := &Receiver{
 		pool,
-		deleteTimeout,
-		trackerInterval,
 	}
 
 	return r
@@ -45,8 +41,6 @@ func (receiver *Receiver) Start() {
 	quit = make(chan struct{})
 	logrus.Info("Starting heartbeat receiver routine.")
 	go receiverRoutine(receiver.pool)
-	logrus.Info("Starting cluster tracker routine.")
-	go clustersTrackerRoutine(receiver.pool, receiver.DeleteTimeout, receiver.TrackerInterval)
 }
 
 // goroutine which listens to new heartbeats from cluster masters. It will be stop when an empty object is inserted in
@@ -142,23 +136,6 @@ func receiverRoutine(pool *pooling.Pool) {
 			} else {
 				logrus.WithField("Error", err).Error("Existing cluster not inserted in the pool")
 			}
-		}
-	}
-}
-
-// goroutine which periodically removes outdated/down clusters. It will be stop when the `quit` channel is closed
-// @param pool contains all the clusters to track
-// @param timeout is the time interval after which a cluster must be removed from the pool
-func clustersTrackerRoutine(pool *pooling.Pool, timeout int16, interval int16) {
-
-	for {
-		select {
-		case <-quit:
-			logrus.Info("Closing cluster tracker routine.")
-			return
-		default:
-			pool.LivelinessMonitor(timeout)
-			time.Sleep(time.Duration(interval) * time.Second)
 		}
 	}
 }

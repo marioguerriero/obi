@@ -74,8 +74,10 @@ func CreateMaster() (*ObiMaster) {
 	// Create new cluster pooling object
 	pool := pooling.GetPool()
 	p := pooling.New(pool)
-	hb := heartbeat.New(pool, 60, 30)
+	hb := heartbeat.New(pool)
+
 	hb.Start()
+	pool.StartLivelinessMonitoring()
 
 	// Open connection to predictor server
 	serverAddr := fmt.Sprintf("%s:%s",
