@@ -5,11 +5,6 @@ import (
 	"sync"
 )
 
-const (
-	// ClusterEvent_DELETE even identifying the deletion of a cluster
-	ClusterEvent_DELETE = iota
-)
-
 // Scalable is the interface that must be implemented from a scalable cluster
 type Scalable interface {
 	Scale(nodes int32) bool
