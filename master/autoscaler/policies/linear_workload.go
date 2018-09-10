@@ -7,28 +7,32 @@ import (
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"log"
+	"math/rand"
 	"obi/master/model"
 	"obi/master/predictor"
 	"obi/master/utils"
 )
 
-// WorkloadPolicy contains all useful state-variable to apply the policy
-type WorkloadPolicy struct {
+// MaxLinearScaling maximum absolute scaling factor
+const MaxLinearScaling = 5
+
+// LinearWorkloadPolicy contains all useful state-variable to apply the policy
+type LinearWorkloadPolicy struct {
 	expCount int32
 	record *predictor.AutoscalerData
 	count int32
 }
 
-// NewWorkload is the constructor of the WorkloadPolicy struct
-func NewWorkload() *WorkloadPolicy {
-	return &WorkloadPolicy{
+// NewLinearWorkload is the constructor of the LinearWorkloadPolicy struct
+func NewLinearWorkload() *LinearWorkloadPolicy {
+	return &LinearWorkloadPolicy{
 		record: nil,
 		count: -1,
 	}
 }
 
 // Apply is the implementation of the Policy interface
-func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
+func (p *LinearWorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 	var previousMetrics model.Metrics
 	var throughput float32
 	var pendingGrowthRate float32
@@ -92,14 +96,14 @@ func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 			if p.expCount <= 0 {
 				p.expCount = 1
 			} else {
-				p.expCount = p.expCount << 1
+				p.expCount = rand.Int31n(MaxLinearScaling - 1) + 1
 			}
 		} else if (pendingGrowthRate == 0) || (throughput > pendingGrowthRate) {
 			// scale down
 			if p.expCount >= 0 {
 				p.expCount = -1
 			} else {
-				p.expCount = p.expCount << 1
+				p.expCount = - (rand.Int31n(MaxLinearScaling - 1) + 1)
 			}
 		} else {
 			p.expCount = 0

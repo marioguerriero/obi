@@ -35,3 +35,5 @@ examples/dataproc-deployment.yaml
 master/predictor/predictor-service.pb.go
 
 client/data-collector.sh
+
+client/il_generator

@@ -5,6 +5,9 @@ import (
 	"obi/master/predictor"
 )
 
+// LowerBoundNodes minimum number of admitted nodes
+const LowerBoundNodes = 2
+
 // MetricsToSnapshot converts a master's metric snapshot to a predictor metric snapshot
 func MetricsToSnapshot(metrics *model.Metrics) *predictor.MetricsSnasphot {
 	return &predictor.MetricsSnasphot{
