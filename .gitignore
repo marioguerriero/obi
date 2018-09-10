@@ -37,3 +37,4 @@ master/predictor/predictor-service.pb.go
 client/data-collector.sh
 
 client/il_generator
+client/il_launcher.py
