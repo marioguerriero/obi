@@ -10,12 +10,10 @@ heartbeat/message_pb2.py
 predictor/__pycache__/
 predictor/**/__pycache__/
 
-obi-dataproc-sa.json
-
 .DS_Store
 assets/.DS_Store
 
-obi-dataproc-sa.json
+dataproc-sa.json
 
 master/*.pb.go
 master/main
@@ -23,6 +21,7 @@ master/main
 client/master_rpc_service_pb2.py
 client/master_rpc_service_pb2_grpc.py
 client/__pycache__/
+client/__init__.py
 
 master/heartbeat/message.pb.go
 master/heartbeat/message_pb2.py

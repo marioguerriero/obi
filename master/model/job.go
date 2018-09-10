@@ -37,16 +37,17 @@ type Job struct {
 }
 
 func (j *Job) Compare(other queue.Item) int {
+	// `1` means this job must be executed after the other one
 	otherJob := other.(*Job)
-	if j.Priority > otherJob.Priority {
+	if j.Priority < otherJob.Priority {
 		return 1
 	} else if j.Priority == otherJob.Priority {
 		if j.PredictedDuration < otherJob.PredictedDuration {
-			return 1
+			return -1
 		} else if j.PredictedDuration == otherJob.PredictedDuration {
 			return 0
 		} else {
-			return -1
+			return 1
 		}
 	} else {
 		return -1
