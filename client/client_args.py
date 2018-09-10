@@ -56,6 +56,10 @@ create_job_args.add_argument('-i', help='Infrastructure on which execute the '
                                         'configuration file will be used',
                              type=str, required=True,
                              dest='job_infrastructure')
+create_job_args.add_argument('-p', help='Job priority level',
+                             type=int, required=True,
+                             choices=range(0, 11),
+                             dest='job_priority')
 create_job_args.add_argument('job_args', nargs=argparse.REMAINDER)
 
 # Create infrastructure arguments
