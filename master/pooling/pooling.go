@@ -3,7 +3,7 @@ package pooling
 import (
 		"errors"
 	"fmt"
-	"github.com/golang-collections/go-datastructures/queue"
+	"github.com/Workiva/go-datastructures/queue"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"obi/master/autoscaler"
@@ -17,7 +17,8 @@ import (
 // Pooling class with properties
 type Pooling struct {
 	pool           *Pool
-	queue *queue.PriorityQueue
+	priority *queue.Queue
+	bestEffort *queue.Queue
 	quit chan struct{}
 	schedulerWindow int16
 }
@@ -30,7 +31,8 @@ func New(pool *Pool, timeWindow int16) *Pooling {
 	logrus.Info("Creating cluster pooling")
 	pooling := &Pooling{
 		pool,
-		queue.NewPriorityQueue(50),
+		queue.New(50),
+		queue.New(100),
 		make(chan struct{}),
 		timeWindow,
 	}
@@ -96,7 +98,7 @@ func schedulingRoutine(pooling *Pooling) {
 			logrus.Info("Closing scheduler routine.")
 			return
 		default:
-			obj, error := pooling.queue.Get(1)
+			obj, error := pooling.priority.Get(1)
 			if error != nil {
 				logrus.WithField("error", error).Info("Impossible get the next job in the priority queue")
 			} else {
@@ -106,9 +108,7 @@ func schedulingRoutine(pooling *Pooling) {
 					"jobID": job.ID,
 					"priority": job.Priority,
 				}).Info("New job admitted for running")
-				go func() {
-					pooling.SubmitJob(job)
-				}()
+				go pooling.SubmitJob(job)
 			}
 			time.Sleep(time.Duration(pooling.schedulerWindow) * time.Second)
 		}
@@ -117,11 +117,19 @@ func schedulingRoutine(pooling *Pooling) {
 
 // ScheduleJob submits a new job to the pooling scheduling queues
 func (p *Pooling) ScheduleJob(job *model.Job) {
-	p.queue.Put(job)
+	// TODO: configuration file for pooling
+	if job.Priority > 0 && job.Priority <= 7 {
+		p.priority.Put(job)
+	} else if job.Priority == 0 {
+		p.bestEffort.Put(job)
+	} else {
+		go p.SubmitJob(job)
+	}
 }
 
 // SubmitJob remote procedure call used to submit a job to one of the OBI infrastructures
 func (p *Pooling) SubmitJob(job *model.Job) error {
+
 	// TODO: this should not be done here
 	job.Platform = "dataproc"
 
