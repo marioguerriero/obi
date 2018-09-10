@@ -23,7 +23,6 @@ type ClusterBase struct {
 	HeartbeatHost string
 	HeartbeatPort int
 	metrics *utils.ConcurrentSlice // not available outside package to prevent race conditions, get and set must be used
-	Events chan int
 	sync.Mutex
 }
 
@@ -50,7 +49,6 @@ func NewClusterBase(clusterName string, workers int32, platform string, hbHost s
 		HeartbeatHost: hbHost,
 		HeartbeatPort: hbPort,
 		metrics: utils.NewConcurrentSlice(6, true),
-		events: make(chan int),
 	}
 }
 

@@ -316,6 +316,4 @@ func (c *DataprocCluster) delete(ctx context.Context)  {
 		Region:      c.Region,
 		ClusterName: c.Name,
 	})
-	// Send delete even over cluster's channel
-	c.Events <- m.ClusterEvent_DELETE
 }
