@@ -1,8 +1,7 @@
 package pooling
 
 import (
-	"container/heap"
-	"errors"
+		"errors"
 	"fmt"
 	"github.com/golang-collections/go-datastructures/queue"
 	"github.com/sirupsen/logrus"
@@ -12,36 +11,43 @@ import (
 	"obi/master/model"
 	"obi/master/platforms"
 	"obi/master/utils"
-	"sync"
+		"time"
 )
 
 // Pooling class with properties
 type Pooling struct {
 	pool           *Pool
-	scheduleQueues map[int32]*queue.Queue
-	CreationLock sync.Mutex
+	queue *queue.PriorityQueue
+	quit chan struct{}
+	schedulerWindow int16
 }
 
 // New is the constructor of Pooling struct
 // @param pool contains the available clusters to use for job deployments
-func New(pool *Pool) *Pooling {
-	// TODO: Implement pooling
+func New(pool *Pool, timeWindow int16) *Pooling {
 
 	// Create Pooling object
 	logrus.Info("Creating cluster pooling")
 	pooling := &Pooling{
 		pool,
-		make(map[int32]*queue.Queue),
-		sync.Mutex{},
+		queue.NewPriorityQueue(50),
+		make(chan struct{}),
+		timeWindow,
 	}
-
-	// Start scheduling routine
-	logrus.Info("Initialize scheduling routine")
-	go pooling.schedulingRoutine()
 
 	// Return created pooling object
 	logrus.Info("Created pool of clusters")
 	return pooling
+}
+
+func (p *Pooling) StartScheduling() {
+	logrus.Info("Starting scheduling routine.")
+	go schedulingRoutine(p)
+}
+
+func (p *Pooling) StopScheduling() {
+	logrus.Info("Stopping scheduling routine.")
+	close(p.quit)
 }
 
 func (p *Pooling) newCluster(name, platform string) error {
@@ -83,59 +89,34 @@ func (p *Pooling) newDataprocCluster(name string) error {
 }
 
 // This routine periodically scans queues from top to low priority and schedules its contained job
-func (p *Pooling) schedulingRoutine() {
-	// Endless loop controlling available queues
+func schedulingRoutine(pooling *Pooling) {
 	for {
-		// I need to read keys every time because a new priority value may be added
-		h := new(utils.MinHeap)
-		heap.Init(h)
-		for p := range p.scheduleQueues {
-			h.Push(p)
-		}
-
-		// Scan queues in priority order
-		for h.Len() > 0 {
-			priority, err := h.PopInt()
-			if err != nil {
-				// If the priority value is invalid just skip this queue
-				continue
+		select {
+		case <-pooling.quit:
+			logrus.Info("Closing scheduler routine.")
+			return
+		default:
+			obj, error := pooling.queue.Get(1)
+			if error != nil {
+				logrus.WithField("error", error).Info("Impossible get the next job in the priority queue")
+			} else {
+				// TODO: use another library for heap-based priority queue
+				job := obj[0].(*model.Job)
+				logrus.WithField("jobID", job.ID).Info("New job admitted for running")
+				pooling.SubmitJob(job)
 			}
-			// Pop and submit job
-			q := p.scheduleQueues[priority]
-			if q.Len() > 0 {
-				items, _ := q.Get(1)
-				job := items[0]
-				go func() {
-					p.SubmitJob(job.(*model.Job))
-				}()
-				logrus.WithField("cluster", job.(*model.Job).AssignedCluster).Info(
-					"Extract job from queue for execution")
-				break
-			}
+			time.Sleep(time.Duration(pooling.schedulerWindow) * time.Second)
 		}
 	}
 }
 
 // ScheduleJob submits a new job to the pooling scheduling queues
-func (p *Pooling) ScheduleJob(job *model.Job, priority int32) error {
-	// Check if queue for the given priority level already exists,
-	// if not, create it
-	p.CreationLock.Lock()
-	_, ok := p.scheduleQueues[priority]
-	if !ok {
-		p.scheduleQueues[priority] = queue.New(32)
-		logrus.WithField("level", priority).Info("Created new scheduling queue")
-	}
-	p.CreationLock.Unlock()
-
-	// Add job to the request schedule queue
-	return p.scheduleQueues[priority].Put(job)
+func (p *Pooling) ScheduleJob(job *model.Job) {
+	p.queue.Put(job)
 }
 
 // SubmitJob remote procedure call used to submit a job to one of the OBI infrastructures
 func (p *Pooling) SubmitJob(job *model.Job) error {
-	logrus.WithField("job", job.ID).Info("Submitting job for execution")
-
 	// TODO: this should not be done here
 	job.Platform = "dataproc"
 
@@ -148,7 +129,7 @@ func (p *Pooling) SubmitJob(job *model.Job) error {
 	// Submit job
 	switch job.Type {
 	case model.JobTypePySpark:
-		p.SubmitPySparkJob(clusterName, job) // TODO: use real pooling feature
+		p.SubmitPySparkJob(clusterName, job)
 	default:
 		return errors.New("invalid job type")
 	}

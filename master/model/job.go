@@ -1,5 +1,7 @@
 package model
 
+import "github.com/golang-collections/go-datastructures/queue"
+
 // JobStatus defines the status of a job
 type JobStatus int
 const (
@@ -25,10 +27,28 @@ type Job struct {
 	ID                 int
 	ExecutablePath     string
 	Type               JobType
+	Priority           int8
 	Status             JobStatus
 	Platform 		   string
 	AssignedCluster    string
 	PredictedDuration  int64
 	FailureProbability float32
 	Args 			   string
+}
+
+func (j *Job) Compare(other queue.Item) int {
+	otherJob := other.(*Job)
+	if j.Priority > otherJob.Priority {
+		return 1
+	} else if j.Priority == otherJob.Priority {
+		if j.PredictedDuration < otherJob.PredictedDuration {
+			return 1
+		} else if j.PredictedDuration == otherJob.PredictedDuration {
+			return 0
+		} else {
+			return -1
+		}
+	} else {
+		return -1
+	}
 }
