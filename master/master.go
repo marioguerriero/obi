@@ -63,6 +63,7 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 	}
 
 	// Send job execution request
+	logrus.WithField("priority-level", jobRequest.Priority).Info("Schedule job for execution")
 	m.Pooling.ScheduleJob(job, jobRequest.Priority)
 
 	return new(EmptyResponse), nil
