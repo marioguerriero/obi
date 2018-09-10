@@ -39,13 +39,13 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 	logrus.WithField("path", jobRequest.ExecutablePath).Info("Received job request")
 
 	// Generate predictions before submitting the job
-	resp, err := (*m.PredictorClient).RequestPrediction(
-		context.Background(), &predictor.PredictionRequest{
-			JobFilePath: jobRequest.ExecutablePath,
-		}) // TODO: read metrics for executor cluster
-	if err != nil {
-		logrus.WithField("response", resp).Warning("Could not generate predictions")
-	}
+	//resp, err := (*m.PredictorClient).RequestPrediction(
+	//	context.Background(), &predictor.PredictionRequest{
+	//		JobFilePath: jobRequest.ExecutablePath,
+	//	}) // TODO: read metrics for executor cluster
+	//if err != nil {
+	//	logrus.WithField("response", resp).Warning("Could not generate predictions")
+	//}
 	duration, failure := 0, 0.0 // TODO: use predicted values
 
 	// Create job object to be submitted to the pooling component
