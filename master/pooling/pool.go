@@ -1,15 +1,17 @@
 package pooling
 
 import (
-	"obi/master/utils"
-	"obi/master/autoscaler"
+		"obi/master/autoscaler"
 	"obi/master/model"
+	"sync"
+	"time"
+	"github.com/sirupsen/logrus"
 )
 
 // Pool struct with properties
 type Pool struct {
-	clusters *utils.ConcurrentMap
-	autoscalers *utils.ConcurrentMap
+	clusters sync.Map
+	autoscalers sync.Map
 }
 
 // singleton instance
@@ -20,8 +22,8 @@ var poolInstance *Pool
 func GetPool() *Pool {
 	if poolInstance == nil {
 		poolInstance = &Pool{
-			utils.NewConcurrentMap(),
-			utils.NewConcurrentMap(),
+			sync.Map{},
+			sync.Map{},
 		}
 	}
 	return poolInstance
@@ -32,15 +34,15 @@ func GetPool() *Pool {
 // @param autoscaler is the autoscaler object that will monitor the cluster
 func (p *Pool) AddCluster(cluster model.ClusterBaseInterface, autoscaler *autoscaler.Autoscaler) {
 	clusterName := cluster.GetName()
-	p.clusters.Set(clusterName, cluster)
-	p.autoscalers.Set(clusterName, autoscaler)
+	p.clusters.Store(clusterName, cluster)
+	p.autoscalers.Store(clusterName, autoscaler)
 }
 
 // RemoveCluster is for deleting a cluster from the pool, turning off its autoscaler
 // @param clusterName is the name of the cluster
 func (p *Pool) RemoveCluster(clusterName string) {
 	p.clusters.Delete(clusterName)
-	obj, ok := p.autoscalers.Get(clusterName)
+	obj, ok := p.autoscalers.Load(clusterName)
 	if ok {
 		obj.(*autoscaler.Autoscaler).StopMonitoring()
 	}
@@ -49,15 +51,33 @@ func (p *Pool) RemoveCluster(clusterName string) {
 
 // Clusters is for getting the list of all clusters inside the pool
 // return a channel containing the cluster objects
-func (p *Pool) Clusters() <-chan utils.ConcurrentMapItem {
-	return p.clusters.Iter()
+func (p *Pool) LivelinessMonitor(timeout int16) {
+	p.clusters.Range(func(key interface{}, value interface{}) bool {
+		cluster := value.(model.ClusterBaseInterface)
+		var lastHeartbeat model.Metrics
+		for hb := range cluster.GetMetricsWindow().Iter() {
+			if hb.Value != nil {
+				lastHeartbeat = hb.Value.(model.Metrics)
+			}
+		}
+
+		if lastHeartbeat != (model.Metrics{}) {
+			lastHeartbeatInterval := int16(time.Now().Sub(lastHeartbeat.Timestamp).Seconds())
+			if lastHeartbeatInterval > timeout {
+				clusterName := cluster.GetName()
+				logrus.WithField("Name", clusterName).Info("Deleting cluster.")
+				p.RemoveCluster(clusterName)
+			}
+		}
+		return true
+	})
 }
 
 // GetCluster is for getting a specific cluster inside the pool
 // @param clusterName is the name of the cluster
 // return the optional object and a bool to check if it is present
 func (p *Pool) GetCluster(clusterName string) (interface{}, bool) {
-	return p.clusters.Get(clusterName)
+	return p.clusters.Load(clusterName)
 }
 
 

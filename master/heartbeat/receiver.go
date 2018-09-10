@@ -157,23 +157,7 @@ func clustersTrackerRoutine(pool *pooling.Pool, timeout int16, interval int16) {
 			logrus.Info("Closing cluster tracker routine.")
 			return
 		default:
-			for pair := range pool.Clusters() {
-				clusterName := pair.Key
-				cluster := pair.Value.(model.ClusterBaseInterface)
-				var lastHeartbeat model.Metrics
-				for hb := range cluster.GetMetricsWindow().Iter() {
-					if hb.Value != nil {
-						lastHeartbeat = hb.Value.(model.Metrics)
-					}
-				}
-				if lastHeartbeat != (model.Metrics{}) {
-					lastHeartbeatInterval := int16(time.Now().Sub(lastHeartbeat.Timestamp).Seconds())
-					if lastHeartbeatInterval > timeout {
-						logrus.WithField("Name", clusterName).Info("Deleting cluster.")
-						pool.RemoveCluster(clusterName)
-					}
-				}
-			}
+			pool.LivelinessMonitor(timeout)
 			time.Sleep(time.Duration(interval) * time.Second)
 		}
 	}

@@ -41,7 +41,7 @@ namespaces:
   - name: obi
 
 # Docker image of the OBI master deployment
-masterImage: eu.gcr.io/dhg-data-intelligence-ops/obi-master
+masterImage: eu.gcr.io/dhg-data-intelligence-ops/obi-master:production
 
 # Docker image for the OBI predictor component
 predictorImage: eu.gcr.io/dhg-data-intelligence-ops/obi-predictor
