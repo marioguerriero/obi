@@ -6,9 +6,7 @@ import (
 	"errors"
 	"obi/master/platforms"
 	"github.com/spf13/viper"
-	"obi/master/autoscaler/policies"
-	"obi/master/autoscaler"
-)
+		)
 
 func newCluster(name, platform string) (model.ClusterBaseInterface, error) {
 	logrus.WithField("cluster-name", name).Info("Creating new cluster")
@@ -36,11 +34,6 @@ func newDataprocCluster(name string) (*platforms.DataprocCluster, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	// Instantiate a new autoscaler for the new cluster and start monitoring
-	policy := policies.NewWorkload()
-	a := autoscaler.New(policy, 60, cluster)
-	a.StartMonitoring()
 
 	return cluster, nil
 }
