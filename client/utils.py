@@ -1,3 +1,5 @@
+import hashlib
+
 import master_rpc_service_pb2
 
 
@@ -13,6 +15,14 @@ def map_job_type(job_type):
     return None
 
 
+def md5(fname):
+    hash_md5 = hashlib.md5()
+    with open(fname, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
+
+
 def executable_submission_iterator(path):
     CHUNK_SIZE = 65535
     with open(path, 'r') as f:
@@ -22,3 +32,4 @@ def executable_submission_iterator(path):
                 filename=path,
                 chunk=data
             )
+            data = f.read(CHUNK_SIZE)

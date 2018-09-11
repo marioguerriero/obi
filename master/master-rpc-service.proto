@@ -36,7 +36,7 @@ message JobSubmissionRequest {
 
 message ExecutableSubmissionRequest {
     string filename = 1;
-    bytes chunk = 2;
+    string chunk = 2;
 }
 
 message ExecutableSubmissionResponse {
