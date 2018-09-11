@@ -50,17 +50,17 @@ class PredictorServer(predictor_service_pb2_grpc.ObiPredictorServicer):
         """
         log.info('Received request {}'.format(req))
         return 0, 0  # FIXME
-        # Select the correct predictor
-        predictor_name = predictor_utils.infer_predictor_name(req)
-        predictor = predictors.get_predictor_instance(predictor_name)
-        # Generate predictions
-        predictions = predictor.predict(req.Metrics)
-        # Return predictions to the user
-        res = predictor_service_pb2.PredictionResponse()
-        res.Duration = predictions[0]
-        res.FailureProbability = predictions[1]
-        log.info('Generated predictions: {}'.format(res))
-        return res
+        # # Select the correct predictor
+        # predictor_name = predictor_utils.infer_predictor_name(req)
+        # predictor = predictors.get_predictor_instance(predictor_name)
+        # # Generate predictions
+        # predictions = predictor.predict(req.Metrics)
+        # # Return predictions to the user
+        # res = predictor_service_pb2.PredictionResponse()
+        # res.Duration = predictions[0]
+        # res.FailureProbability = predictions[1]
+        # log.info('Generated predictions: {}'.format(res))
+        # return res
 
     def CollectAutoscalerData(self, data, ctx):
         """
