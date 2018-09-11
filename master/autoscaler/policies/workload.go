@@ -16,14 +16,12 @@ import (
 type WorkloadPolicy struct {
 	expCount int32
 	record *predictor.AutoscalerData
-	count int32
 }
 
 // NewWorkload is the constructor of the WorkloadPolicy struct
 func NewWorkload() *WorkloadPolicy {
 	return &WorkloadPolicy{
 		record: nil,
-		count: -1,
 	}
 }
 
