@@ -39,11 +39,13 @@ func New(pool *Pool, timeWindow int32) *Pooling {
 	return pooling
 }
 
+// StartScheduling starts the execution of the scheduler routine
 func (p *Pooling) StartScheduling() {
 	logrus.Info("Starting scheduling routine.")
 	go schedulingRoutine(p)
 }
 
+// StopScheduling stops the execution of the scheduler routine
 func (p *Pooling) StopScheduling() {
 	logrus.Info("Stopping scheduling routine.")
 	close(p.quit)
@@ -86,6 +88,8 @@ func (p *Pooling) ScheduleJob(job *model.Job) {
 	}
 }
 
+// DeployJobs is for deploying the list of jobs into a single cluster
+// @param jobs is the list of jobs to deploy
 func (p *Pooling) DeployJobs(jobs []*model.Job) {
 
 	// Create new cluster

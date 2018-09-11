@@ -56,8 +56,7 @@ func (p *Pool) RemoveCluster(clusterName string) {
 	p.autoscalers.Delete(clusterName)
 }
 
-// Clusters is for getting the list of all clusters inside the pool
-// return a channel containing the cluster objects
+// LivelinessCheck is the the procedure to delete dead clusters from the pool
 func (p *Pool) LivelinessCheck(timeout int16) {
 	p.clusters.Range(func(key interface{}, value interface{}) bool {
 		cluster := value.(model.ClusterBaseInterface)
@@ -87,11 +86,13 @@ func (p *Pool) GetCluster(clusterName string) (interface{}, bool) {
 	return p.clusters.Load(clusterName)
 }
 
+// StartLivelinessMonitoring starts the execution of the liveliness monitor routine
 func (p *Pool) StartLivelinessMonitoring() {
 	logrus.Info("Starting cluster tracker routine.")
 	go livelinessMonitorRoutine(poolInstance)
 }
 
+// StopLivelinessMonitoring stops the execution of the liveliness monitor routine
 func (p *Pool) StopLivelinessMonitoring() {
 	logrus.Info("Stopping cluster tracker routine.")
 	close(p.quit)
