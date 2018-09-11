@@ -83,11 +83,14 @@ func (m *ObiMaster) SubmitExecutable(stream ObiMaster_SubmitExecutableServer) er
 	for {
 		req, err := stream.Recv()
 		if err == io.EOF {
-			return stream.SendAndClose(&ExecutableSubmissionResponse{Filename:filename})
+			absPath, _ := filepath.Abs(filename)
+			return stream.SendAndClose(&ExecutableSubmissionResponse{
+				Filename:fmt.Sprintf("file://%s", absPath),
+			})
 		}
 		if f == nil {
 			// Create file
-			filename = fmt.Sprintf("%s-%s", filepath.Base(req.Filename), utils.RandomString(5))
+			filename = fmt.Sprintf("%s-%s", utils.RandomString(5), filepath.Base(req.Filename))
 			logrus.WithField("filename", filename).Info("Storing local executable")
 			f, err = os.Create(filename)
 			if err != nil {

@@ -6,6 +6,8 @@ import yaml
 import base64
 from random import randint
 
+from google.cloud import storage
+
 import kubernetes as k8s
 
 import grpc
@@ -176,11 +178,19 @@ class KubernetesClient(GenericClient):
                 is_local = False
             if is_local:
                 # Upload the file
-                for a in utils.executable_submission_iterator(req.executablePath):
-                    print(a)
-                res = stub.SubmitExecutable(
-                    utils.executable_submission_iterator(req.executablePath))
-                req.executablePath = res.filename
+                client = storage.Client()
+                bucket = client.get_bucket(self._user_config['tmpBucket'])
+                # Then do other things...
+                md5 = utils.md5(req.executablePath)
+                blob_name = '{}/{}-{}'.format(self._user_config['tmpBlobPath'],
+                                              md5,
+                                              os.path.basename(req.executablePath))
+                gcs_path = 'gs://{}/{}'.format(self._user_config['tmpBucket'],
+                                               blob_name)
+                log.info('Uploading local file to {}'.format(gcs_path))
+                blob = bucket.blob(blob_name)
+                blob.upload_from_filename(filename=req.executablePath)
+                req.executablePath = gcs_path
             # Submit job creation request
             log.info('Sending job submission request')
             stub.SubmitJob(req)

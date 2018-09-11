@@ -82,3 +82,9 @@ nodeSelectorValue: base
 # Predictor GCS configuration bucket (if any)
 predictorBucket: dhg-obi
 predictorBucketMountPath: /mnt/dhg-obi/
+
+# GCS Bucket where to store local executables before submission (if any)
+tmpBucket: dhg-obi
+
+# GCS folder where to store temporary files
+tmpBlobPath: tmp

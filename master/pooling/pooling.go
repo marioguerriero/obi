@@ -1,7 +1,7 @@
 package pooling
 
 import (
-		"errors"
+	"errors"
 	"fmt"
 	"github.com/Workiva/go-datastructures/queue"
 	"github.com/sirupsen/logrus"
@@ -11,7 +11,7 @@ import (
 	"obi/master/model"
 	"obi/master/platforms"
 	"obi/master/utils"
-		"time"
+	"time"
 )
 
 // Pooling class with properties
