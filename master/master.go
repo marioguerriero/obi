@@ -105,7 +105,7 @@ func (m *ObiMaster) SubmitExecutable(stream ObiMaster_SubmitExecutableServer) er
 func CreateMaster() (*ObiMaster) {
 	// Create new cluster pooling object
 	pool := pooling.GetPool()
-	p := pooling.New(pool, 10)
+	p := pooling.New(pool, 60)
 	hb := heartbeat.New(pool)
 
 	hb.Start()
