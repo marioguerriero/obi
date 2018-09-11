@@ -11,7 +11,6 @@ import (
 type Autoscaler struct {
 	Policy Policy
 	Timeout int16
-	SustainedTimeout int16
 	quit chan struct{}
 	managedCluster model.Scalable
 }
@@ -31,13 +30,11 @@ type Policy interface {
 func New(
 	policy Policy,
 	timeout int16,
-	sustainedTimeout int16,
 	cluster model.Scalable,
 	) *Autoscaler {
 	return &Autoscaler{
 		policy,
 		timeout,
-		sustainedTimeout,
 		make(chan struct{}),
 		cluster,
 	}
