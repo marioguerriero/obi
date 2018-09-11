@@ -76,7 +76,7 @@ func (p *GooglePolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 		// Check if we have to scale or not
 		workers := float64(memoryUsage / count) / workerMemory
 		fmt.Printf("Exact workers: %f\n", workers)
-		scalingFactor = int32(workers) - previousMetrics.NumberOfNodes
+		scalingFactor = int32(workers)
 
 		// Create autoscaler record
 		if scalingFactor != 0 && p.record == nil {

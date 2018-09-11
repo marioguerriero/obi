@@ -15,11 +15,11 @@ import (
 )
 
 // TimeoutScalingStep constant value by which scale at each timeout
-const TimeoutScalingStep = 5
+const TimeoutScalingStep = 9
 // TimeoutLength number of metric windows to receive before scaling
 const TimeoutLength = 2
 // TimeoutPolicyUpperBound maximum number of scaling factor
-const TimeoutPolicyUpperBound = 30
+const TimeoutPolicyUpperBound = 50
 
 // TimeoutPolicy this policy scales the cluster each time it receives
 // a certain amount of activations

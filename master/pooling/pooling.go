@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"github.com/Workiva/go-datastructures/queue"
 	"github.com/sirupsen/logrus"
+	"obi/master/autoscaler"
+	"obi/master/autoscaler/policies"
 	"obi/master/model"
 	"obi/master/utils"
 	"time"
-	"obi/master/autoscaler/policies"
-	"obi/master/autoscaler"
 )
 
 // Pooling class with properties
@@ -97,7 +97,7 @@ func (p *Pooling) DeployJobs(jobs []*model.Job) {
 	cluster, err := newCluster(clusterName, "dataproc")
 
 	// Instantiate a new autoscaler for the new cluster and start monitoring
-	policy := policies.NewWorkload()
+	policy := policies.NewGoogle()
 	a := autoscaler.New(policy, 60, cluster.(model.Scalable))
 	a.StartMonitoring()
 
