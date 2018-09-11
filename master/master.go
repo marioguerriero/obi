@@ -78,7 +78,7 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 // SubmitExecutable accepts and store an executable file
 func (m *ObiMaster) SubmitExecutable(stream ObiMaster_SubmitExecutableServer) error {
 	var filename string
-	var f *os.File = nil
+	var f *os.File
 
 	for {
 		req, err := stream.Recv()

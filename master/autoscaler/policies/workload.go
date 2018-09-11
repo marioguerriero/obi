@@ -69,7 +69,6 @@ func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 			p.record.MetricsAfter = MetricsToSnapshot(&previousMetrics)
 			p.record.PerformanceAfter = performance
 			// Send data point
-			logrus.WithField("data", *p.record).Info("Sending autoscaler data to predictor")
 			serverAddr := fmt.Sprintf("%s:%s",
 				viper.GetString("predictorHost"),
 				viper.GetString("predictorPort"))
@@ -120,10 +119,7 @@ func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 			ScalingFactor:     p.expCount,
 			MetricsBefore:     MetricsToSnapshot(&previousMetrics),
 		}
-		logrus.WithField("data", p.record).Info("Created dataset record")
 	}
-
-	logrus.WithField("expCount", p.expCount).Info("Returning expected count")
 
 	return p.expCount
 }

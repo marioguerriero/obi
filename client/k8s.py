@@ -182,9 +182,11 @@ class KubernetesClient(GenericClient):
                 bucket = client.get_bucket(self._user_config['tmpBucket'])
                 # Then do other things...
                 md5 = utils.md5(req.executablePath)
-                blob_name = '{}/{}-{}'.format(self._user_config['tmpBlobPath'],
-                                              md5,
-                                              os.path.basename(req.executablePath))
+                blob_name = '{}/{}-{}'.format(
+                    self._user_config['tmpBlobPath'],
+                    md5,
+                    os.path.basename(req.executablePath)
+                )
                 gcs_path = 'gs://{}/{}'.format(self._user_config['tmpBucket'],
                                                blob_name)
                 log.info('Uploading local file to {}'.format(gcs_path))

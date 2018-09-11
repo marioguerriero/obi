@@ -7,6 +7,8 @@ import (
 	"obi/master/model"
 	"obi/master/utils"
 	"time"
+	"obi/master/autoscaler/policies"
+	"obi/master/autoscaler"
 )
 
 // Pooling class with properties
@@ -37,11 +39,13 @@ func New(pool *Pool, timeWindow int32) *Pooling {
 	return pooling
 }
 
+// StartScheduling starts the execution of the scheduler routine
 func (p *Pooling) StartScheduling() {
 	logrus.Info("Starting scheduling routine.")
 	go schedulingRoutine(p)
 }
 
+// StopScheduling stops the execution of the scheduler routine
 func (p *Pooling) StopScheduling() {
 	logrus.Info("Stopping scheduling routine.")
 	close(p.quit)
@@ -84,11 +88,21 @@ func (p *Pooling) ScheduleJob(job *model.Job) {
 	}
 }
 
+// DeployJobs is for deploying the list of jobs into a single cluster
+// @param jobs is the list of jobs to deploy
 func (p *Pooling) DeployJobs(jobs []*model.Job) {
 
 	// Create new cluster
 	clusterName := fmt.Sprintf("obi-%s", utils.RandomString(10))
 	cluster, err := newCluster(clusterName, "dataproc")
+
+	// Instantiate a new autoscaler for the new cluster and start monitoring
+	policy := policies.NewWorkload()
+	a := autoscaler.New(policy, 60, cluster.(model.Scalable))
+	a.StartMonitoring()
+
+	// Add in the pool
+	p.pool.AddCluster(cluster, a)
 
 	if err != nil {
 		return
