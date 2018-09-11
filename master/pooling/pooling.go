@@ -80,7 +80,7 @@ func (p *Pooling) newDataprocCluster(name string) error {
 	}
 
 	// Instantiate a new autoscaler for the new cluster and start monitoring
-	policy := policies.NewLinearWorkload()
+	policy := policies.NewTimeout()
 	a := autoscaler.New(policy, 60, 30, cluster)
 	a.StartMonitoring()
 

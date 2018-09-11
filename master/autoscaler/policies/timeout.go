@@ -15,7 +15,7 @@ import (
 )
 
 // TimeoutScalingStep constant value by which scale at each timeout
-const TimeoutScalingStep = 1
+const TimeoutScalingStep = 5
 // TimeoutLength number of metric windows to receive before scaling
 const TimeoutLength = 2
 // TimeoutPolicyUpperBound maximum number of scaling factor
@@ -112,6 +112,11 @@ func (p *TimeoutPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 			p.scalingFactor = rand.Int31n(TimeoutScalingStep - 1) + 1
 			p.count = TimeoutLength
 		} else {
+			p.scalingFactor = 0
+		}
+
+		// Never scale below the admitted threshold
+		if previousMetrics.NumberOfNodes + p.scalingFactor < LowerBoundNodes {
 			p.scalingFactor = 0
 		}
 
