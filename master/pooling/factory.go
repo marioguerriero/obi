@@ -1,12 +1,12 @@
 package pooling
 
 import (
-	"obi/master/model"
-	"github.com/sirupsen/logrus"
 	"errors"
-	"obi/master/platforms"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-		)
+	"obi/master/model"
+	"obi/master/platforms"
+)
 
 func newCluster(name, platform string) (model.ClusterBaseInterface, error) {
 	logrus.WithField("cluster-name", name).Info("Creating new cluster")
