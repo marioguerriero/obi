@@ -74,7 +74,7 @@ class PredictorServer(predictor_service_pb2_grpc.ObiPredictorServicer):
         # Return predictions to the user
         res = predictor_service_pb2.PredictionResponse()
         res.Duration = int(predictions[0])
-        res.FailureProbability = predictions[1]
+        res.FailureProbability = 0.0  # predictions[1]
         res.Label = job_type
         log.info('Generated predictions: {}'.format(res))
         return res
