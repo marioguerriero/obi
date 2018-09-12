@@ -271,7 +271,8 @@ def get_list_count_size(bucket, prefix):
 
 def get_blob_size(bucket, name):
     name_clean = name.replace('gs://', '')
-    return storage.Blob(name_clean, bucket).size
+    size = storage.Blob(name_clean, bucket).size
+    return size if size is not None else 0
 
 
 def get_count_size_from_prefixes(bucket, prefixes):
