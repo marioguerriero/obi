@@ -470,7 +470,7 @@ def _get_csv_update_input_size(backend, date=None, day_diff=0):
     blacklisted_list = get_table_list['blacklisted']
     source_splitted = backend.split('_de')
     today = date.strftime('%Y-%m-%d')
-    yesterday = (date - datetime.timedelta(days=1 + day_diff)) \
+    yesterday = (date - datetime.timedelta(days=1+int(day_diff))) \
         .strftime('%Y-%m-%d')
 
     full_file_base_path = 'gs://dhg-backend/dwh_psql_' + source_splitted[0] \
