@@ -4,16 +4,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
-	"google.golang.org/grpc"
-	"io"
-	"log"
-	"math/rand"
+			"io"
+		"math/rand"
 	"obi/master/heartbeat"
 	"obi/master/model"
 	"obi/master/pooling"
-	"obi/master/predictor"
-	"obi/master/utils"
+		"obi/master/utils"
 	"os"
 	"path/filepath"
 )
@@ -22,7 +18,6 @@ import (
 type ObiMaster struct {
 	Pooling *pooling.Pooling
 	HeartbeatReceiver *heartbeat.Receiver
-	PredictorClient *predictor.ObiPredictorClient
 }
 
 // ListInfrastructures RPC for listing the available infrastructure services
@@ -37,16 +32,6 @@ func (m *ObiMaster) ListInfrastructures(ctx context.Context,
 func (m *ObiMaster) SubmitJob(ctx context.Context,
 		jobRequest *JobSubmissionRequest) (*Empty, error) {
 	logrus.WithField("path", jobRequest.ExecutablePath).Info("Received job request")
-
-	// Generate predictions before submitting the job
-	//resp, err := (*m.PredictorClient).RequestPrediction(
-	//	context.Background(), &predictor.PredictionRequest{
-	//		JobFilePath: jobRequest.ExecutablePath,
-	//	}) // TODO: read metrics for executor cluster
-	//if err != nil {
-	//	logrus.WithField("response", resp).Warning("Could not generate predictions")
-	//}
-	duration, failure := 0, 0.0 // TODO: use predicted values
 
 	// Create job object to be submitted to the pooling component
 	var jobType model.JobType
@@ -63,8 +48,6 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 		Type:               jobType,
 		Priority:           jobRequest.Priority,
 		AssignedCluster:    "",
-		PredictedDuration:  int64(duration),
-		FailureProbability: float32(failure),
 		Args:               jobRequest.JobArgs,
 	}
 
@@ -112,20 +95,11 @@ func CreateMaster() (*ObiMaster) {
 	pool.StartLivelinessMonitoring()
 	p.StartScheduling()
 
-	// Open connection to predictor server
-	serverAddr := fmt.Sprintf("%s:%s",
-		viper.GetString("predictorHost"),
-		viper.GetString("predictorPort"))
-	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure()) // TODO: encrypt communication
-	if err != nil {
-		log.Fatalf("fail to dial: %v", err)
-	}
-	pClient := predictor.NewObiPredictorClient(conn)
 	// Create and return OBI master object
 	master := ObiMaster {
 		Pooling: p,
 		HeartbeatReceiver: hb,
-		PredictorClient: &pClient,
 	}
+
 	return &master
 }

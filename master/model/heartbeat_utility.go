@@ -1,11 +1,11 @@
-package heartbeat
+package model
 
 import (
 		"obi/master/predictor"
 )
 
-// ToSnapshot converts an heartbeat to a snapshot of metrics to be sent to the predictor module
-func ToSnapshot(message *HeartbeatMessage) *predictor.MetricsSnasphot {
+// MetricsToSnapshot converts an heartbeat to a snapshot of metrics to be sent to the predictor module
+func MetricsToSnapshot(message Metrics) *predictor.MetricsSnasphot {
 	return &predictor.MetricsSnasphot{
 		AMResourceLimitMB: message.AMResourceLimitMB,
 		AMResourceLimitVCores: message.AMResourceLimitVCores,
