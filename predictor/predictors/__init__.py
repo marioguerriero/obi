@@ -16,6 +16,15 @@ _DURATION_PREDICTORS = {
 FAILURE_PREDICTOR = FailurePredictor()
 
 
+def get_predictor_instance(name):
+    """
+    Returns a predictor instance given its name
+    :param name:
+    :return:
+    """
+    return _DURATION_PREDICTORS[name]
+
+
 def get_duration_predictor(predictor_name):
     """
     Return a profile instance given its name

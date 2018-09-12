@@ -97,7 +97,7 @@ func (p *Pooling) DeployJobs(jobs []*model.Job) {
 	cluster, err := newCluster(clusterName, "dataproc")
 
 	// Instantiate a new autoscaler for the new cluster and start monitoring
-	policy := policies.NewGoogle()
+	policy := policies.NewTimeout()
 	a := autoscaler.New(policy, 60, cluster.(model.Scalable))
 	a.StartMonitoring()
 

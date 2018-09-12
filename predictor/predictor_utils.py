@@ -1,19 +1,27 @@
 import datetime
+import os
 import random
 import string
 
+from google.cloud import storage
+
 predictor_matchers = {
+    # TODO: do not use absolute paths in source_code fields
     'csv_find': {
-        'file_names': ['find_changed']
+        'file_names': ['find_changes.py', 'find_changes_test.py'],
+        'source_code': ['/mnt/dhg-obi/cluster-script/find_changes_test.py']
     },
     'csv_update': {
-            'file_names': ['update']
+        'file_names': ['update.py', 'update_test.py'],
+        'source_code': ['/mnt/dhg-obi/cluster-script/update_test.py']
     },
     'csv_recreate': {
-        'file_names': ['recreate_file']
+        'file_names': ['recreate_file.py'],
+        'source_code': ['data/source/csv_recreate']
     },
     'ulm': {
-        'file_names': ['ulm']
+        'file_names': ['ulm.py'],
+        'source_code': ['data/source/ulm']
     },
 }
 
@@ -77,8 +85,7 @@ def infer_predictor_name(req):
     :return:
     """
     # Try to guess the job predictor from the script file path
-    job_path = req.JobFilePath.split('/')[-1]
-    job_script_name = job_path.split('.')[-1]
+    job_script_name = os.path.basename(req.JobFilePath)
 
     for predictor in predictor_matchers.keys():
         file_names = predictor_matchers[predictor]['file_names']
@@ -87,10 +94,31 @@ def infer_predictor_name(req):
                 return predictor
 
     # Look at job arguments
-    # TODO
+    # TODO: it is not useful for CSV jobs only as they all have the same args
 
     # Look a job script content (if possible)
-    # TODO
+    # TODO: extend this mechanism to data source different from GCS
+    # Instantiates a client
+    storage_client = storage.Client()
+
+    # The name for the new bucket
+    fname = req.JobFilePath.replace('gs://', '')
+    fname = fname.split('/')
+    bucket_name = fname[0]
+    blob_name = '/'.join(fname[1:])
+
+    # Download remote blob
+    bucket = storage_client.get_bucket(bucket_name)
+    blob = bucket.blob(blob_name)
+    blob_content = blob.download_as_string(storage_client)
+
+    # Check hamming similarity between submitted code and known scripts
+    for predictor in predictor_matchers.keys():
+        file_names = predictor_matchers[predictor]['source_code']
+        for fname in file_names:
+            with open(fname, 'r') as f:
+                if hamming_similarity(blob_content, f.read()) > .85:
+                    return predictor
 
     return None
 
