@@ -55,6 +55,7 @@ message PredictionRequest {
 message PredictionResponse {
     int32 Duration = 1;
     float FailureProbability = 2;
+    string Label = 3;
 }
 
 message EmptyResponse {

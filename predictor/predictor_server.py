@@ -1,20 +1,18 @@
-import predictor_service_pb2
-import predictor_service_pb2_grpc
-
-import grpc
-
-from concurrent import futures
 import os
 import sys
 import time
+from concurrent import futures
 
+import grpc
+import pandas as pd
+import predictor_service_pb2
+import predictor_service_pb2_grpc
+import predictor_utils
+import predictors
 import yaml
 from logger import log
 
-import predictors
-import predictor_utils
-
-import pandas as pd
+sys.path.append('.')
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
@@ -50,14 +48,30 @@ class PredictorServer(predictor_service_pb2_grpc.ObiPredictorServicer):
         """
         log.info('Received request {}'.format(req))
         # Select the correct predictor
-        predictor_name = predictor_utils.infer_predictor_name(req)
-        predictor = predictors.get_predictor_instance(predictor_name)
+        job_type = predictor_utils.infer_predictor_name(req)
+        predictor = predictors.get_predictor_instance(job_type)
+        # Get job arguments
+        backend, day_diff = (None,)*2
+        args = req.JobArgs.split()
+        for i, a in enumerate(args):
+            if i + 1 >= len(args):
+                break
+            if a == '-s':
+                # Next one is backend
+                backend = args[i+1]
+            elif a == '-d':
+                # Next one is day difference
+                day_diff = args[i+1]
         # Generate predictions
-        predictions = predictor.predict(req.Metrics)
+        predictions = predictor.predict(req.Metrics, {
+            'backend': backend,
+            'day_diff': day_diff
+        })
         # Return predictions to the user
         res = predictor_service_pb2.PredictionResponse()
         res.Duration = predictions[0]
         res.FailureProbability = predictions[1]
+        res.Label = job_type
         log.info('Generated predictions: {}'.format(res))
         return res
 
