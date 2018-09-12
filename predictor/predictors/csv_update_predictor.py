@@ -53,7 +53,7 @@ class CsvUpdatePredictor(GenericPredictor):
             metrics.AvailableMB,  # YARN_AVAILABLE_MEMORY
             metrics.AvailableVCores,  # YARN_AVAILABLE_VIRTUAL_CORES
         ])
-        data = xgboost.DMatrix(features)
+        data = xgboost.DMatrix(features.reshape(-1, 1))
 
         # Generate predictions
         prediction = self._model.predict(data)
