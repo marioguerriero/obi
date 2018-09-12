@@ -451,7 +451,9 @@ def _get_csv_find_input_size(backend, date=None, day_diff=0):
                 continue
 
         count += 1
-        size += get_blob_size(bucket, today_path + '/' + table + ".id_md5.csv")
+        tmp_size = get_blob_size(
+            bucket, today_path + '/' + table + ".id_md5.csv")
+        size += tmp_size if tmp_size is not None else 0
 
         for b in bucket.list_blobs(
                 prefix=yesterday_path + '/' + table):
