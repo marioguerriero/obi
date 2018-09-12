@@ -113,7 +113,7 @@ func receiverRoutine(pool *pooling.Pool) {
 			m.GetAggregateContainersAllocated(),
 			m.GetAggregateContainersReleased(),
 			m.GetAvailableMB(),
-			m.GetAvailableMB(),
+			m.GetAvailableVCores(),
 			m.GetPendingMB(),
 			m.GetPendingVCores(),
 			m.GetNumberOfNodes(),

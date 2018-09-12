@@ -51,22 +51,21 @@ class PredictorServer(predictor_service_pb2_grpc.ObiPredictorServicer):
         job_type = predictor_utils.infer_predictor_name(req)
         predictor = predictors.get_predictor_instance(job_type)
         # Get job arguments
-        backend, day_diff = (None,)*2
+        backend, day_diff = (None,) * 2
         args = req.JobArgs.split()
         for i, a in enumerate(args):
             if i + 1 >= len(args):
                 break
             if a == '-s':
                 # Next one is backend
-                backend = args[i+1]
+                backend = args[i + 1]
             elif a == '-d':
                 # Next one is day difference
-                day_diff = args[i+1]
+                day_diff = args[i + 1]
         # Generate predictions
-        predictions = predictor.predict(req.Metrics, {
-            'backend': backend,
-            'day_diff': day_diff
-        })
+        predictions = predictor.predict(req.Metrics,
+                                        backend=backend,
+                                        day_diff=day_diff)
         # Return predictions to the user
         res = predictor_service_pb2.PredictionResponse()
         res.Duration = predictions[0]
