@@ -33,9 +33,9 @@ func (p *GooglePolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 	var performance float32
 	var scalingFactor int32
 	var memoryUsage int32
-	workerMemory := 15000.0
+	var workerMemory float32
 
-	logrus.Info("Applying time-based policy")
+	logrus.Info("Applying Google policy")
 	for obj := range metricsWindow.Iter() {
 		if obj.Value == nil {
 			continue
@@ -44,6 +44,9 @@ func (p *GooglePolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 		hb := obj.Value.(model.Metrics)
 		memoryUsage += hb.PendingMemory - hb.AvailableMemory
 		count++
+
+		workerMemory = float32((hb.AvailableMemory + hb.AllocatedMB) / hb.NumberOfNodes)
+		fmt.Println(workerMemory)
 
 		previousMetrics = obj.Value.(model.Metrics)
 	}
