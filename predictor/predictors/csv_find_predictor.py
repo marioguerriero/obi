@@ -12,6 +12,7 @@ import numpy as np
 from scipy.special import inv_boxcox
 from sklearn.externals import joblib
 
+import xgboost
 
 class CsvFindPredictor(GenericPredictor):
 
@@ -54,9 +55,10 @@ class CsvFindPredictor(GenericPredictor):
             metrics.AvailableMB,  # YARN_AVAILABLE_MEMORY
             metrics.AvailableVCores,  # YARN_AVAILABLE_VIRTUAL_CORES
         ])
+        data = xgboost.DMatrix(features)
 
         # Generate predictions
-        prediction = self._model.predict(features)
+        prediction = self._model.predict(data)
 
         # Apply inverse Boxcox function on generate prediction
         return inv_boxcox(prediction, self._config['boxcoxMaxLog'])
