@@ -9,6 +9,10 @@ import (
 	"obi/master/model"
 	"obi/master/utils"
 	"time"
+	"obi/master/predictor"
+	"github.com/spf13/viper"
+	"google.golang.org/grpc"
+	"context"
 )
 
 // Pooling class with properties
@@ -18,6 +22,7 @@ type Pooling struct {
 	bestEffort *queue.Queue
 	quit chan struct{}
 	schedulerWindow int32
+	predictorClient *predictor.ObiPredictorClient
 }
 
 // New is the constructor of Pooling struct
@@ -26,16 +31,26 @@ func New(pool *Pool, timeWindow int32) *Pooling {
 
 	// Create Pooling object
 	logrus.Info("Creating cluster pooling")
+
+	// Open connection to predictor server
+	serverAddr := fmt.Sprintf("%s:%s",
+		viper.GetString("predictorHost"),
+		viper.GetString("predictorPort"))
+	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure()) // TODO: encrypt communication
+	if err != nil {
+		logrus.Fatalf("fail to dial: %v", err)
+	}
+	pClient := predictor.NewObiPredictorClient(conn)
+
 	pooling := &Pooling{
 		pool,
 		queue.New(50),
 		queue.New(100),
 		make(chan struct{}),
 		timeWindow,
+		&pClient,
 	}
 
-	// Return created pooling object
-	logrus.Info("Created pool of clusters")
 	return pooling
 }
 
@@ -96,6 +111,10 @@ func (p *Pooling) DeployJobs(jobs []*model.Job) {
 	clusterName := fmt.Sprintf("obi-%s", utils.RandomString(10))
 	cluster, err := newCluster(clusterName, "dataproc")
 
+	if err != nil {
+		return
+	}
+
 	// Instantiate a new autoscaler for the new cluster and start monitoring
 	policy := policies.NewTimeout()
 	a := autoscaler.New(policy, 60, cluster.(model.Scalable))
@@ -104,14 +123,34 @@ func (p *Pooling) DeployJobs(jobs []*model.Job) {
 	// Add in the pool
 	p.pool.AddCluster(cluster, a)
 
-	if err != nil {
-		return
+	time.Sleep(30 * time.Second)
+
+	var lastHeartbeat model.Metrics
+	for hb := range cluster.GetMetricsWindow().Iter() {
+		if hb.Value != nil {
+			lastHeartbeat = hb.Value.(model.Metrics)
+		}
 	}
 
 	for _, job := range jobs {
 		if job == nil {
 			continue
 		}
+
+		// Generate predictions before submitting the job
+		resp, err := (*p.predictorClient).RequestPrediction(
+			context.Background(), &predictor.PredictionRequest{
+				JobFilePath: job.ExecutablePath,
+				JobArgs: job.Args,
+				Metrics: model.MetricsToSnapshot(lastHeartbeat),
+			})
+		if err != nil {
+			logrus.WithField("response", resp).Warning("Could not generate predictions")
+		}
+		fmt.Println(resp.Duration)
+		fmt.Println(resp.FailureProbability)
+		fmt.Println(resp.Label)
+
 		job.AssignedCluster = clusterName
 		cluster.SubmitJob(job)
 	}
