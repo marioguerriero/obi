@@ -55,7 +55,10 @@ class CsvFindPredictor(GenericPredictor):
             metrics.AvailableMB,  # YARN_AVAILABLE_MEMORY
             metrics.AvailableVCores,  # YARN_AVAILABLE_VIRTUAL_CORES
         ])
-        data = xgboost.DMatrix(features)
+        data = xgboost.DMatrix(features.reshape(-1, 1), label=[
+            'INPUT_FILES_COUNT', 'INPUT_SIZE',
+            'YARN_AVAILABLE_MEMORY', 'YARN_AVAILABLE_VIRTUAL_CORES'
+        ])
 
         # Generate predictions
         prediction = self._model.predict(data)
