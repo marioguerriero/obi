@@ -116,9 +116,10 @@ def infer_predictor_name(req):
     for predictor in predictor_matchers.keys():
         file_names = predictor_matchers[predictor]['source_code']
         for fname in file_names:
-            with open(fname, 'r') as f:
-                if hamming_similarity(blob_content, f.read()) > .85:
-                    return predictor
+            if os.path.exists(fname):
+                with open(fname, 'r') as f:
+                    if hamming_similarity(blob_content, f.read()) > .85:
+                        return predictor
 
     return None
 
