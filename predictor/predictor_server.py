@@ -49,6 +49,11 @@ class PredictorServer(predictor_service_pb2_grpc.ObiPredictorServicer):
         log.info('Received request {}'.format(req))
         # Select the correct predictor
         job_type = predictor_utils.infer_predictor_name(req)
+        if job_type is None:
+            return predictor_service_pb2.PredictionResponse(
+                Duration=-1,
+                FailureProbability=.0
+            )
         predictor = predictors.get_predictor_instance(job_type)
         # Get job arguments
         backend, day_diff = (None,) * 2

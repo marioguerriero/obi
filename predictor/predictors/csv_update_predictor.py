@@ -11,6 +11,7 @@ import input_files_utils
 from logger import log
 from .generic_predictor import GenericPredictor
 
+import xgboost
 
 class CsvUpdatePredictor(GenericPredictor):
 
@@ -47,14 +48,18 @@ class CsvUpdatePredictor(GenericPredictor):
 
         # Feature selection
         features = np.array([
-            input_info[0],  # INPUT_FILES_COUNT
-            input_info[1],  # INPUT_SIZE
-            metrics.AvailableMB,  # YARN_AVAILABLE_MEMORY
-            metrics.AvailableVCores,  # YARN_AVAILABLE_VIRTUAL_CORES
+            float(input_info[0]),  # INPUT_FILES_COUNT
+            float(input_info[1]),  # INPUT_SIZE
+            float(metrics.AvailableMB),  # YARN_AVAILABLE_MEMORY
+            float(metrics.AvailableVCores),  # YARN_AVAILABLE_VIRTUAL_CORES
+        ])
+        data = xgboost.DMatrix(features.reshape(1, -1), feature_names=[
+            'INPUT_FILES_COUNT', 'INPUT_SIZE',
+            'YARN_AVAILABLE_MEMORY', 'YARN_AVAILABLE_VIRTUAL_CORES'
         ])
 
         # Generate predictions
-        prediction = self._model.predict(features)
+        prediction = self._model.predict(data)
 
         # Apply inverse Boxcox function on generate prediction
         return inv_boxcox(prediction, self._config['boxcoxMaxLog'])

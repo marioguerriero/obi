@@ -11,6 +11,7 @@ import input_files_utils
 from logger import log
 from .generic_predictor import GenericPredictor
 
+import xgboost
 
 class CsvRecreatePredictor(GenericPredictor):
 
@@ -37,25 +38,17 @@ class CsvRecreatePredictor(GenericPredictor):
         :param metrics:
         :return int: Duration prediction in seconds
         """
-        # Get input information
-        try:
-            input_info = input_files_utils.get_input_size(
-                'csv', 'find', kwargs['backend'],
-                date.today(), kwargs['day_diff'])
-        except ValueError:
-            log.error('Could not generate predictions')
-            return None
-
         # Feature selection
         features = np.array([
-            input_info[0],  # INPUT_FILES_COUNT
-            input_info[1],  # INPUT_SIZE
-            metrics.AvailableMB,  # YARN_AVAILABLE_MEMORY
-            metrics.AvailableVCores,  # YARN_AVAILABLE_VIRTUAL_CORES
+            float(metrics.AvailableMB),  # YARN_AVAILABLE_MEMORY
+            float(metrics.AvailableVCores),  # YARN_AVAILABLE_VIRTUAL_CORES
+        ])
+        data = xgboost.DMatrix(features.reshape(1, -1), feature_names=[
+            'YARN_AVAILABLE_MEMORY', 'YARN_AVAILABLE_VIRTUAL_CORES'
         ])
 
         # Generate predictions
-        prediction = self._model.predict(features)
+        prediction = self._model.predict(data)
 
         # Apply inverse Boxcox function on generate prediction
         return inv_boxcox(prediction, self._config['boxcoxMaxLog'])
