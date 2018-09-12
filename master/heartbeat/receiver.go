@@ -128,7 +128,7 @@ func receiverRoutine(pool *pooling.Pool) {
 
 			newCluster, err := platforms.NewExistingCluster(m.GetServiceType(), m.GetClusterName())
 			if err == nil {
-				policy := policies.NewWorkload()
+				policy := policies.NewWorkload(0.3)
 				a := autoscaler.New(policy, 60, newCluster.(model.Scalable))
 				pool.AddCluster(newCluster, a)
 
