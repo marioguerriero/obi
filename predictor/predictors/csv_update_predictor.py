@@ -48,10 +48,10 @@ class CsvUpdatePredictor(GenericPredictor):
 
         # Feature selection
         features = np.array([
-            input_info[0],  # INPUT_FILES_COUNT
-            input_info[1],  # INPUT_SIZE
-            metrics.AvailableMB,  # YARN_AVAILABLE_MEMORY
-            metrics.AvailableVCores,  # YARN_AVAILABLE_VIRTUAL_CORES
+            float(input_info[0]),  # INPUT_FILES_COUNT
+            float(input_info[1]),  # INPUT_SIZE
+            float(metrics.AvailableMB),  # YARN_AVAILABLE_MEMORY
+            float(metrics.AvailableVCores),  # YARN_AVAILABLE_VIRTUAL_CORES
         ])
         data = xgboost.DMatrix(features.reshape(-1, 1), label=[
             'INPUT_FILES_COUNT', 'INPUT_SIZE',

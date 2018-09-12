@@ -38,24 +38,12 @@ class CsvRecreatePredictor(GenericPredictor):
         :param metrics:
         :return int: Duration prediction in seconds
         """
-        # Get input information
-        try:
-            input_info = input_files_utils.get_input_size(
-                'csv', 'find', kwargs['backend'],
-                date.today(), kwargs['day_diff'])
-        except ValueError:
-            log.error('Could not generate predictions')
-            return None
-
         # Feature selection
         features = np.array([
-            input_info[0],  # INPUT_FILES_COUNT
-            input_info[1],  # INPUT_SIZE
-            metrics.AvailableMB,  # YARN_AVAILABLE_MEMORY
-            metrics.AvailableVCores,  # YARN_AVAILABLE_VIRTUAL_CORES
+            float(metrics.AvailableMB),  # YARN_AVAILABLE_MEMORY
+            float(metrics.AvailableVCores),  # YARN_AVAILABLE_VIRTUAL_CORES
         ])
         data = xgboost.DMatrix(features.reshape(-1, 1), label=[
-            'INPUT_FILES_COUNT', 'INPUT_SIZE',
             'YARN_AVAILABLE_MEMORY', 'YARN_AVAILABLE_VIRTUAL_CORES'
         ])
 
