@@ -53,7 +53,7 @@ class CsvUpdatePredictor(GenericPredictor):
             float(metrics.AvailableMB),  # YARN_AVAILABLE_MEMORY
             float(metrics.AvailableVCores),  # YARN_AVAILABLE_VIRTUAL_CORES
         ])
-        data = xgboost.DMatrix(features.reshape(-1, 1), label=[
+        data = xgboost.DMatrix(features.reshape(1, -1), feature_names=[
             'INPUT_FILES_COUNT', 'INPUT_SIZE',
             'YARN_AVAILABLE_MEMORY', 'YARN_AVAILABLE_VIRTUAL_CORES'
         ])
