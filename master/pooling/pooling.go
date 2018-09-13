@@ -2,8 +2,7 @@ package pooling
 
 import (
 	"fmt"
-	"github.com/Workiva/go-datastructures/queue"
-	"github.com/sirupsen/logrus"
+		"github.com/sirupsen/logrus"
 	"obi/master/autoscaler"
 	"obi/master/autoscaler/policies"
 	"obi/master/model"
@@ -13,21 +12,19 @@ import (
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"context"
+	"obi/master/scheduler"
 )
 
 // Pooling class with properties
 type Pooling struct {
 	pool           *Pool
-	priority *queue.Queue
-	bestEffort *queue.Queue
-	quit chan struct{}
-	schedulerWindow int32
 	predictorClient *predictor.ObiPredictorClient
+	scheduler *scheduler.Scheduler
 }
 
 // New is the constructor of Pooling struct
 // @param pool contains the available clusters to use for job deployments
-func New(pool *Pool, timeWindow int32) *Pooling {
+func New(pool *Pool) *Pooling {
 
 	// Create Pooling object
 	logrus.Info("Creating cluster pooling")
@@ -44,68 +41,28 @@ func New(pool *Pool, timeWindow int32) *Pooling {
 
 	pooling := &Pooling{
 		pool,
-		queue.New(50),
-		queue.New(100),
-		make(chan struct{}),
-		timeWindow,
 		&pClient,
+		scheduler.New(10),
 	}
+
+	// TODO: configuration for scheduler (levels, timeouts...)
 
 	return pooling
 }
 
-// StartScheduling starts the execution of the scheduler routine
-func (p *Pooling) StartScheduling() {
-	logrus.Info("Starting scheduling routine.")
-	go schedulingRoutine(p)
-}
-
-// StopScheduling stops the execution of the scheduler routine
-func (p *Pooling) StopScheduling() {
-	logrus.Info("Stopping scheduling routine.")
-	close(p.quit)
-}
-
-// This routine periodically scans queues from top to low priority and schedules its contained job
-func schedulingRoutine(pooling *Pooling) {
-	for {
-		select {
-		case <-pooling.quit:
-			logrus.Info("Closing scheduler routine.")
-			return
-		default:
-			slice, error := pooling.priority.Get(10)
-			if error != nil {
-				logrus.WithField("error", error).Info("Impossible get the next job in the priority queue")
-			} else {
-				jobs := make([]*model.Job, len(slice))
-				for i, obj := range slice {
-					if job, ok := obj.(*model.Job); ok {
-						jobs[i] = job
-					}
-				}
-				go pooling.DeployJobs(jobs)
-			}
-			time.Sleep(time.Duration(pooling.schedulerWindow) * time.Second)
-		}
-	}
-}
-
 // ScheduleJob submits a new job to the pooling scheduling queues
-func (p *Pooling) ScheduleJob(job *model.Job) {
+func (p *Pooling) ScheduleJob(job model.Job) {
 	// TODO: configuration file for pooling
-	if job.Priority > 0 && job.Priority <= 7 {
-		p.priority.Put(job)
-	} else if job.Priority == 0 {
-		p.bestEffort.Put(job)
+	if job.Priority >= 0 && job.Priority <= 7 {
+		p.scheduler.AddJob(job)
 	} else {
-		go p.DeployJobs([]*model.Job{job})
+		go p.DeployJobs([]model.Job{job})
 	}
 }
 
 // DeployJobs is for deploying the list of jobs into a single cluster
 // @param jobs is the list of jobs to deploy
-func (p *Pooling) DeployJobs(jobs []*model.Job) {
+func (p *Pooling) DeployJobs(jobs []model.Job) {
 
 	// Create new cluster
 	clusterName := fmt.Sprintf("obi-%s", utils.RandomString(10))
@@ -133,9 +90,6 @@ func (p *Pooling) DeployJobs(jobs []*model.Job) {
 	}
 
 	for _, job := range jobs {
-		if job == nil {
-			continue
-		}
 
 		// Generate predictions before submitting the job
 		resp, err := (*p.predictorClient).RequestPrediction(

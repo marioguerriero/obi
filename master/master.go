@@ -42,7 +42,7 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 		jobType = model.JobTypeUndefined
 	}
 
-	job := &model.Job{
+	job := model.Job{
 		ID:                 rand.Int(),
 		ExecutablePath:     jobRequest.ExecutablePath,
 		Type:               jobType,
@@ -88,12 +88,11 @@ func (m *ObiMaster) SubmitExecutable(stream ObiMaster_SubmitExecutableServer) er
 func CreateMaster() (*ObiMaster) {
 	// Create new cluster pooling object
 	pool := pooling.GetPool()
-	p := pooling.New(pool, 60)
+	p := pooling.New(pool)
 	hb := heartbeat.New(pool)
 
 	hb.Start()
 	pool.StartLivelinessMonitoring()
-	p.StartScheduling()
 
 	// Create and return OBI master object
 	master := ObiMaster {

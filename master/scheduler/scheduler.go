@@ -58,8 +58,8 @@ func (s *Scheduler) AddLevel(level int32, timeWindow int32, policy PackingPolicy
 	}
 }
 
-func (s *Scheduler) AddJob(job model.Job, level int32) {
-	schedulerLevel := s.levels[level]
+func (s *Scheduler) AddJob(job model.Job) {
+	schedulerLevel := s.levels[job.Priority]
 	switch schedulerLevel.policy {
 	case TimeDuration:
 		timeDurationAddJob(&schedulerLevel, job)
@@ -85,7 +85,7 @@ func countAddJob(sl *LevelScheduler, job model.Job) {
 	for _, b := range sl.bins {
 		if b.cumulativeValue + 1 <= sl.binCapacity {
 			b.jobs = append(b.jobs, job)
-			b.cumulativeValue += 1
+			b.cumulativeValue++
 			return
 		}
 	}
@@ -97,7 +97,7 @@ func schedulingRoutine(ls *LevelScheduler, quit <-chan struct{}) {
 	for {
 		select {
 		case <-quit:
-			logrus.Info("Closing scheduler routine.")
+			logrus.Info("Closing level-scheduler routine.")
 			return
 		default:
 			// do something

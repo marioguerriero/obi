@@ -178,7 +178,7 @@ func (c *DataprocCluster) GetName() string {
 }
 
 // SubmitJob is for sending a new job to Dataproc
-func (c *DataprocCluster) SubmitJob(job *m.Job) error {
+func (c *DataprocCluster) SubmitJob(job m.Job) error {
 	ctx := context.Background()
 	controller, err := dataproc.NewJobControllerClient(ctx)
 	if err != nil {
