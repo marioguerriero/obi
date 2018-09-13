@@ -45,9 +45,6 @@ func (p *GooglePolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 		memoryUsage += hb.PendingMemory - hb.AvailableMemory
 		count++
 
-		workerMemory = float32((hb.AvailableMemory + hb.AllocatedMB) / hb.NumberOfNodes)
-		fmt.Println(workerMemory)
-
 		previousMetrics = obj.Value.(model.Metrics)
 	}
 
