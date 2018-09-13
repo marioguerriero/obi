@@ -116,7 +116,7 @@ func (p *Pooling) DeployJobs(jobs []*model.Job) {
 	}
 
 	// Instantiate a new autoscaler for the new cluster and start monitoring
-	policy := policies.NewLinearWorkload()
+	policy := policies.NewWorkload(0.5)
 	a := autoscaler.New(policy, 60, cluster.(model.Scalable))
 	a.StartMonitoring()
 
