@@ -45,8 +45,8 @@ func (p *GooglePolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 		memoryUsage += hb.PendingMemory - hb.AvailableMemory
 		count++
 
-		workerMemory = float32((hb.AvailableMemory + hb.AllocatedMB) / hb.NumberOfNodes)
-		fmt.Println(workerMemory)
+		//workerMemory = float32((hb.AvailableMemory + hb.AllocatedMB) / hb.NumberOfNodes)
+		//fmt.Println(workerMemory)
 
 		previousMetrics = obj.Value.(model.Metrics)
 	}
@@ -77,9 +77,14 @@ func (p *GooglePolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 		}
 
 		// Check if we have to scale or not
-		workers := float64(memoryUsage / count) / workerMemory
+		workers := float32(memoryUsage / count) / workerMemory
 		fmt.Printf("Exact workers: %f\n", workers)
 		scalingFactor = int32(workers)
+
+		// Never scale below the admitted threshold
+		if previousMetrics.NumberOfNodes + scalingFactor < LowerBoundNodes {
+			scalingFactor = 0
+		}
 
 		// Create autoscaler record
 		if scalingFactor != 0 && p.record == nil {
