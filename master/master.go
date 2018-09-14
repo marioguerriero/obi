@@ -8,16 +8,21 @@ import (
 		"math/rand"
 	"obi/master/heartbeat"
 	"obi/master/model"
-	"obi/master/pooling"
+	"obi/master/scheduling"
 		"obi/master/utils"
 	"os"
 	"path/filepath"
+	"obi/master/pool"
+	"obi/master/predictor"
+	"github.com/spf13/viper"
+	"google.golang.org/grpc"
 )
 
 // ObiMaster structure representing one master instance for OBI
 type ObiMaster struct {
-	Pooling *pooling.Pooling
-	HeartbeatReceiver *heartbeat.Receiver
+	scheduler *scheduling.Scheduler
+	heartbeatReceiver *heartbeat.Receiver
+	predictorClient *predictor.ObiPredictorClient
 }
 
 // ListInfrastructures RPC for listing the available infrastructure services
@@ -33,7 +38,21 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 		jobRequest *JobSubmissionRequest) (*Empty, error) {
 	logrus.WithField("path", jobRequest.ExecutablePath).Info("Received job request")
 
-	// Create job object to be submitted to the pooling component
+	// Generate predictions before submitting the job
+	resp, err := (*m.predictorClient).RequestPrediction(
+		context.Background(), &predictor.PredictionRequest{
+			JobFilePath: jobRequest.ExecutablePath,
+			JobArgs: jobRequest.JobArgs,
+			Metrics: model.MetricsDidBorn,
+		})
+	if err != nil {
+		logrus.WithField("response", resp).Warning("Could not generate predictions")
+	}
+	fmt.Println(resp.Duration)
+	fmt.Println(resp.FailureProbability)
+	fmt.Println(resp.Label)
+
+	// Create job object to be submitted to the scheduling component
 	var jobType model.JobType
 	switch jobRequest.Type {
 	case JobSubmissionRequest_PYSPARK:
@@ -42,7 +61,7 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 		jobType = model.JobTypeUndefined
 	}
 
-	job := &model.Job{
+	job := model.Job{
 		ID:                 rand.Int(),
 		ExecutablePath:     jobRequest.ExecutablePath,
 		Type:               jobType,
@@ -53,7 +72,7 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 
 	// Send job execution request
 	logrus.WithField("priority-level", jobRequest.Priority).Info("Schedule job for execution")
-	m.Pooling.ScheduleJob(job)
+	m.scheduler.ScheduleJob(job)
 
 	return new(Empty), nil
 }
@@ -86,19 +105,33 @@ func (m *ObiMaster) SubmitExecutable(stream ObiMaster_SubmitExecutableServer) er
 
 // CreateMaster generates a new OBI master instance
 func CreateMaster() (*ObiMaster) {
-	// Create new cluster pooling object
-	pool := pooling.GetPool()
-	p := pooling.New(pool, 60)
-	hb := heartbeat.New(pool)
+	// Create new cluster scheduling object
+	p := pool.GetPool()
+	submitter := pool.NewSubmitter(p)
+	scheduler := scheduling.New(10, submitter)
+	// TODO: configure levels  of the scheduler
+	hb := heartbeat.New(p)
 
 	hb.Start()
-	pool.StartLivelinessMonitoring()
-	p.StartScheduling()
+	p.StartLivelinessMonitoring()
+	scheduler.Start()
+
+	// Open connection to predictor server
+	serverAddr := fmt.Sprintf("%s:%s",
+		viper.GetString("predictorHost"),
+		viper.GetString("predictorPort"))
+	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure()) // TODO: encrypt communication
+	if err != nil {
+		logrus.Fatalf("fail to dial: %v", err)
+	}
+	pClient := predictor.NewObiPredictorClient(conn)
+
 
 	// Create and return OBI master object
 	master := ObiMaster {
-		Pooling: p,
-		HeartbeatReceiver: hb,
+		scheduler: scheduler,
+		heartbeatReceiver: hb,
+		predictorClient: &pClient,
 	}
 
 	return &master

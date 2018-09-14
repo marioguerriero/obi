@@ -3,8 +3,8 @@ package policies
 import (
 		"obi/master/utils"
 	"obi/master/model"
-	"fmt"
-)
+		"math"
+	)
 
 
 // WorkloadPolicy contains all useful state-variable to apply the policy
@@ -15,7 +15,7 @@ type WorkloadPolicy struct {
 // NewWorkload is the constructor of the WorkloadPolicy struct
 func NewWorkload(scaleFactor float32) *WorkloadPolicy {
 	return &WorkloadPolicy{
-		scale: scaleFactor,
+		scaleFactor,
 	}
 }
 
@@ -35,7 +35,6 @@ func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 
 		if previousMetrics != (model.Metrics{}) {
 			throughput += float32(hb.TotalContainersReleased - previousMetrics.TotalContainersReleased)
-
 			if hb.PendingContainers > 0 {
 				memoryContainer := hb.PendingMemory / hb.PendingContainers
 				containersWillConsumed := hb.AvailableMemory / memoryContainer
@@ -53,8 +52,13 @@ func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 	if count > 0 {
 		throughput /= float32(count)
 		pendingGrowthRate /= float32(count)
-		fmt.Printf("Throughput: %f\n", throughput)
-		fmt.Printf("Pending rate: %f\n", pendingGrowthRate)
+		if pendingGrowthRate == 0 && previousMetrics.AllocatedContainers > 0 {
+			workerMemory := (previousMetrics.AvailableMemory + previousMetrics.AllocatedMB) / previousMetrics.NumberOfNodes
+			memoryContainer := previousMetrics.AllocatedMB / previousMetrics.AllocatedContainers
+			containersPerNode := workerMemory / memoryContainer
+			nodesUsed := math.Ceil(float64(previousMetrics.AllocatedContainers / containersPerNode))
+			return int32(nodesUsed) - previousMetrics.NumberOfNodes
+		}
 		return int32((pendingGrowthRate - throughput) * p.scale)
 	}
 	return 0

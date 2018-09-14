@@ -1,4 +1,4 @@
-package pooling
+package pool
 
 import (
 		"obi/master/autoscaler"

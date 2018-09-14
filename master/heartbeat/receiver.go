@@ -8,13 +8,13 @@ import (
 	"obi/master/autoscaler/policies"
 	"obi/master/model"
 	"obi/master/platforms"
-	"obi/master/pooling"
 	"time"
+	"obi/master/pool"
 )
 
 // Receiver class with properties
 type Receiver struct {
-	pool *pooling.Pool
+	pool *pool.Pool
 }
 
 // channel to interrupt the heartbeat receiver routine
@@ -28,7 +28,7 @@ var conn *net.UDPConn
 // @param deleteTimeout is the time interval after which a cluster is assumed down
 // @param trackerInterval is the time interval for which the clusters tracker is triggered
 // return the pointer to the instance
-func New(pool *pooling.Pool) *Receiver {
+func New(pool *pool.Pool) *Receiver {
 	r := &Receiver{
 		pool,
 	}
@@ -46,7 +46,7 @@ func (receiver *Receiver) Start() {
 // goroutine which listens to new heartbeats from cluster masters. It will be stop when an empty object is inserted in
 // the `quit` channel
 // @param pool contains the available clusters to update with new metrics
-func receiverRoutine(pool *pooling.Pool) {
+func receiverRoutine(pool *pool.Pool) {
 	var err error
 
 	// listen to incoming udp packets
