@@ -3,9 +3,11 @@ package scheduling
 import (
 	"obi/master/model"
 	"github.com/sirupsen/logrus"
+		"obi/master/pool"
+	"github.com/spf13/viper"
+		"sync"
 	"time"
-	"obi/master/pool"
-)
+	)
 
 type PackingPolicy int
 const (
@@ -15,14 +17,15 @@ const (
 
 type Bin struct {
 	jobs []model.Job
-	cumulativeValue int64
+	cumulativeValue int32
 }
 
 type LevelScheduler struct {
 	bins []Bin
-	policy PackingPolicy
-	timeWindow int32
-	binCapacity int64
+	Policy PackingPolicy
+	Timeout int32
+	BinCapacity int32
+	sync.RWMutex
 }
 
 type Scheduler struct {
@@ -31,74 +34,87 @@ type Scheduler struct {
 	submitter *pool.Submitter
 }
 
-func New(levels int32, submitter *pool.Submitter) *Scheduler {
+func New(submitter *pool.Submitter) *Scheduler {
 	s := &Scheduler{
-		make([]LevelScheduler, levels),
+		make([]LevelScheduler, 0),
 		make(chan struct{}),
 		submitter,
-
 	}
 	return s
 }
 
+func (s *Scheduler) SetupConfig() {
+	err := viper.UnmarshalKey("schedulingLevels", &s.levels)
+	if err != nil {
+		panic("Unable to unmarshal levels")
+	}
+}
+
 func (s *Scheduler) Start() {
 	logrus.Info("Starting scheduling routine.")
-	for _, l := range s.levels {
-		go schedulingRoutine(&l, s.submitter, s.quit)
+
+	for i := range s.levels {
+		go schedulingRoutine(&s.levels[i], s.submitter, s.quit)
 	}
 }
 
-func (p *Scheduler) Stop() {
+func (s *Scheduler) Stop() {
 	logrus.Info("Stopping scheduling routine.")
-	close(p.quit)
-}
-
-func (s *Scheduler) AddLevel(level int32, timeWindow int32, policy PackingPolicy, binCapacity int64) {
-	s.levels[level] = LevelScheduler{
-		make([]Bin, 1),
-		policy,
-		timeWindow,
-		binCapacity,
-	}
+	close(s.quit)
 }
 
 func (s *Scheduler) ScheduleJob(job model.Job) {
-	if job.Priority >= 0 && job.Priority <= 7 {
+	if job.Priority >= int32(len(s.levels)) {
 		go s.submitter.DeployJobs([]model.Job{job})
 	} else {
-		schedulerLevel := s.levels[job.Priority]
-		switch schedulerLevel.policy {
+		schedulerLevel := &s.levels[job.Priority]
+		switch schedulerLevel.Policy {
 		case TimeDuration:
-			timeDurationAddJob(&schedulerLevel, job)
+			timeDurationAddJob(schedulerLevel, job)
 		case Count:
-			countAddJob(&schedulerLevel, job)
+			countAddJob(schedulerLevel, job)
 		}
 	}
 	return
 }
 
-func timeDurationAddJob(sl *LevelScheduler, job model.Job) {
-	for _, b := range sl.bins {
-		if b.cumulativeValue + job.PredictedDuration <= sl.binCapacity {
-			b.jobs = append(b.jobs, job)
-			b.cumulativeValue += job.PredictedDuration
+func timeDurationAddJob(ls *LevelScheduler, job model.Job) {
+	ls.Lock()
+	defer ls.Unlock()
+	for i := range ls.bins {
+		if ls.bins[i].cumulativeValue + job.PredictedDuration <= ls.BinCapacity {
+			ls.bins[i].jobs = append(ls.bins[i].jobs, job)
+			ls.bins[i].cumulativeValue += job.PredictedDuration
 			return
 		}
 	}
-	sl.bins[len(sl.bins)-1].jobs[0] = job
-	sl.bins[len(sl.bins)-1].cumulativeValue = job.PredictedDuration
+	ls.bins = append(ls.bins, Bin{})
+	ls.bins[len(ls.bins)-1].jobs = append(ls.bins[len(ls.bins)-1].jobs, job)
+	ls.bins[len(ls.bins)-1].cumulativeValue = job.PredictedDuration
 }
 
-func countAddJob(sl *LevelScheduler, job model.Job) {
-	for _, b := range sl.bins {
-		if b.cumulativeValue + 1 <= sl.binCapacity {
-			b.jobs = append(b.jobs, job)
-			b.cumulativeValue++
+func countAddJob(ls *LevelScheduler, job model.Job) {
+	ls.Lock()
+	defer ls.Unlock()
+	for i := range ls.bins {
+		if ls.bins[i].cumulativeValue + 1 <= ls.BinCapacity {
+			ls.bins[i].jobs = append(ls.bins[i].jobs, job)
+			ls.bins[i].cumulativeValue++
 			return
 		}
 	}
-	sl.bins[len(sl.bins)-1].jobs[0] = job
-	sl.bins[len(sl.bins)-1].cumulativeValue = 1
+	ls.bins = append(ls.bins, Bin{})
+	ls.bins[len(ls.bins)-1].jobs = append(ls.bins[len(ls.bins)-1].jobs, job)
+	ls.bins[len(ls.bins)-1].cumulativeValue = 1
+}
+
+func flush(ls *LevelScheduler, s *pool.Submitter) {
+	ls.Lock()
+	defer ls.Unlock()
+	for i := range ls.bins {
+		go s.DeployJobs(ls.bins[i].jobs)
+	}
+	ls.bins = nil
 }
 
 func schedulingRoutine(ls *LevelScheduler, s *pool.Submitter, quit <-chan struct{}) {
@@ -108,11 +124,9 @@ func schedulingRoutine(ls *LevelScheduler, s *pool.Submitter, quit <-chan struct
 			logrus.Info("Closing level-scheduler routine.")
 			return
 		default:
-			for _, bin := range ls.bins {
-				go s.DeployJobs(bin.jobs)
-			}
-			time.Sleep(time.Duration(ls.timeWindow) * time.Second)
+			flush(ls, s)
 		}
+		time.Sleep(time.Duration(ls.Timeout) * time.Second)
 	}
 }
 

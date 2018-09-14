@@ -36,7 +36,7 @@ func (m *ObiMaster) ListInfrastructures(ctx context.Context,
 // SubmitJob remote procedure call used to submit a job to one of the OBI infrastructures
 func (m *ObiMaster) SubmitJob(ctx context.Context,
 		jobRequest *JobSubmissionRequest) (*Empty, error) {
-	logrus.WithField("path", jobRequest.ExecutablePath).Info("Received job request")
+	logrus.WithField("path", jobRequest.ExecutablePath).Info("Analyzing new job request")
 
 	// Generate predictions before submitting the job
 	resp, err := (*m.predictorClient).RequestPrediction(
@@ -51,6 +51,10 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 	fmt.Println(resp.Duration)
 	fmt.Println(resp.FailureProbability)
 	fmt.Println(resp.Label)
+	logrus.WithFields(logrus.Fields{
+		"type": resp.Label,
+		"duration": resp.Duration,
+	}).Info("New job")
 
 	// Create job object to be submitted to the scheduling component
 	var jobType model.JobType
@@ -68,6 +72,7 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 		Priority:           jobRequest.Priority,
 		AssignedCluster:    "",
 		Args:               jobRequest.JobArgs,
+		PredictedDuration:  resp.Duration,
 	}
 
 	// Send job execution request
@@ -108,8 +113,8 @@ func CreateMaster() (*ObiMaster) {
 	// Create new cluster scheduling object
 	p := pool.GetPool()
 	submitter := pool.NewSubmitter(p)
-	scheduler := scheduling.New(10, submitter)
-	// TODO: configure levels  of the scheduler
+	scheduler := scheduling.New(submitter)
+	scheduler.SetupConfig()
 	hb := heartbeat.New(p)
 
 	hb.Start()
