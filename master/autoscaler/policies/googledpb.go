@@ -81,6 +81,11 @@ func (p *GooglePolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 		fmt.Printf("Exact workers: %f\n", workers)
 		scalingFactor = int32(workers)
 
+		// Never scale below the admitted threshold
+		if previousMetrics.NumberOfNodes + scalingFactor < LowerBoundNodes {
+			scalingFactor = 0
+		}
+
 		// Create autoscaler record
 		if scalingFactor != 0 && p.record == nil {
 			// Before scaling, save metrics
