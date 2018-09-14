@@ -11,13 +11,13 @@ import (
 	"obi/master/utils"
 )
 
-// WorkloadPolicy contains all useful state-variable to apply the policy
+// ExpWorkloadPolicy contains all useful state-variable to apply the policy
 type ExpWorkloadPolicy struct {
 	expCount int32
 	record *predictor.AutoscalerData
 }
 
-// NewWorkload is the constructor of the WorkloadPolicy struct
+// NewExpWorkload is the constructor of the WorkloadPolicy struct
 func NewExpWorkload() *ExpWorkloadPolicy {
 	return &ExpWorkloadPolicy{
 		record: nil,

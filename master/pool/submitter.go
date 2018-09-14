@@ -12,14 +12,14 @@ import (
 	"google.golang.org/grpc"
 		)
 
-// Pooling class with properties
+// Submitter class with properties
 type Submitter struct {
 	pool           *Pool
 	predictorClient *predictor.ObiPredictorClient
 
 }
 
-// New is the constructor of Pooling struct
+// NewSubmitter is the constructor of Pooling struct
 // @param pool contains the available clusters to use for job deployments
 func NewSubmitter(pool *Pool) *Submitter {
 
