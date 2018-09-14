@@ -1,9 +1,10 @@
-package scheduler
+package scheduling
 
 import (
 	"obi/master/model"
 	"github.com/sirupsen/logrus"
 	"time"
+	"obi/master/pool"
 )
 
 type PackingPolicy int
@@ -27,12 +28,15 @@ type LevelScheduler struct {
 type Scheduler struct {
 	levels []LevelScheduler
 	quit chan struct{}
+	submitter *pool.Submitter
 }
 
-func New(levels int32) *Scheduler {
+func New(levels int32, submitter *pool.Submitter) *Scheduler {
 	s := &Scheduler{
 		make([]LevelScheduler, levels),
 		make(chan struct{}),
+		submitter,
+
 	}
 	return s
 }
@@ -40,7 +44,7 @@ func New(levels int32) *Scheduler {
 func (s *Scheduler) Start() {
 	logrus.Info("Starting scheduling routine.")
 	for _, l := range s.levels {
-		go schedulingRoutine(&l, s.quit)
+		go schedulingRoutine(&l, s.submitter, s.quit)
 	}
 }
 
@@ -58,13 +62,17 @@ func (s *Scheduler) AddLevel(level int32, timeWindow int32, policy PackingPolicy
 	}
 }
 
-func (s *Scheduler) AddJob(job model.Job) {
-	schedulerLevel := s.levels[job.Priority]
-	switch schedulerLevel.policy {
-	case TimeDuration:
-		timeDurationAddJob(&schedulerLevel, job)
-	case Count:
-		countAddJob(&schedulerLevel, job)
+func (s *Scheduler) ScheduleJob(job model.Job) {
+	if job.Priority >= 0 && job.Priority <= 7 {
+		go s.submitter.DeployJobs([]model.Job{job})
+	} else {
+		schedulerLevel := s.levels[job.Priority]
+		switch schedulerLevel.policy {
+		case TimeDuration:
+			timeDurationAddJob(&schedulerLevel, job)
+		case Count:
+			countAddJob(&schedulerLevel, job)
+		}
 	}
 	return
 }
@@ -93,14 +101,16 @@ func countAddJob(sl *LevelScheduler, job model.Job) {
 	sl.bins[len(sl.bins)-1].cumulativeValue = 1
 }
 
-func schedulingRoutine(ls *LevelScheduler, quit <-chan struct{}) {
+func schedulingRoutine(ls *LevelScheduler, s *pool.Submitter, quit <-chan struct{}) {
 	for {
 		select {
 		case <-quit:
 			logrus.Info("Closing level-scheduler routine.")
 			return
 		default:
-			// do something
+			for _, bin := range ls.bins {
+				go s.DeployJobs(bin.jobs)
+			}
 			time.Sleep(time.Duration(ls.timeWindow) * time.Second)
 		}
 	}
