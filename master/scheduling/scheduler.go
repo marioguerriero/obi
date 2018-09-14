@@ -15,13 +15,13 @@ const (
 	Count
 )
 
-type Bin struct {
+type bin struct {
 	jobs []model.Job
 	cumulativeValue int32
 }
 
-type LevelScheduler struct {
-	bins []Bin
+type levelScheduler struct {
+	bins []bin
 	Policy PackingPolicy
 	Timeout int32
 	BinCapacity int32
@@ -29,20 +29,21 @@ type LevelScheduler struct {
 }
 
 type Scheduler struct {
-	levels []LevelScheduler
+	levels []levelScheduler
 	quit chan struct{}
 	submitter *pool.Submitter
 }
 
 func New(submitter *pool.Submitter) *Scheduler {
 	s := &Scheduler{
-		make([]LevelScheduler, 0),
+		make([]levelScheduler, 0),
 		make(chan struct{}),
 		submitter,
 	}
 	return s
 }
 
+// SetupConfig function load the configuration for the scheduler
 func (s *Scheduler) SetupConfig() {
 	err := viper.UnmarshalKey("schedulingLevels", &s.levels)
 	if err != nil {
@@ -50,6 +51,7 @@ func (s *Scheduler) SetupConfig() {
 	}
 }
 
+// Start function starts the scheduling routine
 func (s *Scheduler) Start() {
 	logrus.Info("Starting scheduling routine.")
 
@@ -58,11 +60,13 @@ func (s *Scheduler) Start() {
 	}
 }
 
+// Stop function stops the scheduling routine
 func (s *Scheduler) Stop() {
 	logrus.Info("Stopping scheduling routine.")
 	close(s.quit)
 }
 
+// ScheduleJob if for adding a new job in the bins
 func (s *Scheduler) ScheduleJob(job model.Job) {
 	if job.Priority >= int32(len(s.levels)) {
 		go s.submitter.DeployJobs([]model.Job{job})
@@ -78,7 +82,7 @@ func (s *Scheduler) ScheduleJob(job model.Job) {
 	return
 }
 
-func timeDurationAddJob(ls *LevelScheduler, job model.Job) {
+func timeDurationAddJob(ls *levelScheduler, job model.Job) {
 	ls.Lock()
 	defer ls.Unlock()
 	for i := range ls.bins {
@@ -88,12 +92,12 @@ func timeDurationAddJob(ls *LevelScheduler, job model.Job) {
 			return
 		}
 	}
-	ls.bins = append(ls.bins, Bin{})
+	ls.bins = append(ls.bins, bin{})
 	ls.bins[len(ls.bins)-1].jobs = append(ls.bins[len(ls.bins)-1].jobs, job)
 	ls.bins[len(ls.bins)-1].cumulativeValue = job.PredictedDuration
 }
 
-func countAddJob(ls *LevelScheduler, job model.Job) {
+func countAddJob(ls *levelScheduler, job model.Job) {
 	ls.Lock()
 	defer ls.Unlock()
 	for i := range ls.bins {
@@ -103,12 +107,12 @@ func countAddJob(ls *LevelScheduler, job model.Job) {
 			return
 		}
 	}
-	ls.bins = append(ls.bins, Bin{})
+	ls.bins = append(ls.bins, bin{})
 	ls.bins[len(ls.bins)-1].jobs = append(ls.bins[len(ls.bins)-1].jobs, job)
 	ls.bins[len(ls.bins)-1].cumulativeValue = 1
 }
 
-func flush(ls *LevelScheduler, s *pool.Submitter) {
+func flush(ls *levelScheduler, s *pool.Submitter) {
 	ls.Lock()
 	defer ls.Unlock()
 	for i := range ls.bins {
@@ -117,7 +121,7 @@ func flush(ls *LevelScheduler, s *pool.Submitter) {
 	ls.bins = nil
 }
 
-func schedulingRoutine(ls *LevelScheduler, s *pool.Submitter, quit <-chan struct{}) {
+func schedulingRoutine(ls *levelScheduler, s *pool.Submitter, quit <-chan struct{}) {
 	for {
 		select {
 		case <-quit:
