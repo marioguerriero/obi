@@ -9,10 +9,10 @@ import (
 	"time"
 	)
 
-type PackingPolicy int
+type packingPolicy int
 const (
-	TimeDuration PackingPolicy = iota
-	Count
+	timeDuration packingPolicy = iota
+	count
 )
 
 type bin struct {
@@ -22,18 +22,20 @@ type bin struct {
 
 type levelScheduler struct {
 	bins []bin
-	Policy PackingPolicy
+	Policy packingPolicy
 	Timeout int32
 	BinCapacity int32
 	sync.RWMutex
 }
 
+// Scheduler struct with properties
 type Scheduler struct {
 	levels []levelScheduler
 	quit chan struct{}
 	submitter *pool.Submitter
 }
 
+// New is the constructor for the scheduler struct
 func New(submitter *pool.Submitter) *Scheduler {
 	s := &Scheduler{
 		make([]levelScheduler, 0),
@@ -73,9 +75,9 @@ func (s *Scheduler) ScheduleJob(job model.Job) {
 	} else {
 		schedulerLevel := &s.levels[job.Priority]
 		switch schedulerLevel.Policy {
-		case TimeDuration:
+		case timeDuration:
 			timeDurationAddJob(schedulerLevel, job)
-		case Count:
+		case count:
 			countAddJob(schedulerLevel, job)
 		}
 	}
