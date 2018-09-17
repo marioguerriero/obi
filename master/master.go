@@ -126,20 +126,19 @@ func CreateMaster() (*ObiMaster) {
 
 	}
 
-	// Setup pool
-	p := pool.GetPool()
-	submitter := pool.NewSubmitter(p)
+	// Start up the pool
+	pool.GetPool().StartLivelinessMonitoring()
 
 	// Setup scheduler
+	submitter := pool.NewSubmitter()
 	scheduler := scheduling.New(submitter)
 	scheduler.SetupConfig()
 
 	// Setup heartbeat
-	hb := heartbeat.New(p)
+	hb := heartbeat.New()
 
 	// Start everything
 	hb.Start()
-	p.StartLivelinessMonitoring()
 	scheduler.Start()
 
 	// Open connection to predictor server

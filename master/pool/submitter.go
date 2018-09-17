@@ -16,14 +16,13 @@ import (
 // It exposes a method that receives as parameter the list of jobs to deploy in the same cluster.
 // It creates a new cluster that, after being added in the pool for further actions, will host the new jobs.
 type Submitter struct {
-	pool           *Pool
 	predictorClient *predictor.ObiPredictorClient
 
 }
 
 // NewSubmitter is the constructor of Pooling struct
 // @param pool is the list of clusters to update with new ones
-func NewSubmitter(pool *Pool) *Submitter {
+func NewSubmitter() *Submitter {
 
 	// Create Pooling object
 	logrus.Info("Creating cluster scheduling")
@@ -39,7 +38,6 @@ func NewSubmitter(pool *Pool) *Submitter {
 	pClient := predictor.NewObiPredictorClient(conn)
 
 	pooling := &Submitter{
-		pool,
 		&pClient,
 	}
 
@@ -64,7 +62,7 @@ func (s *Submitter) DeployJobs(jobs []model.Job) {
 	a.StartMonitoring()
 
 	// Add in the pool
-	s.pool.AddCluster(cluster, a)
+	GetPool().AddCluster(cluster, a)
 
 	for _, job := range jobs {
 		job.AssignedCluster = clusterName

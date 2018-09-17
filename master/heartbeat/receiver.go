@@ -17,7 +17,6 @@ import (
 // If it receives an heartbeat from a cluster not in the pool, it creates the instance
 // for that cluster in order to monitor it.
 type Receiver struct {
-	pool *pool.Pool
 }
 
 // channel to interrupt the heartbeat receiver routine
@@ -29,10 +28,8 @@ var conn *net.UDPConn
 // New is the constructor of the heartbeat Receiver struct
 // @param pool contains the clusters to update regularly
 // return the pointer to the instance
-func New(pool *pool.Pool) *Receiver {
-	r := &Receiver{
-		pool,
-	}
+func New() *Receiver {
+	r := &Receiver{}
 
 	return r
 }
@@ -41,7 +38,7 @@ func New(pool *pool.Pool) *Receiver {
 func (receiver *Receiver) Start() {
 	quit = make(chan struct{})
 	logrus.Info("Starting heartbeat receiver routine.")
-	go receiverRoutine(receiver.pool)
+	go receiverRoutine(pool.GetPool())
 }
 
 // goroutine which listens to new heartbeats from cluster masters. It will be stop when an empty object is inserted in
