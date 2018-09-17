@@ -26,7 +26,7 @@ func NewExpWorkload() *ExpWorkloadPolicy {
 
 // Apply is the implementation of the Policy interface
 func (p *ExpWorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
-	var previousMetrics *model.HeartbeatMessage
+	var previousMetrics model.HeartbeatMessage
 	var throughput float32
 	var pendingGrowthRate float32
 	var count int8
@@ -39,7 +39,7 @@ func (p *ExpWorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 
 		hb := obj.Value.(model.HeartbeatMessage)
 
-		if previousMetrics != nil {
+		if previousMetrics.ClusterName != "" {
 			throughput += float32(hb.AggregateContainersReleased - previousMetrics.AggregateContainersReleased)
 			if hb.PendingContainers > 0 {
 				memoryContainer := hb.PendingMB / hb.PendingContainers
@@ -52,7 +52,7 @@ func (p *ExpWorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 
 			count++
 		}
-		previousMetrics = &hb
+		previousMetrics = hb
 	}
 
 	if count > 0 {
@@ -63,7 +63,7 @@ func (p *ExpWorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 
 		if p.record != nil {
 			// If I have scaled, send data point
-			p.record.MetricsAfter = previousMetrics
+			p.record.MetricsAfter = &previousMetrics
 			p.record.PerformanceAfter = performance
 			// Send data point
 			serverAddr := fmt.Sprintf("%s:%s",
@@ -114,7 +114,7 @@ func (p *ExpWorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 			Nodes:             previousMetrics.NumberOfNodes,
 			PerformanceBefore: performance,
 			ScalingFactor:     p.expCount,
-			MetricsBefore:     previousMetrics,
+			MetricsBefore:     &previousMetrics,
 		}
 	}
 
