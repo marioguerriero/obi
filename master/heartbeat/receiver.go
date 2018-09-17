@@ -8,8 +8,7 @@ import (
 	"obi/master/autoscaler/policies"
 	"obi/master/model"
 	"obi/master/platforms"
-	"time"
-	"obi/master/pool"
+		"obi/master/pool"
 )
 
 // Receiver is the heartbeat module in charge of updating clusters metrics.
@@ -75,51 +74,17 @@ func receiverRoutine(pool *pool.Pool) {
 
 		}
 
-		m := &HeartbeatMessage{}
-		err = proto.Unmarshal(data[0:n], m)
+		m := model.HeartbeatMessage{}
+		err = proto.Unmarshal(data[0:n], &m)
 
 		if err != nil {
 			logrus.WithField("error", err).Error("'Unmarshal' method call for new heartbeat message failed")
 			continue
 		}
 
-		newMetrics := model.Metrics{
-			time.Now(),
-			m.GetPendingContainers(),
-			m.GetPendingMB(),
-			m.GetAvailableMB(),
-			m.GetAppAttemptFirstContainerAllocationDelayAvgTime(),
-			m.GetAggregateContainersAllocated(),
-			m.GetAggregateContainersReleased(),
-			m.GetAMResourceLimitMB(),
-			m.GetAMResourceLimitVCores(),
-			m.GetUsedAMResourceMB(),
-			m.GetUsedAMResourceVCores(),
-			m.GetAppsSubmitted(),
-			m.GetAppsRunning(),
-			m.GetAppsPending(),
-			m.GetAppsCompleted(),
-			m.GetAppsKilled(),
-			m.GetAppsFailed(),
-			m.GetAggregateContainersPreempted(),
-			m.GetActiveApplications(),
-			m.GetAppAttemptFirstContainerAllocationDelayNumOps(),
-			m.GetAppAttemptFirstContainerAllocationDelayAvgTime(),
-			m.GetAllocatedMB(),
-			m.GetAllocatedVCores(),
-			m.GetAllocatedContainers(),
-			m.GetAggregateContainersAllocated(),
-			m.GetAggregateContainersReleased(),
-			m.GetAvailableMB(),
-			m.GetAvailableVCores(),
-			m.GetPendingMB(),
-			m.GetPendingVCores(),
-			m.GetNumberOfNodes(),
-		}
-
 		if value, ok := pool.GetCluster(m.GetClusterName()); ok {
 			cluster := value.(model.ClusterBaseInterface)
-			cluster.AddMetricsSnapshot(newMetrics)
+			cluster.AddMetricsSnapshot(m)
 			logrus.WithField("clusterName", m.GetClusterName()).Info("Metrics updated")
 		} else {
 			logrus.Info("Received metrics for a cluster not in the pool.")

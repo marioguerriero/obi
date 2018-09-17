@@ -26,7 +26,7 @@ func NewGoogle() *GooglePolicy {
 
 // Apply is the implementation of the Policy interface
 func (p *GooglePolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
-	var previousMetrics model.Metrics
+	var previousMetrics model.HeartbeatMessage
 	var throughput float32
 	var pendingGrowthRate float32
 	var count int32
@@ -41,14 +41,14 @@ func (p *GooglePolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 			continue
 		}
 
-		hb := obj.Value.(model.Metrics)
-		memoryUsage += hb.PendingMemory - hb.AvailableMemory
+		hb := obj.Value.(model.HeartbeatMessage)
+		memoryUsage += hb.PendingMB - hb.AvailableMB
 		count++
 
-		workerMemory = float64((hb.AvailableMemory + hb.AllocatedMB) / hb.NumberOfNodes)
+		workerMemory = float64((hb.AvailableMB + hb.AllocatedMB) / hb.NumberOfNodes)
 		fmt.Println(workerMemory)
 
-		previousMetrics = obj.Value.(model.Metrics)
+		previousMetrics = obj.Value.(model.HeartbeatMessage)
 	}
 
 	if count > 0 {
@@ -59,7 +59,7 @@ func (p *GooglePolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 
 		if p.record != nil {
 			// If I have scaled, send data point
-			p.record.MetricsAfter = MetricsToSnapshot(&previousMetrics)
+			p.record.MetricsAfter = previousMetrics
 			p.record.PerformanceAfter = performance
 			// Send data point
 			logrus.WithField("data", *p.record).Info("Sending autoscaler data to predictor")
@@ -93,7 +93,7 @@ func (p *GooglePolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 				Nodes:             previousMetrics.NumberOfNodes,
 				PerformanceBefore: performance,
 				ScalingFactor:     scalingFactor,
-				MetricsBefore:     MetricsToSnapshot(&previousMetrics),
+				MetricsBefore:     previousMetrics,
 			}
 			logrus.WithField("data", p.record).Info("Created dataset record")
 		}

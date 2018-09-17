@@ -26,7 +26,7 @@ type ClusterBaseInterface interface {
 	GetName() string
 	SubmitJob(Job) error
 	GetMetricsWindow() *utils.ConcurrentSlice
-	AddMetricsSnapshot(Metrics)
+	AddMetricsSnapshot(message HeartbeatMessage)
 	AllocateResources() error
 }
 
@@ -55,6 +55,6 @@ func (c *ClusterBase) GetMetrics() *utils.ConcurrentSlice {
 
 // SetMetrics is the setter of status field inside ClusterBase
 // thread-safe
-func (c *ClusterBase) SetMetrics(newStatus Metrics) {
+func (c *ClusterBase) SetMetrics(newStatus HeartbeatMessage) {
 	c.metrics.Append(newStatus)
 }

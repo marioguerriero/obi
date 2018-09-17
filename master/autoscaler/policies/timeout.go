@@ -43,7 +43,7 @@ func NewTimeout() *TimeoutPolicy {
 
 // Apply scale based on a timeout: if it expires, add a node
 func (p *TimeoutPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
-	var previousMetrics model.Metrics
+	var previousMetrics *model.HeartbeatMessage
 	var throughput float32
 	var pendingGrowthRate float32
 	var count int8
@@ -55,20 +55,14 @@ func (p *TimeoutPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 			continue
 		}
 
-		hb := obj.Value.(model.Metrics)
+		hb := obj.Value.(model.HeartbeatMessage)
 
-		if previousMetrics != (model.Metrics{}) {
-			fmt.Printf("Allocated containers: %d\n", hb.TotalContainersAllocated)
-			fmt.Printf("Released containers: %d\n", hb.TotalContainersReleased)
-			fmt.Printf("Released containers before: %d\n", previousMetrics.TotalContainersReleased)
-			throughput += float32(hb.TotalContainersReleased - previousMetrics.TotalContainersReleased)
-
+		if previousMetrics != nil {
+			throughput += float32(hb.AggregateContainersReleased - previousMetrics.AggregateContainersReleased)
 			if hb.PendingContainers > 0 {
-				fmt.Printf("Pending containers: %d\n", hb.PendingContainers)
-				memoryContainer := hb.PendingMemory / hb.PendingContainers
-				containersWillConsumed := hb.AvailableMemory / memoryContainer
-				pendingGrowth := float32(
-					hb.PendingContainers - containersWillConsumed - previousMetrics.PendingContainers)
+				memoryContainer := hb.PendingMB / hb.PendingContainers
+				containersWillConsumed := hb.AvailableMB / memoryContainer
+				pendingGrowth := float32(hb.PendingContainers - containersWillConsumed - previousMetrics.PendingContainers)
 				if pendingGrowth > 0 {
 					pendingGrowthRate += pendingGrowth
 				}
@@ -76,7 +70,7 @@ func (p *TimeoutPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 
 			count++
 		}
-		previousMetrics = hb
+		previousMetrics = &hb
 	}
 
 	if count > 0 {
@@ -87,7 +81,7 @@ func (p *TimeoutPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 
 		if p.record != nil {
 			// If I have scaled, send data point
-			p.record.MetricsAfter = MetricsToSnapshot(&previousMetrics)
+			p.record.MetricsAfter = previousMetrics
 			p.record.PerformanceAfter = performance
 			// Send data point
 			logrus.WithField("data", *p.record).Info("Sending autoscaler data to predictor")
@@ -132,7 +126,7 @@ func (p *TimeoutPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 			Nodes:             previousMetrics.NumberOfNodes,
 			PerformanceBefore: performance,
 			ScalingFactor:     p.scalingFactor,
-			MetricsBefore:     MetricsToSnapshot(&previousMetrics),
+			MetricsBefore:     previousMetrics,
 		}
 		logrus.WithField("data", p.record).Info("Created dataset record")
 	}

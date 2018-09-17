@@ -1,6 +1,8 @@
 syntax = "proto3";
 
-package heartbeat;
+package model;
+
+import "google/protobuf/timestamp.proto";
 
 message HeartbeatMessage {
     // Cluster details
@@ -32,8 +34,7 @@ message HeartbeatMessage {
     int32 PendingVCores = 24;
     int32 PendingContainers = 25;
 
-    // Platform type
-    string ServiceType = 26;
+    google.protobuf.Timestamp Timestamp = 26;
 
     // Cluster specific information
     int32 NumberOfNodes = 27;

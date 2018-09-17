@@ -21,7 +21,7 @@ func NewWorkload(scaleFactor float32) *WorkloadPolicy {
 
 // Apply is the implementation of the Policy interface
 func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
-	var previousMetrics model.Metrics
+	var previousMetrics *model.HeartbeatMessage
 	var throughput float32
 	var pendingGrowthRate float32
 	var count int8
@@ -31,13 +31,13 @@ func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 			continue
 		}
 
-		hb := obj.Value.(model.Metrics)
+		hb := obj.Value.(model.HeartbeatMessage)
 
-		if previousMetrics != (model.Metrics{}) {
-			throughput += float32(hb.TotalContainersReleased - previousMetrics.TotalContainersReleased)
+		if previousMetrics != nil {
+			throughput += float32(hb.AggregateContainersReleased - previousMetrics.AggregateContainersReleased)
 			if hb.PendingContainers > 0 {
-				memoryContainer := hb.PendingMemory / hb.PendingContainers
-				containersWillConsumed := hb.AvailableMemory / memoryContainer
+				memoryContainer := hb.PendingMB / hb.PendingContainers
+				containersWillConsumed := hb.AvailableMB / memoryContainer
 				pendingGrowth := float32(hb.PendingContainers - containersWillConsumed - previousMetrics.PendingContainers)
 				if pendingGrowth > 0 {
 					pendingGrowthRate += pendingGrowth
@@ -46,14 +46,14 @@ func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 
 			count++
 		}
-		previousMetrics = hb
+		previousMetrics = &hb
 	}
 
 	if count > 0 {
 		throughput /= float32(count)
 		pendingGrowthRate /= float32(count)
 		if pendingGrowthRate == 0 && previousMetrics.AllocatedContainers > 0 {
-			workerMemory := (previousMetrics.AvailableMemory + previousMetrics.AllocatedMB) / previousMetrics.NumberOfNodes
+			workerMemory := (previousMetrics.AvailableMB + previousMetrics.AllocatedMB) / previousMetrics.NumberOfNodes
 			memoryContainer := previousMetrics.AllocatedMB / previousMetrics.AllocatedContainers
 			containersPerNode := workerMemory / memoryContainer
 			nodesUsed := math.Ceil(float64(previousMetrics.AllocatedContainers / containersPerNode))
