@@ -62,10 +62,10 @@ func (p *Pool) RemoveCluster(clusterName string) {
 func (p *Pool) LivelinessCheck(timeout int16) {
 	p.clusters.Range(func(key interface{}, value interface{}) bool {
 		cluster := value.(model.ClusterBaseInterface)
-		var lastHeartbeat model.Metrics
+		var lastHeartbeat model.HeartbeatMessage
 		for hb := range cluster.GetMetricsWindow().Iter() {
 			if hb.Value != nil {
-				lastHeartbeat = hb.Value.(model.Metrics)
+				lastHeartbeat = hb.Value.(model.HeartbeatMessage)
 			}
 		}
 

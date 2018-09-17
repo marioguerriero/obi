@@ -89,7 +89,7 @@ func receiverRoutine(pool *pool.Pool) {
 		} else {
 			logrus.Info("Received metrics for a cluster not in the pool.")
 
-			newCluster, err := platforms.NewExistingCluster(m.GetServiceType(), m.GetClusterName())
+			newCluster, err := platforms.NewExistingCluster("dataproc", m.GetClusterName())
 			if err == nil {
 				policy := policies.NewWorkload(0.5)
 				a := autoscaler.New(policy, 60, newCluster.(model.Scalable), false)
