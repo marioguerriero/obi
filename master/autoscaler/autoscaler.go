@@ -13,6 +13,7 @@ type Autoscaler struct {
 	Timeout int16
 	quit chan struct{}
 	managedCluster model.Scalable
+	allowDownscale bool
 }
 
 // Policy defines the primitive methods that must be implemented for any type of autoscaling policy
@@ -31,12 +32,14 @@ func New(
 	policy Policy,
 	timeout int16,
 	cluster model.Scalable,
+	downscalePermitted bool,
 	) *Autoscaler {
 	return &Autoscaler{
 		policy,
 		timeout,
 		make(chan struct{}),
 		cluster,
+		downscalePermitted,
 	}
 }
 
@@ -65,7 +68,7 @@ func autoscalerRoutine(as *Autoscaler) {
 		default:
 			delta = as.Policy.Apply(as.managedCluster.(model.ClusterBaseInterface).GetMetricsWindow())
 
-			if delta != 0 {
+			if (delta < 0 && as.allowDownscale) || delta > 0 {
 				as.managedCluster.Scale(delta)
 			}
 			time.Sleep(time.Duration(as.Timeout) * time.Second)

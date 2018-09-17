@@ -49,9 +49,7 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 	if err != nil {
 		logrus.WithField("response", resp).Warning("Could not generate predictions")
 	}
-	fmt.Println(resp.Duration)
-	fmt.Println(resp.FailureProbability)
-	fmt.Println(resp.Label)
+
 	logrus.WithFields(logrus.Fields{
 		"type": resp.Label,
 		"duration": resp.Duration,
@@ -81,7 +79,7 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 	}
 
 	// Send job execution request
-	logrus.WithField("priority-level", jobRequest.Priority).Info("Schedule job for execution")
+	logrus.WithField("priority-level", job.Priority).Info("Schedule job for execution")
 	m.scheduler.ScheduleJob(job)
 
 	return new(Empty), nil
