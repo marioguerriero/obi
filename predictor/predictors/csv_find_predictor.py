@@ -14,6 +14,7 @@ from sklearn.externals import joblib
 
 import xgboost
 
+
 class CsvFindPredictor(GenericPredictor):
 
     def __init__(self):
