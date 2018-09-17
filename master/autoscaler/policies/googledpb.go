@@ -59,7 +59,7 @@ func (p *GooglePolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 
 		if p.record != nil {
 			// If I have scaled, send data point
-			p.record.MetricsAfter = previousMetrics
+			p.record.MetricsAfter = &previousMetrics
 			p.record.PerformanceAfter = performance
 			// Send data point
 			logrus.WithField("data", *p.record).Info("Sending autoscaler data to predictor")
@@ -93,7 +93,7 @@ func (p *GooglePolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 				Nodes:             previousMetrics.NumberOfNodes,
 				PerformanceBefore: performance,
 				ScalingFactor:     scalingFactor,
-				MetricsBefore:     previousMetrics,
+				MetricsBefore:     &previousMetrics,
 			}
 			logrus.WithField("data", p.record).Info("Created dataset record")
 		}
