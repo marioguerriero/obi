@@ -49,7 +49,7 @@ func New(submitter *pool.Submitter) *Scheduler {
 func (s *Scheduler) SetupConfig() {
 	err := viper.UnmarshalKey("schedulingLevels", &s.levels)
 	if err != nil {
-		panic("Unable to unmarshal levels")
+		logrus.WithField("err", err).Fatalln("Unable to configure the scheduler")
 	}
 }
 
