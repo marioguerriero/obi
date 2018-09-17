@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// The autoscaler module resize the managed cluster according to the policy.
+// Autoscaler module resizes the managed cluster according to the policy.
 // The policy is a pluggable struct with a well-defined interface to implement.
 type Autoscaler struct {
 	Policy Policy
