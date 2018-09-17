@@ -13,6 +13,7 @@ from .generic_predictor import GenericPredictor
 
 import xgboost
 
+
 class CsvUpdatePredictor(GenericPredictor):
 
     def __init__(self):

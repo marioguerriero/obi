@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 import socket
@@ -5,6 +6,8 @@ import sys
 import urllib.request
 
 from .message_pb2 import HeartbeatMessage
+
+from google.protobuf.timestamp_pb2 import Timestamp
 
 HOSTNAME = socket.gethostname()
 CLUSTER_NAME = HOSTNAME[:-2]
@@ -94,6 +97,10 @@ def compute_hb():
 
     # Set service type to dataproc
     hb.ServiceType = 'dataproc'
+
+    # Timestamp
+    hb.Timestamp = Timestamp()
+    hb.Timestamp.FromDatetime(datetime.datetime.now())
 
     return hb
 

@@ -9,7 +9,7 @@ import (
 	"obi/master/model"
 	"time"
 
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" // this is required to use the Postgres connector
 )
 
 var database *sql.DB

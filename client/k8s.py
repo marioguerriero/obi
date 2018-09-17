@@ -1149,7 +1149,8 @@ class KubernetesClient(GenericClient):
             # in their metadata
             deployments = list()
             for d in deployment_list.items:
-                if self._user_config['typeMetadata'] not in d.metadata.annotations:
+                if self._user_config['typeMetadata'] \
+                        not in d.metadata.annotations:
                     continue
                 type = d.metadata.annotations[
                     self._user_config['typeMetadata']]
