@@ -300,7 +300,8 @@ class KubernetesClient(GenericClient):
             region=deployment['region'], zone=deployment['zone'],
             masterPort=self._user_config['defaultMasterPort'],
             predictorHost=pred_host, predictorPort=pred_port,
-            schedulingLevels=deployment['schedulingLevels'])
+            schedulingLevels=deployment['schedulingLevels'],
+            priorityMap=deployment['priorityMap'])
 
         # Create volume claim
         volume_claim_name = self._object_name_generator(
