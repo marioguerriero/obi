@@ -7,7 +7,8 @@ import (
 	"time"
 )
 
-// Autoscaler class with properties
+// The autoscaler module resize the managed cluster according to the policy.
+// The policy is a pluggable struct with a well-defined interface to implement.
 type Autoscaler struct {
 	Policy Policy
 	Timeout int16
@@ -22,11 +23,10 @@ type Policy interface {
 }
 
 // New is the constructor of Autoscaler struct
-// @param algorithm is the algorithm to follow during scaling policy execution
+// @param policy is the to apply for the autoscaling logic
 // @param timeout is the time interval to wait before triggering the scaling-check action again
-// @param sustainedTimeoutInterval is the time interval to wait before triggering the scaling action again, when a
-// 	`scale-up` or `scale-down` was triggered
 // @param cluster is the scalable cluster to be managed
+// @param downscalePermitted is a bool to allow the policy to downscale
 // return the pointer to the instance
 func New(
 	policy Policy,

@@ -12,7 +12,9 @@ import (
 	"google.golang.org/grpc"
 		)
 
-// Submitter class with properties
+// Submitter is the struct that is used by the scheduler to deploy new jobs.
+// It exposes a method that receives as parameter the list of jobs to deploy in the same cluster.
+// It creates a new cluster that, after being added in the pool for further actions, will host the new jobs.
 type Submitter struct {
 	pool           *Pool
 	predictorClient *predictor.ObiPredictorClient
@@ -20,7 +22,7 @@ type Submitter struct {
 }
 
 // NewSubmitter is the constructor of Pooling struct
-// @param pool contains the available clusters to use for job deployments
+// @param pool is the list of clusters to update with new ones
 func NewSubmitter(pool *Pool) *Submitter {
 
 	// Create Pooling object
@@ -40,8 +42,6 @@ func NewSubmitter(pool *Pool) *Submitter {
 		pool,
 		&pClient,
 	}
-
-	// TODO: configuration for scheduler (levels, timeouts...)
 
 	return pooling
 }
