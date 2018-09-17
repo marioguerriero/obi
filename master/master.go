@@ -8,6 +8,7 @@ import (
 		"math/rand"
 	"obi/master/heartbeat"
 	"obi/master/model"
+	"obi/master/persistent"
 	"obi/master/scheduling"
 		"obi/master/utils"
 	"os"
@@ -126,6 +127,12 @@ func CreateMaster() (*ObiMaster) {
 	}
 	pClient := predictor.NewObiPredictorClient(conn)
 
+	// Open connection to persistent storage
+	err = persistent.CreatePersistentConnection()
+	if err != nil {
+		logrus.Fatal("Could not connect to persistent database")
+	}
+	logrus.Info("Connected to persistent database")
 
 	// Create and return OBI master object
 	master := ObiMaster {

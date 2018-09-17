@@ -299,7 +299,11 @@ class KubernetesClient(GenericClient):
             projectId=deployment['projectId'],
             region=deployment['region'], zone=deployment['zone'],
             masterPort=self._user_config['defaultMasterPort'],
-            predictorHost=pred_host, predictorPort=pred_port)
+            predictorHost=pred_host, predictorPort=pred_port,
+            dbType=deployment['dbType'], dbHost=deployment['dbHost'],
+            dbPort=deployment['dbPort'], dbUser=deployment['dbUser'],
+            dbPassword=deployment['dbPassword'], dbName=deployment['dbName']
+        )
 
         # Create volume claim
         volume_claim_name = self._object_name_generator(
@@ -1144,6 +1148,8 @@ class KubernetesClient(GenericClient):
             # in their metadata
             deployments = list()
             for d in deployment_list.items:
+                if self._user_config['typeMetadata'] not in d.metadata.annotations:
+                    continue
                 type = d.metadata.annotations[
                     self._user_config['typeMetadata']]
                 if type == self._user_config['masterType']:
