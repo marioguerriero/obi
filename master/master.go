@@ -24,6 +24,7 @@ type ObiMaster struct {
 	scheduler *scheduling.Scheduler
 	heartbeatReceiver *heartbeat.Receiver
 	predictorClient *predictor.ObiPredictorClient
+	priorities map[string]int
 }
 
 // ListInfrastructures RPC for listing the available infrastructure services
@@ -37,7 +38,7 @@ func (m *ObiMaster) ListInfrastructures(ctx context.Context,
 // SubmitJob remote procedure call used to submit a job to one of the OBI infrastructures
 func (m *ObiMaster) SubmitJob(ctx context.Context,
 		jobRequest *JobSubmissionRequest) (*Empty, error) {
-	logrus.WithField("path", jobRequest.ExecutablePath).Info("Received job request")
+	logrus.WithField("path", jobRequest.ExecutablePath).Info("Analyzing new job request")
 
 	// Generate predictions before submitting the job
 	resp, err := (*m.predictorClient).RequestPrediction(
@@ -49,9 +50,11 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 	if err != nil {
 		logrus.WithField("response", resp).Warning("Could not generate predictions")
 	}
-	fmt.Println(resp.Duration)
-	fmt.Println(resp.FailureProbability)
-	fmt.Println(resp.Label)
+
+	logrus.WithFields(logrus.Fields{
+		"type": resp.Label,
+		"duration": resp.Duration,
+	}).Info("New job")
 
 	// Create job object to be submitted to the scheduling component
 	var jobType model.JobType
@@ -69,10 +72,15 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 		Priority:           jobRequest.Priority,
 		AssignedCluster:    "",
 		Args:               jobRequest.JobArgs,
+		PredictedDuration:  resp.Duration,
+	}
+
+	if val, ok := m.priorities[resp.Label]; ok {
+		job.Priority = int32(val)
 	}
 
 	// Send job execution request
-	logrus.WithField("priority-level", jobRequest.Priority).Info("Schedule job for execution")
+	logrus.WithField("priority-level", job.Priority).Info("Schedule job for execution")
 	m.scheduler.ScheduleJob(job)
 
 	return new(Empty), nil
@@ -106,15 +114,32 @@ func (m *ObiMaster) SubmitExecutable(stream ObiMaster_SubmitExecutableServer) er
 
 // CreateMaster generates a new OBI master instance
 func CreateMaster() (*ObiMaster) {
-	// Create new cluster scheduling object
-	p := pool.GetPool()
-	submitter := pool.NewSubmitter(p)
-	scheduler := scheduling.New(10, submitter)
-	// TODO: configure levels  of the scheduler
-	hb := heartbeat.New(p)
 
+	// Load priority map
+	priorityMap := map[string]int{}
+	tmp := viper.GetStringMap("priorityMap")
+	for k, v := range tmp {
+		if vInt, ok := v.(int); ok {
+			priorityMap[k] = vInt
+		} else {
+			logrus.Panicln("Not integer value in the priority map.")
+		}
+
+	}
+
+	// Start up the pool
+	pool.GetPool().StartLivelinessMonitoring()
+
+	// Setup scheduler
+	submitter := pool.NewSubmitter()
+	scheduler := scheduling.New(submitter)
+	scheduler.SetupConfig()
+
+	// Setup heartbeat
+	hb := heartbeat.New()
+
+	// Start everything
 	hb.Start()
-	p.StartLivelinessMonitoring()
 	scheduler.Start()
 
 	// Open connection to predictor server
@@ -139,6 +164,7 @@ func CreateMaster() (*ObiMaster) {
 		scheduler: scheduler,
 		heartbeatReceiver: hb,
 		predictorClient: &pClient,
+		priorities: priorityMap,
 	}
 
 	return &master

@@ -23,7 +23,7 @@ func parseConfig() {
 	viper.SetConfigName(name)
 	err := viper.ReadInConfig()
 	if err != nil {
-		logrus.Info("Unable to read configuration", err)
+		logrus.WithField("err", err).Fatalln("Unable to read configuration")
 	}
 }
 
@@ -41,7 +41,7 @@ func main() {
 	port := viper.GetString("masterPort")
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
 	if err != nil {
-		logrus.WithField("error", err).Fatal("Unable to open server listener")
+		logrus.WithField("error", err).Fatalln("Unable to open server listener")
 	}
 	logrus.Info("Successfully opened connection listener")
 

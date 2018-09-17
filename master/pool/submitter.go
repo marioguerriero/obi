@@ -12,16 +12,17 @@ import (
 	"google.golang.org/grpc"
 		)
 
-// Pooling class with properties
+// Submitter is the struct that is used by the scheduler to deploy new jobs.
+// It exposes a method that receives as parameter the list of jobs to deploy in the same cluster.
+// It creates a new cluster that, after being added in the pool for further actions, will host the new jobs.
 type Submitter struct {
-	pool           *Pool
 	predictorClient *predictor.ObiPredictorClient
 
 }
 
-// New is the constructor of Pooling struct
-// @param pool contains the available clusters to use for job deployments
-func NewSubmitter(pool *Pool) *Submitter {
+// NewSubmitter is the constructor of Pooling struct
+// @param pool is the list of clusters to update with new ones
+func NewSubmitter() *Submitter {
 
 	// Create Pooling object
 	logrus.Info("Creating cluster scheduling")
@@ -37,11 +38,8 @@ func NewSubmitter(pool *Pool) *Submitter {
 	pClient := predictor.NewObiPredictorClient(conn)
 
 	pooling := &Submitter{
-		pool,
 		&pClient,
 	}
-
-	// TODO: configuration for scheduler (levels, timeouts...)
 
 	return pooling
 }
@@ -60,11 +58,11 @@ func (s *Submitter) DeployJobs(jobs []model.Job) {
 
 	// Instantiate a new autoscaler for the new cluster and start monitoring
 	policy := policies.NewWorkload(0.5)
-	a := autoscaler.New(policy, 60, cluster.(model.Scalable))
+	a := autoscaler.New(policy, 60, cluster.(model.Scalable), false)
 	a.StartMonitoring()
 
 	// Add in the pool
-	s.pool.AddCluster(cluster, a)
+	GetPool().AddCluster(cluster, a)
 
 	for _, job := range jobs {
 		job.AssignedCluster = clusterName

@@ -8,7 +8,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Pool struct with properties
+// Pool is the struct for clusters monitoring. Each created cluster is added in the pool
+// in order to use them in all the different modules of the system.
+// The pool is continuously updated, checking if all the clusters are actually alive.
 type Pool struct {
 	clusters sync.Map
 	autoscalers sync.Map

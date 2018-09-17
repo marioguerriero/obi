@@ -7,12 +7,14 @@ import (
 	"time"
 )
 
-// Autoscaler class with properties
+// Autoscaler module resizes the managed cluster according to the policy.
+// The policy is a pluggable struct with a well-defined interface to implement.
 type Autoscaler struct {
 	Policy Policy
 	Timeout int16
 	quit chan struct{}
 	managedCluster model.Scalable
+	allowDownscale bool
 }
 
 // Policy defines the primitive methods that must be implemented for any type of autoscaling policy
@@ -21,22 +23,23 @@ type Policy interface {
 }
 
 // New is the constructor of Autoscaler struct
-// @param algorithm is the algorithm to follow during scaling policy execution
+// @param policy is the to apply for the autoscaling logic
 // @param timeout is the time interval to wait before triggering the scaling-check action again
-// @param sustainedTimeoutInterval is the time interval to wait before triggering the scaling action again, when a
-// 	`scale-up` or `scale-down` was triggered
 // @param cluster is the scalable cluster to be managed
+// @param downscalePermitted is a bool to allow the policy to downscale
 // return the pointer to the instance
 func New(
 	policy Policy,
 	timeout int16,
 	cluster model.Scalable,
+	downscalePermitted bool,
 	) *Autoscaler {
 	return &Autoscaler{
 		policy,
 		timeout,
 		make(chan struct{}),
 		cluster,
+		downscalePermitted,
 	}
 }
 
@@ -65,7 +68,7 @@ func autoscalerRoutine(as *Autoscaler) {
 		default:
 			delta = as.Policy.Apply(as.managedCluster.(model.ClusterBaseInterface).GetMetricsWindow())
 
-			if delta != 0 {
+			if (delta < 0 && as.allowDownscale) || delta > 0 {
 				as.managedCluster.Scale(delta)
 			}
 			time.Sleep(time.Duration(as.Timeout) * time.Second)

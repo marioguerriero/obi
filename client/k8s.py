@@ -302,8 +302,9 @@ class KubernetesClient(GenericClient):
             predictorHost=pred_host, predictorPort=pred_port,
             dbType=deployment['dbType'], dbHost=deployment['dbHost'],
             dbPort=deployment['dbPort'], dbUser=deployment['dbUser'],
-            dbPassword=deployment['dbPassword'], dbName=deployment['dbName']
-        )
+            dbPassword=deployment['dbPassword'], dbName=deployment['dbName'],
+            schedulingLevels=deployment['schedulingLevels'],
+            priorityMap=deployment['priorityMap'])
 
         # Create volume claim
         volume_claim_name = self._object_name_generator(

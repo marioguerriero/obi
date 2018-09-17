@@ -35,8 +35,9 @@ func MetricsToSnapshot(message Metrics) *predictor.MetricsSnasphot {
 	}
 }
 
+// MetricsDidBorn is a temporary var
 // TODO: remove this dirty code
-var MetricsDidBorn *predictor.MetricsSnasphot = &predictor.MetricsSnasphot{
+var MetricsDidBorn = &predictor.MetricsSnasphot{
 	AMResourceLimitMB:                              0,
 	AMResourceLimitVCores:                          0,
 	UsedAMResourceMB:                               0,

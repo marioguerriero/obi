@@ -12,9 +12,11 @@ import (
 	"obi/master/pool"
 )
 
-// Receiver class with properties
+// Receiver is the heartbeat module in charge of updating clusters metrics.
+// In a long-living routing it listens for all the incoming heartbeats from cluster masters.
+// If it receives an heartbeat from a cluster not in the pool, it creates the instance
+// for that cluster in order to monitor it.
 type Receiver struct {
-	pool *pool.Pool
 }
 
 // channel to interrupt the heartbeat receiver routine
@@ -25,13 +27,9 @@ var conn *net.UDPConn
 
 // New is the constructor of the heartbeat Receiver struct
 // @param pool contains the clusters to update regularly
-// @param deleteTimeout is the time interval after which a cluster is assumed down
-// @param trackerInterval is the time interval for which the clusters tracker is triggered
 // return the pointer to the instance
-func New(pool *pool.Pool) *Receiver {
-	r := &Receiver{
-		pool,
-	}
+func New() *Receiver {
+	r := &Receiver{}
 
 	return r
 }
@@ -40,7 +38,7 @@ func New(pool *pool.Pool) *Receiver {
 func (receiver *Receiver) Start() {
 	quit = make(chan struct{})
 	logrus.Info("Starting heartbeat receiver routine.")
-	go receiverRoutine(receiver.pool)
+	go receiverRoutine(pool.GetPool())
 }
 
 // goroutine which listens to new heartbeats from cluster masters. It will be stop when an empty object is inserted in
@@ -128,8 +126,8 @@ func receiverRoutine(pool *pool.Pool) {
 
 			newCluster, err := platforms.NewExistingCluster(m.GetServiceType(), m.GetClusterName())
 			if err == nil {
-				policy := policies.NewWorkload(0.3)
-				a := autoscaler.New(policy, 60, newCluster.(model.Scalable))
+				policy := policies.NewWorkload(0.5)
+				a := autoscaler.New(policy, 60, newCluster.(model.Scalable), false)
 				pool.AddCluster(newCluster, a)
 
 				logrus.WithField("clusterName", m.GetClusterName()).Info("Added cluster in the pool")
