@@ -91,9 +91,9 @@ func (p *MLPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 
 		// Decide whether to scale or not
 		if math.Abs(float64(performance)) > ScalingTrigger {
-			scalingResp, err := p.client.RequestPrediction(context.Background(),
+			scalingResp, err := p.client.RequestAutoscaling(context.Background(),
 				&predictor.AutoscalerRequest{
-					Metrics: previousMetrics,
+					Metrics: &previousMetrics,
 					Performance: performance,
 				},
 			)
@@ -101,7 +101,7 @@ func (p *MLPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 				logrus.WithField("error", err).Error("MLAutoscaler could not generate predictions")
 				p.scalingFactor = 0
 			} else {
-				p.scalingFactor = scalingResp.scalingFactor
+				p.scalingFactor = scalingResp.ScalingFactor
 			}
 		}
 

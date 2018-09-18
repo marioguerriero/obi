@@ -7,6 +7,7 @@ import "obi/master/model/message.proto";
 service ObiPredictor {
     rpc RequestPrediction(PredictionRequest) returns (PredictionResponse) {}
     rpc CollectAutoscalerData(AutoscalerData) returns (EmptyResponse) {}
+    rpc RequestAutoscaling(AutoscalerRequest) returns (AutoscalerResponse) {}
 }
 
 message AutoscalerData {
@@ -14,37 +15,9 @@ message AutoscalerData {
     int32 ScalingFactor = 2;
     model.HeartbeatMessage MetricsBefore = 3;
     model.HeartbeatMessage MetricsAfter = 4;
-	float PerformanceBefore = 5;
-	float PerformanceAfter = 6;
+    float PerformanceBefore = 5;
+    float PerformanceAfter = 6;
 }
-
-//message MetricsSnasphot {
-//    int32 AMResourceLimitMB = 2;
-//    int32 AMResourceLimitVCores = 3;
-//    int32 UsedAMResourceMB = 4;
-//    int32 UsedAMResourceVCores = 5;
-//    int32 AppsSubmitted = 6;
-//    int32 AppsRunning = 7;
-//    int32 AppsPending = 8;
-//    int32 AppsCompleted = 9;
-//    int32 AppsKilled = 10;
-//    int32 AppsFailed = 11;
-//    int32 AggregateContainersPreempted = 12;
-//    int32 ActiveApplications = 13;
-//    int32 AppAttemptFirstContainerAllocationDelayNumOps = 14;
-//    float AppAttemptFirstContainerAllocationDelayAvgTime = 15;
-//    int32 AllocatedMB = 16;
-//    int32 AllocatedVCores = 17;
-//    int32 AllocatedContainers = 18;
-//    int32 AggregateContainersAllocated = 19;
-//    int32 AggregateContainersReleased = 20;
-//    int32 AvailableMB = 21;
-//    int32 AvailableVCores = 22;
-//    int32 PendingMB = 23;
-//    int32 PendingVCores = 24;
-//    int32 PendingContainers = 25;
-//    int32 NumberOfNodes = 26;
-//}
 
 // Request/Response messages
 
@@ -58,6 +31,15 @@ message PredictionResponse {
     int32 Duration = 1;
     float FailureProbability = 2;
     string Label = 3;
+}
+
+message AutoscalerRequest {
+    model.HeartbeatMessage Metrics = 1;
+    float Performance = 2;
+}
+
+message AutoscalerResponse {
+    int32 scalingFactor = 1;
 }
 
 message EmptyResponse {
