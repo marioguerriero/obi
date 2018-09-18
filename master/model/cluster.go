@@ -3,6 +3,7 @@ package model
 import (
 	"obi/master/utils"
 	"sync"
+	"sync/atomic"
 )
 
 // Scalable is the interface that must be implemented from a scalable cluster
@@ -17,6 +18,7 @@ type ClusterBase struct {
 	ServiceType string
 	HeartbeatHost string
 	HeartbeatPort int
+	AssignedJobs int32
 	metrics *utils.ConcurrentSlice // not available outside package to prevent race conditions, get and set must be used
 	sync.Mutex
 }
@@ -28,6 +30,9 @@ type ClusterBaseInterface interface {
 	GetMetricsWindow() *utils.ConcurrentSlice
 	AddMetricsSnapshot(message HeartbeatMessage)
 	AllocateResources() error
+	FreeResources() error
+	AddJob()
+	RemoveJob()
 }
 
 
@@ -57,4 +62,12 @@ func (c *ClusterBase) GetMetrics() *utils.ConcurrentSlice {
 // thread-safe
 func (c *ClusterBase) SetMetrics(newStatus HeartbeatMessage) {
 	c.metrics.Append(newStatus)
+}
+
+func (c *ClusterBase) AddJob() {
+	c.AssignedJobs = atomic.AddInt32(&c.AssignedJobs, 1)
+}
+
+func (c *ClusterBase) RemoveJob() {
+	c.AssignedJobs = atomic.AddInt32(&c.AssignedJobs, -1)
 }

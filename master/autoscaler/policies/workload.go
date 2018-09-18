@@ -1,26 +1,20 @@
 package policies
 
 import (
-	"fmt"
-	"math"
+		"obi/master/utils"
 	"obi/master/model"
-	"obi/master/predictor"
-	"obi/master/utils"
-)
+		"math"
+	)
 
 
 // WorkloadPolicy contains all useful state-variable to apply the policy
 type WorkloadPolicy struct {
-	scalingFactor int32
 	scale float32
-	record *predictor.AutoscalerData
 }
 
 // NewWorkload is the constructor of the WorkloadPolicy struct
-func NewWorkload(scaleFactor float32) *WorkloadPolicy {
+func NewWorkload() *WorkloadPolicy {
 	return &WorkloadPolicy{
-		scale: scaleFactor,
-		record: nil,
 	}
 }
 
@@ -30,7 +24,6 @@ func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 	var throughput float32
 	var pendingGrowthRate float32
 	var count int8
-	var performance float32
 
 	for obj := range metricsWindow.Iter() {
 		if obj.Value == nil {
@@ -58,34 +51,27 @@ func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 	if count > 0 {
 		throughput /= float32(count)
 		pendingGrowthRate /= float32(count)
-		performance = throughput - pendingGrowthRate
 
-		fmt.Println(throughput)
-		fmt.Println(pendingGrowthRate)
-		if pendingGrowthRate == 0 && previousMetrics.AllocatedContainers > 0 {
-			workerMemory := (previousMetrics.AvailableMB + previousMetrics.AllocatedMB) / previousMetrics.NumberOfNodes
+		workerMemory := (previousMetrics.AvailableMB + previousMetrics.AllocatedMB) / previousMetrics.NumberOfNodes
+
+		// compute the number of containers that fit in each node
+		var containersPerNode int32 = 0
+		if previousMetrics.AllocatedContainers > 0 {
 			memoryContainer := previousMetrics.AllocatedMB / previousMetrics.AllocatedContainers
-			containersPerNode := workerMemory / memoryContainer
+			containersPerNode = workerMemory / memoryContainer
+		} else if previousMetrics.PendingContainers > 0 {
+			memoryContainer := previousMetrics.PendingMB / previousMetrics.PendingContainers
+			containersPerNode = workerMemory / memoryContainer
+		} else {
+			// unable to estimate the value - let's take the minimum
+			containersPerNode = 2
+		}
+
+		if pendingGrowthRate == 0 && previousMetrics.AllocatedContainers > 0 {
 			nodesUsed := math.Ceil(float64(previousMetrics.AllocatedContainers / containersPerNode))
 			return int32(nodesUsed) - previousMetrics.NumberOfNodes
 		}
-		p.scalingFactor = int32((pendingGrowthRate - throughput) * p.scale)
-
-		// Never scale below the admitted threshold
-		if previousMetrics.NumberOfNodes + p.scalingFactor < LowerBoundNodes {
-			p.scalingFactor = 0
-		}
+		return int32((pendingGrowthRate - throughput) * (1 / float32(containersPerNode)))
 	}
-
-	if p.scalingFactor != 0 && p.record == nil {
-		// Before scaling, save metrics
-		p.record = &predictor.AutoscalerData{
-			Nodes:             previousMetrics.NumberOfNodes,
-			PerformanceBefore: performance,
-			ScalingFactor:     p.scalingFactor,
-			MetricsBefore:     &previousMetrics,
-		}
-	}
-
-	return p.scalingFactor
+	return 0
 }

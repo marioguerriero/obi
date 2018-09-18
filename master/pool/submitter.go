@@ -55,6 +55,7 @@ func (s *Submitter) DeployJobs(jobs []model.Job) {
 	}
 
 	for _, job := range jobs {
+		cluster.AddJob()
 		job.AssignedCluster = clusterName
 		cluster.SubmitJob(job)
 	}
