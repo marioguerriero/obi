@@ -219,9 +219,8 @@ func (c *DataprocCluster) SubmitJob(job m.Job) error {
 			if j.Status.State == dataprocpb.JobStatus_DONE ||
 				j.Status.State == dataprocpb.JobStatus_ERROR ||
 				j.Status.State == dataprocpb.JobStatus_CANCELLED {
-				// If the cluster's job is finished, delete the cluster
-				c.delete(ctx)
-				logrus.WithField("cluster-name", c.Name).Info("Delete Dataproc cluster")
+
+				c.RemoveJob()
 				return
 			}
 		}
@@ -302,18 +301,46 @@ func (c *DataprocCluster) AllocateResources() error {
 		logrus.WithField("error", err).Error("'Wait' method call for CreateCluster operation failed")
 		return err
 	}
-	logrus.WithField("name", c.Name).Info("New Dataproc cluster")
+	logrus.WithField("name", c.Name).Info("New cluster on Dataproc platform")
 	return nil
 }
 
-// <-- end implementation of `ClusterBaseInterface` interface -->
-
 // delete the given Dataproc cluster
-func (c *DataprocCluster) delete(ctx context.Context)  {
+func (c *DataprocCluster) FreeResources() error {
+	ctx := context.Background()
 	clusterController, _ := dataproc.NewClusterControllerClient(ctx)
-	clusterController.DeleteCluster(ctx, &dataprocpb.DeleteClusterRequest{
+
+	op, err := clusterController.DeleteCluster(ctx, &dataprocpb.DeleteClusterRequest{
 		ProjectId:   c.ProjectID,
 		Region:      c.Region,
 		ClusterName: c.Name,
 	})
+
+	if err != nil {
+		logrus.WithField("error", err).Error("'DeleteCluster' method call failed")
+		return err
+	}
+
+	// Wait till cluster is successfully deleted
+	err = op.Wait(ctx)
+	if err != nil {
+		logrus.WithField("error", err).Error("'Wait' method call for DeleteCluster operation failed")
+		return err
+	}
+	logrus.WithField("name", c.Name).Info("Deleted cluster on Dataproc platform")
+	return nil
 }
+
+func (c *DataprocCluster) AddJob() {
+	c.ClusterBase.AddJob()
+}
+
+func (c *DataprocCluster) RemoveJob() {
+	c.ClusterBase.RemoveJob()
+	if c.AssignedJobs == 0 {
+		c.FreeResources()
+	}
+}
+
+// <-- end implementation of `ClusterBaseInterface` interface -->
+
