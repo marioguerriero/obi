@@ -68,7 +68,8 @@ class AutoscalerPredictor(GenericPredictor):
             metrics_before.append(metrics[m])
 
             # Generate after scaling prediction
-            pred = self._predict_after_scaling_averaged_metric(m, metrics[m], metrics.NumberOfNodes)
+            pred = self._predict_after_scaling_averaged_metric(
+                m, metrics[m], metrics.NumberOfNodes)
             metrics_after.append(pred)
 
         # Fix desired performance after scaling
@@ -84,7 +85,8 @@ class AutoscalerPredictor(GenericPredictor):
         prediction = self._scaling_factor_model.predict(data)
         return self._minmax_scaler.inverse_transform(prediction)
 
-    def _predict_after_scaling_averaged_metric(self, metric_name, metric, n, n_samples=10):
+    def _predict_after_scaling_averaged_metric(self, metric_name, metric,
+                                               n, n_samples=10):
         """
         Predict the impact a scaling may potentially have on a certain
         metric on a cluster having n nodes
