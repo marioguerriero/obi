@@ -14,7 +14,7 @@ import (
 )
 
 // ScalingTrigger integer constant used to decide when to trigger autoscaler
-const ScalingTrigger = 6
+const ScalingTrigger = 8
 
 // MLPolicy contains all useful state-variable to apply the policy
 type MLPolicy struct {
@@ -97,6 +97,7 @@ func (p *MLPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 					Performance: performance,
 				},
 			)
+			logrus.WithField("response", scalingResp).Info("Asked ML autoscaler to scale")
 			if err != nil {
 				logrus.WithField("error", err).Error("MLAutoscaler could not generate predictions")
 				p.scalingFactor = 0

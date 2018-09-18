@@ -32,7 +32,7 @@ func newDataprocCluster(name string) (*platforms.DataprocCluster, error) {
 		viper.GetString("region"), 0)
 
 	// Instantiate a new autoscaler for the new cluster and start monitoring
-	policy := policies.NewWorkload(0.5)
+	policy := policies.NewMLPolicy()
 	a := autoscaler.New(policy, 60, cluster, false)
 
 	// Add in the pool
