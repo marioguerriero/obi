@@ -4,8 +4,7 @@ import (
 		"obi/master/utils"
 	"obi/master/model"
 		"math"
-	"fmt"
-)
+	)
 
 
 // WorkloadPolicy contains all useful state-variable to apply the policy
@@ -14,9 +13,8 @@ type WorkloadPolicy struct {
 }
 
 // NewWorkload is the constructor of the WorkloadPolicy struct
-func NewWorkload(scaleFactor float32) *WorkloadPolicy {
+func NewWorkload() *WorkloadPolicy {
 	return &WorkloadPolicy{
-		scaleFactor,
 	}
 }
 
@@ -53,16 +51,27 @@ func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 	if count > 0 {
 		throughput /= float32(count)
 		pendingGrowthRate /= float32(count)
-		fmt.Println(throughput)
-		fmt.Println(pendingGrowthRate)
-		if pendingGrowthRate == 0 && previousMetrics.AllocatedContainers > 0 {
-			workerMemory := (previousMetrics.AvailableMB + previousMetrics.AllocatedMB) / previousMetrics.NumberOfNodes
+
+		workerMemory := (previousMetrics.AvailableMB + previousMetrics.AllocatedMB) / previousMetrics.NumberOfNodes
+
+		// compute the number of containers that fit in each node
+		var containersPerNode int32 = 0
+		if previousMetrics.AllocatedContainers > 0 {
 			memoryContainer := previousMetrics.AllocatedMB / previousMetrics.AllocatedContainers
-			containersPerNode := workerMemory / memoryContainer
+			containersPerNode = workerMemory / memoryContainer
+		} else if previousMetrics.PendingContainers > 0 {
+			memoryContainer := previousMetrics.PendingMB / previousMetrics.PendingContainers
+			containersPerNode = workerMemory / memoryContainer
+		} else {
+			// unable to estimate the value - let's take the minimum
+			containersPerNode = 2
+		}
+
+		if pendingGrowthRate == 0 && previousMetrics.AllocatedContainers > 0 {
 			nodesUsed := math.Ceil(float64(previousMetrics.AllocatedContainers / containersPerNode))
 			return int32(nodesUsed) - previousMetrics.NumberOfNodes
 		}
-		return int32((pendingGrowthRate - throughput) * p.scale)
+		return int32((pendingGrowthRate - throughput) * (1 / float32(containersPerNode)))
 	}
 	return 0
 }

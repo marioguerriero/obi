@@ -7,8 +7,7 @@ import (
 	"time"
 	"github.com/sirupsen/logrus"
 	"github.com/golang/protobuf/ptypes"
-	"fmt"
-)
+	)
 
 // Pool is the struct for clusters monitoring. Each created cluster is added in the pool
 // in order to use them in all the different modules of the system.
@@ -73,7 +72,6 @@ func (p *Pool) LivelinessCheck(timeout int16) {
 
 		if lastHeartbeat.ClusterName != "" {
 			lastTimestamp, _ := ptypes.Timestamp(lastHeartbeat.Timestamp)
-			fmt.Println(lastTimestamp)
 			lastHeartbeatInterval := int16(time.Now().Sub(lastTimestamp).Seconds())
 			if lastHeartbeatInterval > timeout {
 				clusterName := cluster.GetName()

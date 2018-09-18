@@ -159,7 +159,7 @@ func (c *DataprocCluster) Scale(delta int32) bool {
 	c.PreemptibleNodes= newSize
 	logrus.WithFields(logrus.Fields{
 		"clusterName": c.Name,
-		"newSize": newSize,
+		"additionalWorkers": newSize,
 	}).Info("Scaling completed with secondary nodes.")
 
 	if c.PreemptibleNodes == 0 {
