@@ -1,7 +1,8 @@
 package policies
 
 import (
-		"obi/master/utils"
+	"obi/master/predictor"
+	"obi/master/utils"
 	"obi/master/model"
 		"math"
 	)
@@ -9,13 +10,16 @@ import (
 
 // WorkloadPolicy contains all useful state-variable to apply the policy
 type WorkloadPolicy struct {
+	scalingFactor int32
 	scale float32
+	record *predictor.AutoscalerData
 }
 
 // NewWorkload is the constructor of the WorkloadPolicy struct
 func NewWorkload(scaleFactor float32) *WorkloadPolicy {
 	return &WorkloadPolicy{
-		scaleFactor,
+		scale: scaleFactor,
+		record: nil,
 	}
 }
 
@@ -59,7 +63,23 @@ func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 			nodesUsed := math.Ceil(float64(previousMetrics.AllocatedContainers / containersPerNode))
 			return int32(nodesUsed) - previousMetrics.NumberOfNodes
 		}
-		return int32((pendingGrowthRate - throughput) * p.scale)
+		p.scalingFactor = int32((pendingGrowthRate - throughput) * p.scale)
+
+		// Never scale below the admitted threshold
+		if previousMetrics.NumberOfNodes + p.scalingFactor < LowerBoundNodes {
+			p.scalingFactor = 0
+		}
 	}
-	return 0
+
+	if p.scalingFactor != 0 && p.record == nil {
+		// Before scaling, save metrics
+		p.record = &predictor.AutoscalerData{
+			Nodes:             previousMetrics.NumberOfNodes,
+			PerformanceBefore: performance,
+			ScalingFactor:     p.scalingFactor,
+			MetricsBefore:     &previousMetrics,
+		}
+	}
+
+	return p.scalingFactor
 }
