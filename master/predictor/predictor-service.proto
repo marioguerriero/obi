@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package predictor;
 
-import "message.proto";
+import "obi/master/model/message.proto";
 
 service ObiPredictor {
     rpc RequestPrediction(PredictionRequest) returns (PredictionResponse) {}
@@ -15,8 +15,8 @@ message AutoscalerData {
     int32 ScalingFactor = 2;
     model.HeartbeatMessage MetricsBefore = 3;
     model.HeartbeatMessage MetricsAfter = 4;
-	float PerformanceBefore = 5;
-	float PerformanceAfter = 6;
+    float PerformanceBefore = 5;
+    float PerformanceAfter = 6;
 }
 
 // Request/Response messages

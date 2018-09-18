@@ -46,6 +46,8 @@ func New(
 
 // StartMonitoring starts the execution of the autoscaler
 func (as *Autoscaler) StartMonitoring() {
+	logrus.WithField("clusterName", as.managedCluster.(model.ClusterBaseInterface).GetName()).Info(
+		"Starting autoscaler routine.")
 	go autoscalerRoutine(as)
 }
 

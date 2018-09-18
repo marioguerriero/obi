@@ -5,7 +5,8 @@ import (
 	"obi/master/utils"
 	"obi/master/model"
 		"math"
-	)
+	"fmt"
+)
 
 
 // WorkloadPolicy contains all useful state-variable to apply the policy
@@ -37,7 +38,7 @@ func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 
 		hb := obj.Value.(model.HeartbeatMessage)
 
-		if hb.ClusterName != "" {
+		if previousMetrics.ClusterName != "" {
 			throughput += float32(hb.AggregateContainersReleased - previousMetrics.AggregateContainersReleased)
 			if hb.PendingContainers > 0 {
 				memoryContainer := hb.PendingMB / hb.PendingContainers
@@ -56,6 +57,8 @@ func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 	if count > 0 {
 		throughput /= float32(count)
 		pendingGrowthRate /= float32(count)
+		fmt.Println(throughput)
+		fmt.Println(pendingGrowthRate)
 		if pendingGrowthRate == 0 && previousMetrics.AllocatedContainers > 0 {
 			workerMemory := (previousMetrics.AvailableMB + previousMetrics.AllocatedMB) / previousMetrics.NumberOfNodes
 			memoryContainer := previousMetrics.AllocatedMB / previousMetrics.AllocatedContainers
