@@ -338,6 +338,7 @@ func (c *DataprocCluster) AddJob() {
 func (c *DataprocCluster) RemoveJob() {
 	c.ClusterBase.RemoveJob()
 	if c.AssignedJobs == 0 {
+		logrus.WithField("name", c.Name).Info("No more jobs. Freeing resources on Dataproc")
 		c.FreeResources()
 	}
 }
