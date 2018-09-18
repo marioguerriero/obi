@@ -21,7 +21,7 @@ func NewWorkload(scaleFactor float32) *WorkloadPolicy {
 
 // Apply is the implementation of the Policy interface
 func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
-	var previousMetrics *model.HeartbeatMessage
+	var previousMetrics model.HeartbeatMessage
 	var throughput float32
 	var pendingGrowthRate float32
 	var count int8
@@ -33,7 +33,7 @@ func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 
 		hb := obj.Value.(model.HeartbeatMessage)
 
-		if previousMetrics != nil {
+		if hb.ClusterName != "" {
 			throughput += float32(hb.AggregateContainersReleased - previousMetrics.AggregateContainersReleased)
 			if hb.PendingContainers > 0 {
 				memoryContainer := hb.PendingMB / hb.PendingContainers
@@ -46,7 +46,7 @@ func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 
 			count++
 		}
-		previousMetrics = &hb
+		previousMetrics = hb
 	}
 
 	if count > 0 {

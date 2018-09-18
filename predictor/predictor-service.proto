@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package predictor;
 
-import "message.proto";
+import "obi/master/model/message.proto";
 
 service ObiPredictor {
     rpc RequestPrediction(PredictionRequest) returns (PredictionResponse) {}

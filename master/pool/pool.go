@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 	"github.com/sirupsen/logrus"
+	"github.com/golang/protobuf/ptypes"
 )
 
 // Pool is the struct for clusters monitoring. Each created cluster is added in the pool
@@ -62,15 +63,16 @@ func (p *Pool) RemoveCluster(clusterName string) {
 func (p *Pool) LivelinessCheck(timeout int16) {
 	p.clusters.Range(func(key interface{}, value interface{}) bool {
 		cluster := value.(model.ClusterBaseInterface)
-		var lastHeartbeat model.Metrics
+		var lastHeartbeat model.HeartbeatMessage
 		for hb := range cluster.GetMetricsWindow().Iter() {
 			if hb.Value != nil {
-				lastHeartbeat = hb.Value.(model.Metrics)
+				lastHeartbeat = hb.Value.(model.HeartbeatMessage)
 			}
 		}
 
-		if lastHeartbeat != (model.Metrics{}) {
-			lastHeartbeatInterval := int16(time.Now().Sub(lastHeartbeat.Timestamp).Seconds())
+		if lastHeartbeat.ClusterName != "" {
+			lastTimestamp, _ := ptypes.Timestamp(lastHeartbeat.Timestamp)
+			lastHeartbeatInterval := int16(time.Now().Sub(lastTimestamp).Seconds())
 			if lastHeartbeatInterval > timeout {
 				clusterName := cluster.GetName()
 				logrus.WithField("Name", clusterName).Info("Deleting cluster.")
