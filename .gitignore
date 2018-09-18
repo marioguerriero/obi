@@ -37,3 +37,6 @@ client/data-collector.sh
 
 client/il_generator
 client/il_launcher.py
+
+predictor/message_pb2.py
+master/model/message.pb.go
