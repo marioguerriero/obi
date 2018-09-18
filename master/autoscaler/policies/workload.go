@@ -1,11 +1,11 @@
 package policies
 
 import (
+	"fmt"
+	"math"
+	"obi/master/model"
 	"obi/master/predictor"
 	"obi/master/utils"
-	"obi/master/model"
-		"math"
-	"fmt"
 )
 
 
@@ -30,6 +30,7 @@ func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 	var throughput float32
 	var pendingGrowthRate float32
 	var count int8
+	var performance float32
 
 	for obj := range metricsWindow.Iter() {
 		if obj.Value == nil {
@@ -57,6 +58,8 @@ func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 	if count > 0 {
 		throughput /= float32(count)
 		pendingGrowthRate /= float32(count)
+		performance = throughput - pendingGrowthRate
+
 		fmt.Println(throughput)
 		fmt.Println(pendingGrowthRate)
 		if pendingGrowthRate == 0 && previousMetrics.AllocatedContainers > 0 {
