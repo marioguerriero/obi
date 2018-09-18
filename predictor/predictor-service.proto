@@ -7,6 +7,7 @@ import "message.proto";
 service ObiPredictor {
     rpc RequestPrediction(PredictionRequest) returns (PredictionResponse) {}
     rpc CollectAutoscalerData(AutoscalerData) returns (EmptyResponse) {}
+    rpc RequestAutoscaling(AutoscalerRequest) returns (AutoscalerResponse) {}
 }
 
 message AutoscalerData {
@@ -30,6 +31,15 @@ message PredictionResponse {
     int32 Duration = 1;
     float FailureProbability = 2;
     string Label = 3;
+}
+
+message AutoscalerRequest {
+    model.HeartbeatMessage Metrics = 1;
+    float Performance = 2;
+}
+
+message AutoscalerResponse {
+    int32 scalingFactor = 1;
 }
 
 message EmptyResponse {
