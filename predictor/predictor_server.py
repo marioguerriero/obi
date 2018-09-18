@@ -79,6 +79,25 @@ class PredictorServer(predictor_service_pb2_grpc.ObiPredictorServicer):
         log.info('Generated predictions: {}'.format(res))
         return res
 
+    def RequestAutoscaling(self, req, ctx):
+        """
+        Collect data sent from OBI to train smart autoscalers
+        :param data:
+        :param ctx:
+        :return:
+        """
+        log.info('Received request for autoscaler: {}'.format(req))
+
+        # Request autoscaler's prediction
+        scaling_factor = predictors.predict_scaling_factor(
+            req.Metrics, req.Performance)
+
+        # Build response
+        res = predictor_service_pb2.AutoscalerResponse()
+        res.ScalingFactor = scaling_factor
+        log.info('Generated predictions: {}'.format(res))
+        return res
+
     def CollectAutoscalerData(self, data, ctx):
         """
         Collect data sent from OBI to train smart autoscalers

@@ -6,6 +6,8 @@ from .csv_recreate_predictor import CsvRecreatePredictor
 
 from .ulm_predictor import UlmPredictor
 
+from .autoscaler import AutoscalerPredictor
+
 _DURATION_PREDICTORS = {
     'csv_find': CsvFindPredictor(),
     'csv_update': CsvUpdatePredictor(),
@@ -13,7 +15,8 @@ _DURATION_PREDICTORS = {
     'ulm': UlmPredictor(),
 }
 
-FAILURE_PREDICTOR = FailurePredictor()
+_FAILURE_PREDICTOR = FailurePredictor()
+_AUTOSCALER_PREDICTOR = AutoscalerPredictor()
 
 
 def get_predictor_instance(name):
@@ -42,4 +45,15 @@ def predict_failure(data):
     :param data:
     :return:
     """
-    return FAILURE_PREDICTOR.predict(data)
+    return _FAILURE_PREDICTOR.predict(data)
+
+
+def predict_scaling_factor(metrics, performance_before):
+    """
+    Generate scaling factor predictions from autoscaler model
+    :param metrics:
+    :param performance_before:
+    :return:
+    """
+    return _AUTOSCALER_PREDICTOR.predict(
+        metrics, performance=performance_before)
