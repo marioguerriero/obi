@@ -23,7 +23,7 @@ type MLPolicy struct {
 	client        predictor.ObiPredictorClient
 }
 
-// NewExpWorkload is the constructor of the WorkloadPolicy struct
+// NewMLPolicy is the constructor of the MLPolicy struct
 func NewMLPolicy() *MLPolicy {
 	// Open predictor connection
 	serverAddr := fmt.Sprintf("%s:%s",
