@@ -3,9 +3,7 @@ package pool
 import (
 	"fmt"
 		"github.com/sirupsen/logrus"
-	"obi/master/autoscaler"
-	"obi/master/autoscaler/policies"
-	"obi/master/model"
+			"obi/master/model"
 	"obi/master/utils"
 		"obi/master/predictor"
 	"github.com/spf13/viper"
@@ -55,14 +53,6 @@ func (s *Submitter) DeployJobs(jobs []model.Job) {
 	if err != nil {
 		return
 	}
-
-	// Instantiate a new autoscaler for the new cluster and start monitoring
-	policy := policies.NewWorkload(0.5)
-	a := autoscaler.New(policy, 60, cluster.(model.Scalable), false)
-	a.StartMonitoring()
-
-	// Add in the pool
-	GetPool().AddCluster(cluster, a)
 
 	for _, job := range jobs {
 		job.AssignedCluster = clusterName
