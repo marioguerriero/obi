@@ -11,14 +11,14 @@ from google.cloud import storage
 
 get_table_list = \
     {
-        'lh_de': ['public.api_apikey', 'public.auth_user',
+        'lh_de': ['public.api_apikey',  'public.auth_user',
                   'public.backend_crmdata', 'public.cart_order',
                   'public.cart_orderdeliveryevent',
                   'public.cart_orderdetailinquiry',
                   'public.cart_orderdetails',
-                  'public.cart_orderedingredient', 'public.cart_orderitem',
+                  'public.cart_orderedingredient',  'public.cart_orderitem',
                   'public.cart_thirdpartyorderinfo',
-                  'public.geo_city', 'public.geo_country',
+                  'public.geo_city',  'public.geo_country',
                   'public.geo_deliverypolygon', 'public.geo_district',
                   'public.geo_district_zipcodes', 'public.geo_street',
                   'public.geo_zipcode',
@@ -62,7 +62,6 @@ get_table_list = \
                   'public.payback_paybackcardcustomer',
                   'public.payback_paybackcardorder',
                   'public.payback_paybacktransaction'],
-
         'pde_de': ['public.api_apikey', 'public.auth_user',
                    'public.backend_crmdata', 'public.cart_orderdeliveryevent',
                    'public.cart_orderdetailinquiry',
@@ -74,10 +73,10 @@ get_table_list = \
                    'public.coupon_coupon', 'public.coupon_coupon_users',
                    'public.customer_customeraddress',
                    'public.customer_favouriterestaurant',
-                   'public.geo_city', 'public.geo_country',
+                   'public.geo_city',  'public.geo_country',
                    'public.geo_deliverypolygon', 'public.geo_district',
                    'public.geo_district_zipcodes',
-                   'public.geo_street', 'public.geo_zipcode',
+                   'public.geo_street',  'public.geo_zipcode',
                    'public.newsletter_newslettersubscription',
                    'public.offers_offeravailability',
                    'public.offers_restaurantoffer',
@@ -112,7 +111,6 @@ get_table_list = \
                    'public.payback_paybackcardorder',
                    'public.payback_paybacktransaction'
                    ],
-
         'bgk_de': ['getbk.Areas', 'getbk.campaign', 'getbk.Cities',
                    'getbk.company', 'getbk.Configuration', 'getbk.Cuisines',
                    'getbk.customeraddress', 'getbk.Customers',
@@ -142,7 +140,6 @@ get_table_list = \
                    'getbk.VendorsDiscounts', 'getbk.VendorsPaymenttypes',
                    'getbk.VendorStatus', 'getbk.Voucherattributions',
                    'getbk.Vouchers', 'getbk.voucher_schedule'],
-
         'lh_audit_de': ['audit.customer_changelog',
                         'audit.order_status_history'],
         'pde_audit_de': ['audit.customer_changelog',
@@ -158,8 +155,7 @@ get_table_list = \
                   'midas_data.packages', 'midas_data.postcodes',
                   'midas_data.restaurants', 'midas_data.settings'],
         '9c': ['public.contract_plan', 'public.country', 'public.delivery',
-               'public.delivery_address', 'public.delivery_platform',
-               'public.driver_location_log', 'public.operator',
+               'public.delivery_platform', 'public.operator',
                'public.operator_contract_type', 'public.restaurant',
                'public.sms_notification'],
         'fd_de': ['production_de.accounting',
@@ -251,12 +247,22 @@ get_table_list = \
                            'public.order_payment_record',
                            'public.payment_transaction',
                            'public.subscription'],
+        'lh_archive_de': ['archive.cart_order', 'archive.cart_orderitem',
+                          'archive.coupon_coupon',
+                          'archive.cart_orderdetailinquiry',
+                          'archive.customer_customer'],
+        'pde_archive_de': ['archive.cart_order', 'archive.cart_orderitem',
+                           'archive.coupon_coupon',
+                           'archive.cart_orderdetailinquiry'],
         'blacklisted': ['production_de.vendor_deliveries_'
                         'polygon_adjustments_log',
                         'production_de.calculation_configuration',
                         'production_de.Statusflows',
                         'public.alembic_version', 'public.customer',
-                        'public.order_payment_record', 'public.subscription']
+                        'public.order_payment_record',
+                        'public.subscription', 'public.delivery_address',
+                        'public.driver_location_log',
+                        'archive.customer_customer']
     }
 
 
