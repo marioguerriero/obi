@@ -94,7 +94,7 @@ class PredictorServer(predictor_service_pb2_grpc.ObiPredictorServicer):
 
         # Build response
         res = predictor_service_pb2.AutoscalerResponse()
-        res.ScalingFactor = scaling_factor
+        res.scalingFactor = scaling_factor
         log.info('Generated predictions: {}'.format(res))
         return res
 

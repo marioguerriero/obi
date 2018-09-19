@@ -4,11 +4,17 @@ import yaml
 
 from .generic_predictor import GenericPredictor
 
+from logger import log
+
 import numpy as np
 
 import keras
+import tensorflow as tf
 
 from sklearn.externals import joblib
+
+global graph
+graph = tf.get_default_graph()
 
 
 class AutoscalerPredictor(GenericPredictor):
@@ -49,6 +55,9 @@ class AutoscalerPredictor(GenericPredictor):
             base_dir, 'scaling_factor_model.h5'
         ))
 
+        # Initialize model's prediction function in a thread-safe way
+        self._scaling_factor_model._make_predict_function()
+
     def predict(self, metrics, **kwargs):
         """
         This function generate and returns prediction of the scaling factor
@@ -63,26 +72,30 @@ class AutoscalerPredictor(GenericPredictor):
         # Generate metrics prediction
         metrics_before = list()
         metrics_after = list()
-        for m in self._config['userMetrics']:
+        for m in self._config['usedMetrics']:
+            value = getattr(metrics, m)
+
             # Store metrics before scaling
-            metrics_before.append(metrics[m])
+            metrics_before.append(value)
 
             # Generate after scaling prediction
             pred = self._predict_after_scaling_averaged_metric(
-                m, metrics[m], metrics.NumberOfNodes)
+                m, value, metrics.NumberOfNodes)
             metrics_after.append(pred)
 
         # Fix desired performance after scaling
         performance_after = 0.0
 
         # Generate predictions for the scaling factor
-        data = np.array([
+        data = np.array([[
             metrics.NumberOfNodes, performance_before, performance_after,
             *metrics_before, *metrics_after
-        ])
+        ]])
         data = self._standard_scaler.transform(data)
 
+        log.info('Input to neural network: {}'.format(data))
         prediction = self._scaling_factor_model.predict(data)
+        log.info('Predicted value')
         return self._minmax_scaler.inverse_transform(prediction)
 
     def _predict_after_scaling_averaged_metric(self, metric_name, metric,
@@ -98,6 +111,7 @@ class AutoscalerPredictor(GenericPredictor):
         return np.mean([
             self._predict_after_scaling_metric(metric_name, metric, n, k)
             for k in np.random.choice(self._scaling_factors, size=(n_samples,))
+            if k != -n  # Avoid crashing for infinite values
         ])
 
     def _predict_after_scaling_metric(self, metric_name, metric, k, n):
@@ -109,8 +123,9 @@ class AutoscalerPredictor(GenericPredictor):
         :param n: number of nodes before scaling
         :return:
         """
-        data = np.array([
+        data = np.array([[
             metric * (n / (n + k)),
             metric * (k / (n + k)),
-        ])
+        ]])
+        log.info('Predicting {} with model for {}'.format(data, metric_name))
         return self._metric_models[metric_name].predict(data)

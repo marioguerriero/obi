@@ -306,14 +306,6 @@ class KubernetesClient(GenericClient):
             schedulingLevels=deployment['schedulingLevels'],
             priorityMap=deployment['priorityMap'])
 
-        # Create volume claim
-        volume_claim_name = self._object_name_generator(
-            prefix='{}-volume-claim'.format(
-                self._user_config['kubernetesNamespace'])
-        )
-        self._create_volume_claim(volume_claim_name,
-                                  self._user_config['kubernetesNamespace'])
-
         # Create deployment
         self._create_infrastructure_deployment(
             name, namespace, deployment['projectId'],
@@ -323,8 +315,7 @@ class KubernetesClient(GenericClient):
             master_service_name,
             heartbeat_service_name,
             predictor_service_name,
-            predictor_deployment_name,
-            volume_claim_name)
+            predictor_deployment_name)
         log.info('Infrastructure successfully created')
 
     def _delete_job(self, **kwargs):
@@ -383,12 +374,6 @@ class KubernetesClient(GenericClient):
             ]
         ]
 
-        persistent_volume_claims = [
-            master_deployment.metadata.annotations[
-                self._user_config['masterVolumeClaimName']
-            ],
-        ]
-
         # Delete all the objects
         log.info('Deleting infrastructure objects')
 
@@ -414,11 +399,6 @@ class KubernetesClient(GenericClient):
             self._delete_configmap(self._user_config['kubernetesNamespace'], c)
 
         log.info('All ConfigMaps deleted')
-
-        for pvc in persistent_volume_claims:
-            self._delete_pvc(self._user_config['kubernetesNamespace'], pvc)
-
-        log.info('All Persistent Volume Claim deleted')
 
     def _get_jobs(self, **kwargs):
         """
@@ -531,8 +511,7 @@ class KubernetesClient(GenericClient):
                                           master_service_name,
                                           heartbeat_service_name,
                                           predictor_service_name,
-                                          predictor_deployment_name,
-                                          volume_claim_name):
+                                          predictor_deployment_name):
         """
         This function is used to generate the deployment for the OBI
         master for a certain infrastructure. This function returns the
@@ -556,7 +535,6 @@ class KubernetesClient(GenericClient):
                 predictor_deployment_name,
             self._user_config['serviceAccountSecretName']: sa_secret,
             self._user_config['masterConfigMapName']: config_map_name,
-            self._user_config['masterVolumeClaimName']: volume_claim_name
         }
         deployment.metadata = metadata
 
@@ -564,8 +542,7 @@ class KubernetesClient(GenericClient):
         deployment.spec = self._build_deployment_spec_object(label,
                                                              project_id,
                                                              sa_secret,
-                                                             config_map_name,
-                                                             volume_claim_name)
+                                                             config_map_name)
 
         # Send deployment creation request
         try:
@@ -578,8 +555,7 @@ class KubernetesClient(GenericClient):
                 "%s" % e)
 
     def _build_deployment_spec_object(self, label, project_id,
-                                      sa_secret, config_map_name,
-                                      volume_claim_name):
+                                      sa_secret, config_map_name):
         """
         This function simply creates a spec object to attach to the
         deployment of a new OBI master
@@ -626,16 +602,8 @@ class KubernetesClient(GenericClient):
             name=volume_mount_config_map_name,
             mount_path=self._user_config['configMountPath'])
 
-        # Volume mount for persistent storage
-        volume_mount_pv_name = self._object_name_generator(
-            prefix='{}-volume-mount'.format(
-                self._user_config['kubernetesNamespace']))
-        volume_mount_pv = k8s.client.V1VolumeMount(
-            name=volume_mount_pv_name,
-            mount_path=self._user_config['persistentVolumeMountPath'])
-
         container.volume_mounts = [
-            volume_mount_secret, volume_mount_config_map, volume_mount_pv
+            volume_mount_secret, volume_mount_config_map
         ]
 
         # Environment variables
@@ -652,13 +620,8 @@ class KubernetesClient(GenericClient):
                 self._user_config['defaultConfigMapName'])
         )
 
-        env_pv = k8s.client.V1EnvVar(
-            name='PERSISTENT_VOLUME',
-            value=self._user_config['persistentVolumeMountPath']
-        )
-
         container.env = [
-            env_proj, env_creds, env_config, env_pv
+            env_proj, env_creds, env_config
         ]
 
         # Build template spec object
@@ -683,15 +646,8 @@ class KubernetesClient(GenericClient):
         volume_config_map.config_map = k8s.client.V1ConfigMapVolumeSource()
         volume_config_map.config_map.name = config_map_name
 
-        # Volume for persistent storage
-        persistent_volume = k8s.client.V1Volume(
-            name=volume_mount_pv_name)
-        persistent_volume.persistent_volume_claim \
-            = k8s.client.V1PersistentVolumeClaimVolumeSource(
-                claim_name=volume_claim_name)
-
         template_spec.volumes = [
-            volume_secret, volume_config_map, persistent_volume
+            volume_secret, volume_config_map
         ]
         template.spec = template_spec
 
@@ -830,45 +786,6 @@ class KubernetesClient(GenericClient):
                 "Exception when calling "
                 "CoreV1Api->create_namespaced_config_map: %s\n" % e)
             return None
-
-    def _create_volume_claim(self, name, namespace,
-                             access_mode=['ReadWriteOnce'],
-                             storage_request='1Gi'):
-        """
-        This function is used to generate a volume claim with the
-        given name and parameters
-        :param name:
-        :return:
-        """
-        pvc = k8s.client.V1PersistentVolumeClaim()
-
-        # Set metadata
-        metadata = k8s.client.V1ObjectMeta()
-        metadata.name = name
-
-        pvc.metadata = metadata
-
-        # Set spec object
-        spec = k8s.client.V1PersistentVolumeClaimSpec()
-        spec.access_modes = ['ReadWriteOnce']
-
-        resources = k8s.client.V1ResourceRequirements()
-        resources.requests = {
-            'storage': storage_request
-        }
-
-        spec.resources = resources
-
-        pvc.spec = spec
-
-        # Request creation of the constructed PVC
-        try:
-            self._core_client.create_namespaced_persistent_volume_claim(
-                namespace, pvc)
-        except k8s.client.rest.ApiException as e:
-            log.error("Exception when calling "
-                      "CoreV1Api->create_namespaced_persistent_volume_claim: "
-                      "%s\n" % e)
 
     def _create_predictive_component(self, name, service_name,
                                      namespace, project_id,
@@ -1278,22 +1195,6 @@ class KubernetesClient(GenericClient):
             log.error(
                 "Exception when calling "
                 "CoreV1Api->delete_namespaced_config_map: %s\n" % e)
-
-    def _delete_pvc(self, namespace, name):
-        """
-        Deletes a given service
-        :param namespace:
-        :param name:
-        :return:
-        """
-        try:
-            self._core_client.delete_namespaced_persistent_volume_claim(
-                name, namespace, body=k8s.client.V1DeleteOptions())
-        except k8s.client.rest.ApiException as e:
-            log.error(
-                "Exception when calling "
-                "CoreV1Api->delete_namespaced_persistent_volume_claim: "
-                "%s\n" % e)
     #############
     #  END: Generic utility functions
     #############
