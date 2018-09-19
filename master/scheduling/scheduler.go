@@ -88,7 +88,9 @@ func timeDurationAddJob(ls *levelScheduler, job model.Job) {
 	ls.Lock()
 	defer ls.Unlock()
 	for i := range ls.bins {
-		if ls.bins[i].cumulativeValue + job.PredictedDuration <= ls.BinCapacity {
+		jobFit := ls.bins[i].cumulativeValue + job.PredictedDuration <= ls.BinCapacity
+		jobTooLongButBinEmpty := ls.bins[i].cumulativeValue == 0 && job.PredictedDuration > ls.BinCapacity
+		if jobFit || jobTooLongButBinEmpty {
 			ls.bins[i].jobs = append(ls.bins[i].jobs, job)
 			ls.bins[i].cumulativeValue += job.PredictedDuration
 			return
