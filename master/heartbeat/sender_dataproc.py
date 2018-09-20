@@ -5,8 +5,6 @@ import socket
 import sys
 import urllib.request
 
-from .message_pb2 import HeartbeatMessage
-
 from google.protobuf.timestamp_pb2 import Timestamp
 
 HOSTNAME = socket.gethostname()
@@ -126,8 +124,7 @@ def compute_hb():
     hb.NumberOfNodes = int(n_nodes)
 
     # Timestamp
-    hb.Timestamp = Timestamp()
-    hb.Timestamp.FromDatetime(datetime.datetime.now())
+    hb.Timestamp.GetCurrentTime()
 
     # Compute new cumulative cost and store it
     global cumulative_cost
