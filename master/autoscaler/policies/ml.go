@@ -48,6 +48,9 @@ func (p *MLPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 	var count int8
 	var performance float32
 
+	// Reset scaling factor
+	p.scalingFactor = 0
+
 	for obj := range metricsWindow.Iter() {
 		if obj.Value == nil {
 			continue

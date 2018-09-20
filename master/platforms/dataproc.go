@@ -19,6 +19,14 @@ import (
 // InitializationAction initialization script for installing necessary requirements
 const InitializationAction = "gs://dhg-obi/cluster-script/init_action.sh"
 
+// NormalNodeCostPerSecond unitary cost of a normal node
+const NormalNodeCostPerSecond = 0.2448 / 60
+
+// PreemptibleNodeCostPerSecond unitary cost of a preemptible node
+const PreemptibleNodeCostPerSecond = 0.04920 / 60
+
+// HeartbeatInterval interval of time at which each heartbeat is sent
+const HeartbeatInterval = 10
 
 // DataprocCluster is the extended cluster struct of Google Dataproc
 type DataprocCluster struct {
@@ -268,6 +276,9 @@ func (c *DataprocCluster) AllocateResources() error {
 					Metadata: map[string]string{
 						"obi-hb-host": c.HeartbeatHost,
 						"obi-hb-port": strconv.Itoa(c.HeartbeatPort),
+						"normal-node-cost": strconv.FormatFloat(NormalNodeCostPerSecond, 'f', 16, 64),
+						"preemptible-node-cost": strconv.FormatFloat(PreemptibleNodeCostPerSecond, 'f', 16, 64),
+						"interval": strconv.Itoa(HeartbeatInterval),
 					},
 				},
 				MasterConfig: &dataprocpb.InstanceGroupConfig{

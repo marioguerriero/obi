@@ -21,19 +21,49 @@ if master_name != HOSTNAME:
     # so the current program can be aborted
     sys.exit(1)
 
+
+# Get metadata information
+def get_metadata(attr):
+    return os.popen('/usr/share/google/'
+                    'get_metadata_value attributes/' +
+                    attr).read()
+
+
 QUERY = 'jmx?qry=Hadoop:service=ResourceManager,name=QueueMetrics,q0=root,' \
         'q1=default'
 QUERY_URL = 'http://{}:8088/{}'.format(HOSTNAME, QUERY)
 
-RECEIVER_ADDRESS = os.popen('/usr/share/google/'
-                            'get_metadata_value attributes/'
-                            'obi-hb-host').read()
-RECEIVER_PORT = os.popen('/usr/share/google/'
-                         'get_metadata_value attributes/'
-                         'obi-hb-port').read()
+RECEIVER_ADDRESS = get_metadata('obi-hb-host')
+
+RECEIVER_PORT = get_metadata('obi-hb-port')
 RECEIVER_PORT = int(RECEIVER_PORT)
 
-TIMEOUT = 10
+NORMAL_NODE_COST = get_metadata('normal-node-cost')
+NORMAL_NODE_COST = float(NORMAL_NODE_COST)
+PREEMPTIBLE_NODE_COST = get_metadata('preemptible-node-cost')
+PREEMPTIBLE_NODE_COST = float(PREEMPTIBLE_NODE_COST)
+INTERVAL = get_metadata('interval')
+INTERVAL = int(INTERVAL)
+
+# Get current cumulative cost
+cost_path = os.path.join('/tmp', 'cumulative_dataproc_cost')
+cumulative_cost = 0.0
+if os.path.exists(cost_path):
+    with open(cost_path, 'r') as f:
+        try:
+            cumulative_cost = float(f.read())
+        except ValueError:
+            cumulative_cost = 0.0
+
+
+def get_nodes_count():
+    normal = os.popen(
+        "yarn node -list 2> /dev/null | "
+        "egrep '^obi-[^-]+-w' | wc -l").read()
+    preemptible = os.popen(
+        "yarn node -list 2> /dev/null | "
+        "egrep '^obi-[^-]+-sw' | wc -l").read()
+    return normal, preemptible
 
 
 def send_hb():
@@ -95,12 +125,19 @@ def compute_hb():
                        "| egrep -o '[0-9]+'").read()
     hb.NumberOfNodes = int(n_nodes)
 
-    # Set service type to dataproc
-    hb.ServiceType = 'dataproc'
-
     # Timestamp
     hb.Timestamp = Timestamp()
     hb.Timestamp.FromDatetime(datetime.datetime.now())
+
+    # Compute new cumulative cost and store it
+    global cumulative_cost
+    current_cost = INTERVAL * (NORMAL_NODE_COST * PREEMPTIBLE_NODE_COST)
+    cumulative_cost += current_cost
+
+    with open(cost_path, 'w+') as f:
+        f.write(str(cumulative_cost))
+
+    hb.Cost = cumulative_cost
 
     return hb
 

@@ -1,6 +1,7 @@
 package heartbeat
 
 import (
+	"fmt"
 	"github.com/golang/protobuf/proto"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -76,7 +77,7 @@ func receiverRoutine(pool *pool.Pool) {
 
 		m := model.HeartbeatMessage{}
 		err = proto.Unmarshal(data[0:n], &m)
-
+		fmt.Println(m)
 		if err != nil {
 			logrus.WithField("error", err).Error("'Unmarshal' method call for new heartbeat message failed")
 			continue

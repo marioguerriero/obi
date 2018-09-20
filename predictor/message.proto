@@ -38,4 +38,7 @@ message HeartbeatMessage {
 
     // Cluster specific information
     int32 NumberOfNodes = 27;
+
+    // Cost field (in dollars)
+    float Cost = 28;
 }
