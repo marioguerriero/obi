@@ -101,12 +101,12 @@ func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 			nodesUsed := math.Ceil(float64(previousMetrics.AllocatedContainers / containersPerNode))
 			p.scalingFactor = int32(nodesUsed) - previousMetrics.NumberOfNodes
 		}
-		p.scalingFactor = int32((pendingGrowthRate - throughput) * (1 / float32(containersPerNode)))
+		p.scalingFactor = int32((pendingGrowthRate - throughput) * (1 / float32(containersPerNode)) * 0.5)
 
-		// Never scale below the admitted threshold
-		if previousMetrics.NumberOfNodes + p.scalingFactor < LowerBoundNodes {
-			p.scalingFactor = 0
-		}
+		//// Never scale below the admitted threshold
+		//if previousMetrics.NumberOfNodes + p.scalingFactor < LowerBoundNodes {
+		//	p.scalingFactor = 0
+		//}
 	}
 
 	if p.scalingFactor != 0 && p.record == nil {
