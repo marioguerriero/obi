@@ -1,7 +1,6 @@
 package heartbeat
 
 import (
-	"fmt"
 	"github.com/golang/protobuf/proto"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -9,7 +8,7 @@ import (
 	"obi/master/autoscaler/policies"
 	"obi/master/model"
 	"obi/master/platforms"
-		"obi/master/pool"
+	"obi/master/pool"
 )
 
 // Receiver is the heartbeat module in charge of updating clusters metrics.
@@ -77,7 +76,7 @@ func receiverRoutine(pool *pool.Pool) {
 
 		m := model.HeartbeatMessage{}
 		err = proto.Unmarshal(data[0:n], &m)
-		fmt.Println(m)
+
 		if err != nil {
 			logrus.WithField("error", err).Error("'Unmarshal' method call for new heartbeat message failed")
 			continue

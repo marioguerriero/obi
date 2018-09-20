@@ -720,8 +720,9 @@ def get_input_size(job_type, task_type=None, backend=None,
     :return:
     """
     if job_type == 'csv':
-        return _get_csv_input_size(task_type, backend, date, day_diff)
+        c, s = _get_csv_input_size(task_type, backend, date, day_diff)
     elif job_type == 'ulm':
-        return _get_ulm_input_size(task_type, date)
+        c, s = _get_ulm_input_size(task_type, date)
     else:
         raise ValueError('Invalid job type')
+    return c, int(s) / 1e6  # Size is in megabytes

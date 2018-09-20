@@ -34,7 +34,7 @@ func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 	var pendingGrowthRate float32
 	var count int8
 	var performance float32
-
+	return 0
 	for obj := range metricsWindow.Iter() {
 		if obj.Value == nil {
 			continue
