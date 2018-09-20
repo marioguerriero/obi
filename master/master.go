@@ -38,23 +38,6 @@ func (m *ObiMaster) ListInfrastructures(ctx context.Context,
 // SubmitJob remote procedure call used to submit a job to one of the OBI infrastructures
 func (m *ObiMaster) SubmitJob(ctx context.Context,
 		jobRequest *JobSubmissionRequest) (*Empty, error) {
-	logrus.WithField("path", jobRequest.ExecutablePath).Info("Analyzing new job request")
-
-	// Generate predictions before submitting the job
-	resp, err := (*m.predictorClient).RequestPrediction(
-		context.Background(), &predictor.PredictionRequest{
-			JobFilePath: jobRequest.ExecutablePath,
-			JobArgs: jobRequest.JobArgs,
-			Metrics: model.MetricsDidBorn,
-		})
-	if err != nil {
-		logrus.WithField("response", resp).Warning("Could not generate predictions")
-	}
-
-	logrus.WithFields(logrus.Fields{
-		"type": resp.Label,
-		"duration": resp.Duration,
-	}).Info("New job")
 
 	// Create job object to be submitted to the scheduling component
 	var jobType model.JobType
@@ -72,11 +55,34 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 		Priority:           jobRequest.Priority,
 		AssignedCluster:    "",
 		Args:               jobRequest.JobArgs,
-		PredictedDuration:  resp.Duration,
 	}
 
-	if val, ok := m.priorities[resp.Label]; ok {
-		job.Priority = int32(val)
+	// Generate predictions before submitting the job
+	logrus.WithField("path", jobRequest.ExecutablePath).Info("Analyzing new job request")
+	resp, err := (*m.predictorClient).RequestPrediction(
+		context.Background(), &predictor.PredictionRequest{
+			JobFilePath: jobRequest.ExecutablePath,
+			JobArgs: jobRequest.JobArgs,
+			Metrics: model.MetricsDidBorn,
+		})
+	if err != nil {
+		logrus.WithField("response", resp).Warning("Could not generate predictions")
+		job.PredictedDuration = 0
+
+		if job.Priority < 0 {
+			job.Priority = 0
+		}
+	} else {
+		logrus.WithFields(logrus.Fields{
+			"type": resp.Label,
+			"duration": resp.Duration,
+		}).Info("New job")
+
+		job.PredictedDuration = resp.Duration
+
+		if val, ok := m.priorities[resp.Label]; ok && job.Priority < 0 {
+			job.Priority = int32(val)
+		}
 	}
 
 	// Send job execution request
