@@ -92,7 +92,7 @@ func receiverRoutine(pool *pool.Pool) {
 
 			newCluster, err := platforms.NewExistingCluster("dataproc", m.GetClusterName())
 			if err == nil {
-				policy :=  policies.NewWorkload()
+				policy :=  policies.NewWorkload(0.5)
 				a := autoscaler.New(policy, 60, newCluster.(model.Scalable), false)
 				pool.AddCluster(newCluster, a)
 
