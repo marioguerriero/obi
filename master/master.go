@@ -177,5 +177,14 @@ func CreateMaster() (*ObiMaster) {
 		priorities: priorityMap,
 	}
 
+	// Recover from failure by rescheduling any jobs which are still in the pending state
+	pendingJobs, err := persistent.GetPendingJobs()
+	if err != nil {
+		logrus.WithField("error", err).Error("Unable to load pending jobs from database")
+	}
+	for _, job := range pendingJobs {
+		master.scheduler.ScheduleJob(&job)
+	}
+
 	return &master
 }

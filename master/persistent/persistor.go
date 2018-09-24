@@ -93,6 +93,75 @@ func initTables() error {
 	return err
 }
 
+// GetPendingJobs returns all the jobs marked as running[
+func GetPendingJobs() ([]model.Job, error) {
+	return getJobsByState("pending")
+}
+
+// GetRunningJobs returns all the jobs marked as running[
+func GetRunningJobs() ([]model.Job, error) {
+	return getJobsByState("running")
+}
+
+// GetJobsByState returns all the jobs marked with a certain state
+func getJobsByState(state string) ([]model.Job, error) {
+	// Query jobs
+	query := `SELECT CreationTimestamp, ExecutablePath, Type, Priority, Status,
+			  PredictedDuration, FailureProbability, Arguments FROM Job WHERE Status='$1'`
+	rows, err := database.Query(query, state)
+	defer rows.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	// Build job objects
+	var jobs []model.Job
+
+	for rows.Next() {
+		var creationTimestamp time.Time
+		var executablePath string
+		var jobType string
+		var jobTypeCode model.JobType
+		var status string
+		var statusCode model.JobStatus
+		var priority int32
+		var predictedDuration int
+		var failureProbability float32
+		var args string
+
+		err := rows.Scan(&creationTimestamp, &executablePath, &jobType,
+			&status, &priority, &predictedDuration, &failureProbability, &args)
+		if err != nil {
+			return nil, err
+		}
+
+		// find out job type
+		for k, v := range model.JobTypeNames {
+			if jobType == v {
+				jobTypeCode = k
+			}
+		}
+
+		// find out job type
+		for k, v := range model.JobStatusNames {
+			if status == v {
+				statusCode = k
+			}
+		}
+
+		jobs = append(jobs, model.Job{
+			CreationTimestamp:  creationTimestamp,
+			ExecutablePath:     executablePath,
+			Type:               jobTypeCode,
+			Priority:           priority,
+			Status: 			statusCode,
+			Args:               args,
+		})
+	}
+
+	return jobs, nil
+}
+
 // Write a record into the persistent storage database
 func Write(record interface{}) error {
 	// Check if database connection is open
