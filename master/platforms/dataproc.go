@@ -10,6 +10,7 @@ import (
 	"google.golang.org/genproto/protobuf/field_mask"
 	"math"
 	m "obi/master/model"
+	"obi/master/persistent"
 	"obi/master/utils"
 	"strconv"
 	"strings"
@@ -50,6 +51,7 @@ func NewDataprocCluster(
 		region string,
 		preemptibleNodes int32,
     ) *DataprocCluster {
+	baseInfo.Platform = "dataproc"
 	return &DataprocCluster{
 		baseInfo,
 		projectID,
@@ -186,7 +188,7 @@ func (c *DataprocCluster) GetName() string {
 }
 
 // SubmitJob is for sending a new job to Dataproc
-func (c *DataprocCluster) SubmitJob(job m.Job) error {
+func (c *DataprocCluster) SubmitJob(job *m.Job) error {
 	ctx := context.Background()
 	controller, err := dataproc.NewJobControllerClient(ctx)
 	if err != nil {
@@ -213,6 +215,7 @@ func (c *DataprocCluster) SubmitJob(job m.Job) error {
 	}
 
 	dataprocJob, err := controller.SubmitJob(ctx, req)
+	job.PlatformDependentID = dataprocJob.Reference.JobId
 
 	// Start routine to kill the cluster once the job is finished
 	go func() {
@@ -227,6 +230,18 @@ func (c *DataprocCluster) SubmitJob(job m.Job) error {
 			if j.Status.State == dataprocpb.JobStatus_DONE ||
 				j.Status.State == dataprocpb.JobStatus_ERROR ||
 				j.Status.State == dataprocpb.JobStatus_CANCELLED {
+
+				// Update persistent storage with new job status
+				previousState := job.Status
+				if j.Status.State == dataprocpb.JobStatus_DONE {
+					job.Status = m.JobStatusCompleted
+				} else if j.Status.State == dataprocpb.JobStatus_ERROR ||
+					j.Status.State == dataprocpb.JobStatus_CANCELLED {
+					job.Status = m.JobStatusFailed
+				}
+				if previousState != job.Status {
+					persistent.Write(job)
+				}
 
 				c.RemoveJob()
 				return
@@ -312,6 +327,7 @@ func (c *DataprocCluster) AllocateResources() error {
 		logrus.WithField("error", err).Error("'Wait' method call for CreateCluster operation failed")
 		return err
 	}
+	c.Status = m.ClusterStatusRunning
 	logrus.WithField("name", c.Name).Info("New cluster on Dataproc platform")
 	return nil
 }
@@ -354,5 +370,30 @@ func (c *DataprocCluster) RemoveJob() {
 	}
 }
 
-// <-- end implementation of `ClusterBaseInterface` interface -->
+// GetPlatform returns cluster's platform type e.g. "dataproc"
+func (c *DataprocCluster) GetPlatform() string {
+	return c.Platform
+}
 
+// GetCreationTimestamp return cluster's creation timestamp
+func (c *DataprocCluster) GetCreationTimestamp() time.Time {
+	return c.CreationTimestamp
+}
+
+// GetCost returns cluster's cost so far in dollars
+func (c *DataprocCluster) GetCost() float32 {
+	metricsCount := c.GetMetrics().Len()
+	m := c.GetMetrics().Get(metricsCount-1).(m.HeartbeatMessage)
+	return m.Cost
+}
+
+// GetStatus returns cluster's status e.g. "running"
+func (c *DataprocCluster) GetStatus() m.ClusterStatus {
+	return c.Status
+}
+
+// SetStatus set cluster's status e.g. "running"
+func (c *DataprocCluster) SetStatus(s m.ClusterStatus) {
+	c.Status = s
+}
+// <-- end implementation of `ClusterBaseInterface` interface -->

@@ -4,7 +4,23 @@ import (
 	"obi/master/utils"
 	"sync"
 	"sync/atomic"
+	"time"
 )
+
+// ClusterStatus defines the status of a cluster
+type ClusterStatus int
+const (
+	// ClusterStatusRunning attached to a cluster when it is running
+	ClusterStatusRunning = iota
+	// ClusterStatusClosed attached to a cluster when it is closed
+	ClusterStatusClosed  = iota
+)
+
+// ClusterStatusNames descriptive names for different cluster statuses
+var ClusterStatusNames = map[ClusterStatus]string {
+	ClusterStatusRunning: "running",
+	ClusterStatusClosed: "closed",
+}
 
 // Scalable is the interface that must be implemented from a scalable cluster
 type Scalable interface {
@@ -13,20 +29,28 @@ type Scalable interface {
 
 // ClusterBase is the base class for any type of cluster
 type ClusterBase struct {
-	Name string
-	WorkerNodes int32
-	ServiceType string
+	Name          string
+	WorkerNodes   int32
+	Platform      string
+	CreationTimestamp time.Time
+	Cost float32
+	Status ClusterStatus
 	HeartbeatHost string
 	HeartbeatPort int
-	AssignedJobs int32
-	metrics *utils.ConcurrentSlice // not available outside package to prevent race conditions, get and set must be used
+	AssignedJobs  int32
+	metrics       *utils.ConcurrentSlice // not available outside package to prevent race conditions, get and set must be used
 	sync.Mutex
 }
 
 // ClusterBaseInterface defines the primitive methods that must be implemented for any type of cluster
 type ClusterBaseInterface interface {
 	GetName() string
-	SubmitJob(Job) error
+	GetPlatform() string
+	GetCreationTimestamp() time.Time
+	GetCost() float32
+	GetStatus() ClusterStatus
+	SetStatus(ClusterStatus)
+	SubmitJob(*Job) error
 	GetMetricsWindow() *utils.ConcurrentSlice
 	AddMetricsSnapshot(message HeartbeatMessage)
 	AllocateResources() error
@@ -43,12 +67,13 @@ type ClusterBaseInterface interface {
 // return the pointer to the ClusterBase instance
 func NewClusterBase(clusterName string, workers int32, platform string, hbHost string, hbPort int) *ClusterBase {
 	return &ClusterBase{
-		Name:  clusterName,
-		WorkerNodes: workers,
-		ServiceType: platform,
+		Name:          clusterName,
+		WorkerNodes:   workers,
+		Platform:      platform,
+		CreationTimestamp: time.Now(),
 		HeartbeatHost: hbHost,
 		HeartbeatPort: hbPort,
-		metrics: utils.NewConcurrentSlice(6, true),
+		metrics:       utils.NewConcurrentSlice(6, true),
 	}
 }
 

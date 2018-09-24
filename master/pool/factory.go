@@ -5,21 +5,36 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"obi/master/model"
+	"obi/master/persistent"
 	"obi/master/platforms"
 	"obi/master/autoscaler/policies"
 	"obi/master/autoscaler"
 )
 
 func newCluster(name, platform string) (model.ClusterBaseInterface, error) {
+	var cluster model.ClusterBaseInterface
+	var err error
+
 	logrus.WithField("cluster-name", name).Info("Creating new cluster")
 
 	switch platform {
 	case "dataproc":
-		return newDataprocCluster(name)
+		cluster, err = newDataprocCluster(name)
 	default:
 		logrus.WithField("platform-type", platform).Error("Invalid platform type")
 		return nil, errors.New("invalid platform type")
 	}
+
+	// Check if there was an error creating the cluster structure
+	if err != nil {
+		logrus.WithField("platform-type", platform).Error("Could not create platform")
+		return nil, err
+	}
+
+	// Write created cluster interface to persistent database
+	persistent.Write(cluster)
+
+	return cluster, err
 }
 
 func newDataprocCluster(name string) (*platforms.DataprocCluster, error) {

@@ -55,3 +55,17 @@ func (cs *ConcurrentSlice) Iter() <-chan ConcurrentSliceItem {
 
 	return c
 }
+
+// Len returns the length of the slice
+func (cs *ConcurrentSlice) Len() int {
+	cs.Lock()
+	defer cs.Unlock()
+	return len(cs.items)
+}
+
+// Get returns the element at the given index
+func (cs *ConcurrentSlice) Get(idx int) interface{} {
+	cs.Lock()
+	defer cs.Unlock()
+	return cs.items[idx]
+}

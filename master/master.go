@@ -4,19 +4,19 @@ import (
 	"context"
 	"fmt"
 	"github.com/sirupsen/logrus"
-			"io"
-		"math/rand"
+	"github.com/spf13/viper"
+	"google.golang.org/grpc"
+	"io"
 	"obi/master/heartbeat"
 	"obi/master/model"
 	"obi/master/persistent"
-	"obi/master/scheduling"
-		"obi/master/utils"
-	"os"
-	"path/filepath"
 	"obi/master/pool"
 	"obi/master/predictor"
-	"github.com/spf13/viper"
-	"google.golang.org/grpc"
+	"obi/master/scheduling"
+	"obi/master/utils"
+	"os"
+	"path/filepath"
+	"time"
 )
 
 // ObiMaster structure representing one master instance for OBI
@@ -48,12 +48,13 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 		jobType = model.JobTypeUndefined
 	}
 
+	// Create job structure
 	job := model.Job{
-		ID:                 rand.Int(),
+		CreationTimestamp:  time.Now(),
 		ExecutablePath:     jobRequest.ExecutablePath,
 		Type:               jobType,
 		Priority:           jobRequest.Priority,
-		AssignedCluster:    "",
+		Status: 			model.JobStatusPending,
 		Args:               jobRequest.JobArgs,
 	}
 
@@ -85,9 +86,12 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 		}
 	}
 
+	// Write submitted job into persistent storage
+	persistent.Write(&job)
+
 	// Send job execution request
 	logrus.WithField("priority-level", job.Priority).Info("Schedule job for execution")
-	m.scheduler.ScheduleJob(job)
+	m.scheduler.ScheduleJob(&job)
 
 	return new(Empty), nil
 }
