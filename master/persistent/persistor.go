@@ -119,9 +119,9 @@ func writeJob(job *model.Job) error {
 	// If job has no ID set, then a new entry should be created into the database, otherwise update it
 	if job.ID == 0 {
 		return insertJobQuery(job)
-	} else {
-		return updateJobQuery(job)
 	}
+
+	return updateJobQuery(job)
 }
 
 func writeCluster(cluster model.ClusterBaseInterface) error {
@@ -131,9 +131,9 @@ func writeCluster(cluster model.ClusterBaseInterface) error {
 	if rowExists("SELECT * FROM Cluster WHERE Name=$1 AND CreationTimestamp=$2",
 			cluster.GetName(), cluster.GetCreationTimestamp()) {
 		return updateClusterQuery(cluster)
-	} else {
-		return insertClusterQuery(cluster)
 	}
+
+	return insertClusterQuery(cluster)
 }
 
 func insertJobQuery(job *model.Job) error {
