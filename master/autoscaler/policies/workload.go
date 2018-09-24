@@ -21,9 +21,10 @@ type WorkloadPolicy struct {
 }
 
 // NewWorkload is the constructor of the WorkloadPolicy struct
-func NewWorkload() *WorkloadPolicy {
+func NewWorkload(scale float32) *WorkloadPolicy {
 	return &WorkloadPolicy{
 		record: nil,
+		scale: scale,
 	}
 }
 
@@ -34,7 +35,7 @@ func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 	var pendingGrowthRate float32
 	var count int8
 	var performance float32
-	return 0
+
 	for obj := range metricsWindow.Iter() {
 		if obj.Value == nil {
 			continue
@@ -85,7 +86,7 @@ func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 		workerMemory := (previousMetrics.AvailableMB + previousMetrics.AllocatedMB) / previousMetrics.NumberOfNodes
 
 		// compute the number of containers that fit in each node
-		var containersPerNode int32 = 0
+		var containersPerNode int32
 		if previousMetrics.AllocatedContainers > 0 {
 			memoryContainer := previousMetrics.AllocatedMB / previousMetrics.AllocatedContainers
 			containersPerNode = workerMemory / memoryContainer
@@ -101,7 +102,7 @@ func (p *WorkloadPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 			nodesUsed := math.Ceil(float64(previousMetrics.AllocatedContainers / containersPerNode))
 			p.scalingFactor = int32(nodesUsed) - previousMetrics.NumberOfNodes
 		}
-		p.scalingFactor = int32((pendingGrowthRate - throughput) * (1 / float32(containersPerNode)) * 0.5)
+		p.scalingFactor = int32((pendingGrowthRate - throughput) * (1 / float32(containersPerNode)) * p.scale)
 
 		//// Never scale below the admitted threshold
 		//if previousMetrics.NumberOfNodes + p.scalingFactor < LowerBoundNodes {

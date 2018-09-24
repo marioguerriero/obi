@@ -332,7 +332,7 @@ func (c *DataprocCluster) AllocateResources() error {
 	return nil
 }
 
-// delete the given Dataproc cluster
+// FreeResources deletes the given Dataproc cluster
 func (c *DataprocCluster) FreeResources() error {
 	ctx := context.Background()
 	clusterController, _ := dataproc.NewClusterControllerClient(ctx)
@@ -358,10 +358,12 @@ func (c *DataprocCluster) FreeResources() error {
 	return nil
 }
 
+// AddJob increments the internal counter of running jobs
 func (c *DataprocCluster) AddJob() {
 	c.ClusterBase.AddJob()
 }
 
+// RemoveJob decrements the internal counter of running jobs and, if none remaining, deallocates the cluster
 func (c *DataprocCluster) RemoveJob() {
 	c.ClusterBase.RemoveJob()
 	if c.AssignedJobs == 0 {

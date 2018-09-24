@@ -89,10 +89,14 @@ func (c *ClusterBase) SetMetrics(newStatus HeartbeatMessage) {
 	c.metrics.Append(newStatus)
 }
 
+// AddJob increments the internal counter of running jobs
+// thread-safe
 func (c *ClusterBase) AddJob() {
 	c.AssignedJobs = atomic.AddInt32(&c.AssignedJobs, 1)
 }
 
+// RemoveJob decrements the internal counter of running jobs
+// thread-safe
 func (c *ClusterBase) RemoveJob() {
 	c.AssignedJobs = atomic.AddInt32(&c.AssignedJobs, -1)
 }
