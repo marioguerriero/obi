@@ -38,6 +38,7 @@ type ClusterBase struct {
 	HeartbeatHost string
 	HeartbeatPort int
 	AssignedJobs  int32
+	Jobs *utils.ConcurrentSlice
 	metrics       *utils.ConcurrentSlice // not available outside package to prevent race conditions, get and set must be used
 	sync.Mutex
 }
@@ -55,9 +56,10 @@ type ClusterBaseInterface interface {
 	AddMetricsSnapshot(message HeartbeatMessage)
 	AllocateResources() error
 	FreeResources() error
-	AddJob()
-	RemoveJob()
-	GetAssignedJobs() int32
+	MonitorJobs()
+	AllocateJobSlot()
+	ReleaseJobSlot()
+	GetAllocatedJobSlots() int32
 }
 
 
@@ -74,6 +76,7 @@ func NewClusterBase(clusterName string, workers int32, platform string, hbHost s
 		CreationTimestamp: time.Now(),
 		HeartbeatHost: hbHost,
 		HeartbeatPort: hbPort,
+		Jobs: 		   utils.NewConcurrentSlice(0, false),
 		metrics:       utils.NewConcurrentSlice(6, true),
 	}
 }
@@ -92,18 +95,18 @@ func (c *ClusterBase) SetMetrics(newStatus HeartbeatMessage) {
 
 // AddJob increments the internal counter of running jobs
 // thread-safe
-func (c *ClusterBase) AddJob() {
+func (c *ClusterBase) AllocateJobSlot() {
 	c.AssignedJobs = atomic.AddInt32(&c.AssignedJobs, 1)
 }
 
-// RemoveJob decrements the internal counter of running jobs
+// ReleaseJobSlot decrements the internal counter of running jobs
 // thread-safe
-func (c *ClusterBase) RemoveJob() {
+func (c *ClusterBase) ReleaseJobSlot() {
 	c.AssignedJobs = atomic.AddInt32(&c.AssignedJobs, -1)
 }
 
-// GetAssignedJobs return the assigned jobs count
+// GetAllocatedJobSlots return the assigned jobs count
 // thread-safe
-func (c *ClusterBase) GetAssignedJobs() int32 {
+func (c *ClusterBase) GetAllocatedJobSlots() int32 {
 	return atomic.LoadInt32(&c.AssignedJobs)
 }

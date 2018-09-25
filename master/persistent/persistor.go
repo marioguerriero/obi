@@ -96,20 +96,30 @@ func initTables() error {
 
 // GetPendingJobs returns all the jobs marked as running[
 func GetPendingJobs() ([]model.Job, error) {
-	return getJobsByState("pending")
+	return getJobsByState("pending", "")
 }
 
 // GetRunningJobs returns all the jobs marked as running[
-func GetRunningJobs() ([]model.Job, error) {
-	return getJobsByState("running")
+func GetRunningJobs(cluster string) ([]model.Job, error) {
+	return getJobsByState("running", cluster)
 }
 
 // GetJobsByState returns all the jobs marked with a certain state
-func getJobsByState(state string) ([]model.Job, error) {
+func getJobsByState(state string, cluster string) ([]model.Job, error) {
 	// Query jobs
-	query := `SELECT CreationTimestamp, ExecutablePath, Type, Priority, Status,
+	var query string
+	var rows *sql.Rows
+	var err error
+
+	if len(cluster) > 0 {
+		query = `SELECT CreationTimestamp, ExecutablePath, Type, Priority, Status,
+			  PredictedDuration, FailureProbability, Arguments FROM Job WHERE Status='$1' AND ClusterName='$2'`
+		rows, err = database.Query(query, state, cluster)
+	} else {
+		query = `SELECT CreationTimestamp, ExecutablePath, Type, Priority, Status,
 			  PredictedDuration, FailureProbability, Arguments FROM Job WHERE Status='$1'`
-	rows, err := database.Query(query, state)
+		rows, err = database.Query(query, state)
+	}
 	defer rows.Close()
 	if err != nil {
 		return nil, err
@@ -303,7 +313,7 @@ func insertClusterQuery(cluster model.ClusterBaseInterface) error {
 		cluster.GetPlatform(),
 		model.ClusterStatusNames[cluster.GetStatus()],
 		cluster.GetCreationTimestamp(),
-		cluster.GetAssignedJobs(),
+		cluster.GetAllocatedJobSlots(),
 	)
 	return nil
 }
@@ -325,7 +335,7 @@ func updateClusterQuery(cluster model.ClusterBaseInterface) error {
 		cluster.GetPlatform(),
 		model.ClusterStatusNames[cluster.GetStatus()],
 		cluster.GetCost(),
-		cluster.GetAssignedJobs(),
+		cluster.GetAllocatedJobSlots(),
 		cluster.GetName(),
 		cluster.GetCreationTimestamp(),
 	)

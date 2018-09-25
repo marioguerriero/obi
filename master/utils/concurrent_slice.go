@@ -29,7 +29,7 @@ func NewConcurrentSlice(size int, fixed bool) *ConcurrentSlice {
 // @param item is the item to append
 func (cs *ConcurrentSlice) Append(item interface{}) {
 	cs.Lock()
-	defer cs.Unlock()
+	defer cs.Lock()
 
 	cs.items = append(cs.items, item)
 
@@ -44,8 +44,8 @@ func (cs *ConcurrentSlice) Iter() <-chan ConcurrentSliceItem {
 	c := make(chan ConcurrentSliceItem)
 
 	f := func() {
-		cs.Lock()
-		defer cs.Unlock()
+		cs.RLock()
+		defer cs.RUnlock()
 		for index, value := range cs.items {
 			c <- ConcurrentSliceItem{index, value}
 		}
@@ -58,14 +58,23 @@ func (cs *ConcurrentSlice) Iter() <-chan ConcurrentSliceItem {
 
 // Len returns the length of the slice
 func (cs *ConcurrentSlice) Len() int {
-	cs.Lock()
-	defer cs.Unlock()
+	cs.RLock()
+	defer cs.RUnlock()
 	return len(cs.items)
 }
 
 // Get returns the element at the given index
 func (cs *ConcurrentSlice) Get(idx int) interface{} {
+	cs.RLock()
+	defer cs.RUnlock()
+	return cs.items[idx]
+}
+
+// Remove remove one element from the slice
+func (cs *ConcurrentSlice) Remove(idx int) {
 	cs.Lock()
 	defer cs.Unlock()
-	return cs.items[idx]
+	// Replace element to remove with the last one
+	cs.items[idx] = cs.items[len(cs.items)-1]
+	cs.items = cs.items[:len(cs.items)-1]
 }

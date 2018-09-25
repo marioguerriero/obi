@@ -52,13 +52,27 @@ func NewDataprocCluster(
 		preemptibleNodes int32,
     ) *DataprocCluster {
 	baseInfo.Platform = "dataproc"
-	return &DataprocCluster{
+	cluster := &DataprocCluster{
 		baseInfo,
 		projectID,
 		zone,
 		region,
 		preemptibleNodes,
 	}
+
+	// Recover running jobs (if anny)
+	runningJobs, err := persistent.GetRunningJobs(baseInfo.Name)
+	if err != nil {
+		logrus.WithField("error", err).Error("Could not read previously running jobs")
+	}
+	for j := range runningJobs {
+		cluster.Jobs.Append(&j)
+	}
+
+	// Start job monitoring routine
+	go cluster.MonitorJobs()
+
+	return cluster
 }
 
 // NewExistingDataprocCluster is the constructor of DataprocCluster for already allocated resources in Dataproc
@@ -104,13 +118,13 @@ func NewExistingDataprocCluster(projectID string, region string, zone string, cl
 			preemptibleNodes = resp.Config.SecondaryWorkerConfig.NumInstances
 		}
 
-		newCluster = &DataprocCluster{
+		newCluster = NewDataprocCluster(
 			newBaseCluster,
 			projectID,
 			zone,
 			region,
 			preemptibleNodes,
-		}
+		)
 	}
 	return newCluster, nil
 }
@@ -217,37 +231,8 @@ func (c *DataprocCluster) SubmitJob(job *m.Job) error {
 	dataprocJob, err := controller.SubmitJob(ctx, req)
 	job.PlatformDependentID = dataprocJob.Reference.JobId
 
-	// Start routine to kill the cluster once the job is finished
-	go func() {
-		for {
-			time.Sleep(time.Minute)
-			// Query job controller
-			j, _ := controller.GetJob(ctx, &dataprocpb.GetJobRequest{
-				ProjectId: c.ProjectID,
-				Region:    c.Region,
-				JobId:     dataprocJob.Reference.JobId,
-			})
-			if j.Status.State == dataprocpb.JobStatus_DONE ||
-				j.Status.State == dataprocpb.JobStatus_ERROR ||
-				j.Status.State == dataprocpb.JobStatus_CANCELLED {
-
-				// Update persistent storage with new job status
-				previousState := job.Status
-				if j.Status.State == dataprocpb.JobStatus_DONE {
-					job.Status = m.JobStatusCompleted
-				} else if j.Status.State == dataprocpb.JobStatus_ERROR ||
-					j.Status.State == dataprocpb.JobStatus_CANCELLED {
-					job.Status = m.JobStatusFailed
-				}
-				if previousState != job.Status {
-					persistent.Write(job)
-				}
-
-				c.RemoveJob()
-				return
-			}
-		}
-	}()
+	// Add job to the cluster's list
+	c.Jobs.Append(job)
 
 	if err != nil {
 		logrus.WithField("error", err).Error("'SubmitJob' method call failed")
@@ -359,17 +344,22 @@ func (c *DataprocCluster) FreeResources() error {
 }
 
 // AddJob increments the internal counter of running jobs
-func (c *DataprocCluster) AddJob() {
-	c.ClusterBase.AddJob()
+func (c *DataprocCluster) AllocateJobSlot() {
+	c.ClusterBase.AllocateJobSlot()
 }
 
-// RemoveJob decrements the internal counter of running jobs and, if none remaining, deallocates the cluster
-func (c *DataprocCluster) RemoveJob() {
-	c.ClusterBase.RemoveJob()
+// ReleaseJobSlot decrements the internal counter of running jobs and, if none remaining, deallocates the cluster
+func (c *DataprocCluster) ReleaseJobSlot() {
+	c.ClusterBase.ReleaseJobSlot()
 	if c.AssignedJobs == 0 {
 		logrus.WithField("name", c.Name).Info("No more jobs. Freeing resources on Dataproc")
 		c.FreeResources()
 	}
+}
+
+// GetAllocatedJobSlots returns the number of jobs the cluster is currently handling
+func (c *DataprocCluster) GetAllocatedJobSlots() int32 {
+	return c.ClusterBase.GetAllocatedJobSlots()
 }
 
 // GetPlatform returns cluster's platform type e.g. "dataproc"
@@ -380,6 +370,54 @@ func (c *DataprocCluster) GetPlatform() string {
 // GetCreationTimestamp return cluster's creation timestamp
 func (c *DataprocCluster) GetCreationTimestamp() time.Time {
 	return c.CreationTimestamp
+}
+
+// MonitorJobs track job execution status
+func (c *DataprocCluster) MonitorJobs() {
+	ctx := context.Background()
+	controller, err := dataproc.NewJobControllerClient(ctx)
+	if err != nil {
+		logrus.WithField("error", err).Error("'NewJobControllerClient' method call failed")
+	}
+
+	for {
+		time.Sleep(time.Minute)
+
+		for elem := range c.Jobs.Iter() {
+			job := elem.Value.(*m.Job)
+
+			// Query job controller
+			j, _ := controller.GetJob(ctx, &dataprocpb.GetJobRequest{
+				ProjectId: c.ProjectID,
+				Region:    c.Region,
+				JobId:     job.PlatformDependentID,
+			})
+			if j.Status.State == dataprocpb.JobStatus_DONE ||
+				j.Status.State == dataprocpb.JobStatus_ERROR ||
+				j.Status.State == dataprocpb.JobStatus_CANCELLED {
+
+				// Update persistent storage with new job status
+				previousState := job.Status
+				if j.Status.State == dataprocpb.JobStatus_DONE {
+					job.Status = m.JobStatusCompleted
+				} else if j.Status.State == dataprocpb.JobStatus_ERROR ||
+					j.Status.State == dataprocpb.JobStatus_CANCELLED {
+					job.Status = m.JobStatusFailed
+				}
+
+				// Update job in persistent store if its state changed
+				if previousState != job.Status {
+					persistent.Write(job)
+				}
+
+				// Drop job from the cluster's jobs list
+				c.Jobs.Remove(elem.Index)
+
+				// Release job slot
+				c.ReleaseJobSlot()
+			}
+		}
+	}
 }
 
 // GetCost returns cluster's cost so far in dollars
