@@ -57,6 +57,7 @@ type ClusterBaseInterface interface {
 	FreeResources() error
 	AddJob()
 	RemoveJob()
+	GetAssignedJobs() int32
 }
 
 
@@ -99,4 +100,10 @@ func (c *ClusterBase) AddJob() {
 // thread-safe
 func (c *ClusterBase) RemoveJob() {
 	c.AssignedJobs = atomic.AddInt32(&c.AssignedJobs, -1)
+}
+
+// GetAssignedJobs return the assigned jobs count
+// thread-safe
+func (c *ClusterBase) GetAssignedJobs() int32 {
+	return atomic.LoadInt32(&c.AssignedJobs)
 }

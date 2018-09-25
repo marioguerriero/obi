@@ -62,6 +62,7 @@ func initTables() error {
 		CreationTimestamp TIMESTAMP, 
 		Cost FLOAT,
 		LastUpdateTimestamp TIMESTAMP,
+		AssignedJobs INT,
 		PRIMARY KEY(Name, CreationTimestamp))`
 
 	_, err = database.Exec(createClusterTableQuery)
@@ -287,9 +288,10 @@ func insertClusterQuery(cluster model.ClusterBaseInterface) error {
 				Status, 
 				CreationTimestamp, 
 				Cost,
-				LastUpdateTimestamp)
+				LastUpdateTimestamp,
+				AssignedJobs)
 			VALUES (
-				$1, $2, $3, $4, 0.0, CURRENT_TIMESTAMP
+				$1, $2, $3, $4, 0.0, CURRENT_TIMESTAMP, $5
 			)`
 	stmt, err := database.Prepare(query)
 	defer stmt.Close()
@@ -301,6 +303,7 @@ func insertClusterQuery(cluster model.ClusterBaseInterface) error {
 		cluster.GetPlatform(),
 		model.ClusterStatusNames[cluster.GetStatus()],
 		cluster.GetCreationTimestamp(),
+		cluster.GetAssignedJobs(),
 	)
 	return nil
 }
@@ -310,8 +313,9 @@ func updateClusterQuery(cluster model.ClusterBaseInterface) error {
 				Platform = $1, 
 				Status = $2, 
 				Cost = $3,
-				LastUpdateTimestamp = CURRENT_TIMESTAMP
-			WHERE Cluster.Name = $4 AND Cluster.CreationTimestamp = $5;`
+				LastUpdateTimestamp = CURRENT_TIMESTAMP,
+				AssignedJobs = $4
+			WHERE Cluster.Name = $5 AND Cluster.CreationTimestamp = $6;`
 	stmt, err := database.Prepare(query)
 	defer stmt.Close()
 	if err != nil {
@@ -321,6 +325,7 @@ func updateClusterQuery(cluster model.ClusterBaseInterface) error {
 		cluster.GetPlatform(),
 		model.ClusterStatusNames[cluster.GetStatus()],
 		cluster.GetCost(),
+		cluster.GetAssignedJobs(),
 		cluster.GetName(),
 		cluster.GetCreationTimestamp(),
 	)
