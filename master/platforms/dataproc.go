@@ -212,6 +212,10 @@ func (c *DataprocCluster) SubmitJob(job *m.Job) error {
 
 	// TODO generalize this function to deploy any type of job, not only PySpark
 
+	// Lock cluster's jobs list
+	c.Jobs.Lock()
+	defer c.Jobs.Unlock()
+
 	req := &dataprocpb.SubmitJobRequest{
 		ProjectId: c.ProjectID,
 		Region:    c.Region,
@@ -343,23 +347,9 @@ func (c *DataprocCluster) FreeResources() error {
 	return nil
 }
 
-// AddJob increments the internal counter of running jobs
-func (c *DataprocCluster) AllocateJobSlot() {
-	c.ClusterBase.AllocateJobSlot()
-}
-
-// ReleaseJobSlot decrements the internal counter of running jobs and, if none remaining, deallocates the cluster
-func (c *DataprocCluster) ReleaseJobSlot() {
-	c.ClusterBase.ReleaseJobSlot()
-	if c.AssignedJobs == 0 {
-		logrus.WithField("name", c.Name).Info("No more jobs. Freeing resources on Dataproc")
-		c.FreeResources()
-	}
-}
-
 // GetAllocatedJobSlots returns the number of jobs the cluster is currently handling
-func (c *DataprocCluster) GetAllocatedJobSlots() int32 {
-	return c.ClusterBase.GetAllocatedJobSlots()
+func (c *DataprocCluster) GetAllocatedJobSlots() int {
+	return c.Jobs.Len()
 }
 
 // GetPlatform returns cluster's platform type e.g. "dataproc"
@@ -413,8 +403,10 @@ func (c *DataprocCluster) MonitorJobs() {
 				// Drop job from the cluster's jobs list
 				c.Jobs.Remove(elem.Index)
 
-				// Release job slot
-				c.ReleaseJobSlot()
+				// Eventually release resources
+				if c.Jobs.Len() == 0 {
+					c.FreeResources()
+				}
 			}
 		}
 	}

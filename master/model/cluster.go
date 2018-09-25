@@ -3,7 +3,6 @@ package model
 import (
 	"obi/master/utils"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -57,9 +56,7 @@ type ClusterBaseInterface interface {
 	AllocateResources() error
 	FreeResources() error
 	MonitorJobs()
-	AllocateJobSlot()
-	ReleaseJobSlot()
-	GetAllocatedJobSlots() int32
+	GetAllocatedJobSlots() int
 }
 
 
@@ -93,20 +90,3 @@ func (c *ClusterBase) SetMetrics(newStatus HeartbeatMessage) {
 	c.metrics.Append(newStatus)
 }
 
-// AddJob increments the internal counter of running jobs
-// thread-safe
-func (c *ClusterBase) AllocateJobSlot() {
-	c.AssignedJobs = atomic.AddInt32(&c.AssignedJobs, 1)
-}
-
-// ReleaseJobSlot decrements the internal counter of running jobs
-// thread-safe
-func (c *ClusterBase) ReleaseJobSlot() {
-	c.AssignedJobs = atomic.AddInt32(&c.AssignedJobs, -1)
-}
-
-// GetAllocatedJobSlots return the assigned jobs count
-// thread-safe
-func (c *ClusterBase) GetAllocatedJobSlots() int32 {
-	return atomic.LoadInt32(&c.AssignedJobs)
-}
