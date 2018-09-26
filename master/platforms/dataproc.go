@@ -392,7 +392,7 @@ func (c *DataprocCluster) MonitorJobs() {
 	for {
 		time.Sleep(time.Second * 30)
 		for elem := range c.Jobs.Iter() {
-			logrus.WithField("elem", elem).Info("monitoring")
+			logrus.WithField("jobs-len", c.Jobs.Len()).Info("monitoring jobs")
 			job := elem.Value.(*m.Job)
 			logrus.WithField("job", job).Info("monitoring job")
 			logrus.WithField("job", *job).Info("monitoring job")
@@ -421,13 +421,17 @@ func (c *DataprocCluster) MonitorJobs() {
 				}
 
 				// Drop job from the cluster's jobs list
+				logrus.WithField("job", job).Info("Job status updated")
+				logrus.WithField("tombstone", elem.Index).Info("Marking for deletion")
 				c.Jobs.MarkTombstone(elem.Index)
+				logrus.Info("tombstone marked")
 			}
 		}
 		// Force synchronization between tombstone markers and concurrent slice
 		c.Jobs.Sync()
 		// Eventually release resources
 		if c.Jobs.Len() == 0 {
+			logrus.WithField("cluster", c.Name).Info("Freeing resources")
 			c.FreeResources()
 		}
 	}

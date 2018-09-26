@@ -1,6 +1,8 @@
 package utils
 
-import "sync"
+import (
+	"sync"
+)
 
 // ConcurrentSlice is a wrapper for a slice can be safely shared between goroutines
 type ConcurrentSlice struct {
@@ -48,7 +50,7 @@ func (cs *ConcurrentSlice) Append(item interface{}) {
 // Iter is for getting the iterator for the elements in the slice
 // return a channel containing the items
 func (cs *ConcurrentSlice) Iter() <-chan ConcurrentSliceItem {
-	c := make(chan ConcurrentSliceItem)
+	c := make(chan ConcurrentSliceItem, cs.Len())
 
 	f := func() {
 		cs.RLock()
