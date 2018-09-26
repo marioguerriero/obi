@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc"
 	"github.com/spf13/viper"
 	"path/filepath"
-)
+	)
 
 
 func parseConfig() {
@@ -49,8 +49,6 @@ func main() {
 	grpcServer := grpc.NewServer()
 	RegisterObiMasterServer(grpcServer, master)
 	logrus.Info("Successfully registered OBI Master server")
-
-	// TODO: Use encrypted TLS connection
 
 	// Start serving
 	logrus.Info("Start serving requests on port ", port)

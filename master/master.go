@@ -27,17 +27,9 @@ type ObiMaster struct {
 	priorities map[string]int
 }
 
-// ListInfrastructures RPC for listing the available infrastructure services
-// @param ctx
-// @param msg
-func (m *ObiMaster) ListInfrastructures(ctx context.Context,
-		msg *Empty) (*ListInfrastructuresResponse, error) {
-	return nil, nil
-}
-
 // SubmitJob remote procedure call used to submit a job to one of the OBI infrastructures
 func (m *ObiMaster) SubmitJob(ctx context.Context,
-		jobRequest *JobSubmissionRequest) (*Empty, error) {
+		jobRequest *JobSubmissionRequest) (*SubmitJobResponse, error) {
 
 	// Create job object to be submitted to the scheduling component
 	var jobType model.JobType
@@ -93,7 +85,7 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 	logrus.WithField("priority-level", job.Priority).Info("Schedule job for execution")
 	m.scheduler.ScheduleJob(&job)
 
-	return new(Empty), nil
+	return &SubmitJobResponse{Message: "Job successfully created."}, nil
 }
 
 // SubmitExecutable accepts and store an executable file
