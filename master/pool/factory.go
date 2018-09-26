@@ -4,11 +4,10 @@ import (
 	"errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"obi/master/model"
-	"obi/master/persistent"
-	"obi/master/platforms"
-	"obi/master/autoscaler/policies"
 	"obi/master/autoscaler"
+	"obi/master/autoscaler/policies"
+	"obi/master/model"
+	"obi/master/platforms"
 )
 
 func newCluster(name, platform string) (model.ClusterBaseInterface, error) {
@@ -30,9 +29,6 @@ func newCluster(name, platform string) (model.ClusterBaseInterface, error) {
 		logrus.WithField("platform-type", platform).Error("Could not create platform")
 		return nil, err
 	}
-
-	// Write created cluster interface to persistent database
-	persistent.Write(cluster)
 
 	return cluster, err
 }

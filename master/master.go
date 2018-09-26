@@ -183,7 +183,7 @@ func CreateMaster() (*ObiMaster) {
 		logrus.WithField("error", err).Error("Unable to load pending jobs from database")
 	}
 	for _, job := range pendingJobs {
-		master.scheduler.ScheduleJob(&job)
+		master.scheduler.ScheduleJob(job)
 	}
 
 	return &master

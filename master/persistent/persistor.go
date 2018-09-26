@@ -94,79 +94,118 @@ func initTables() error {
 	return err
 }
 
-// GetPendingJobs returns all the jobs marked as running[
-func GetPendingJobs() ([]model.Job, error) {
-	return getJobsByState("pending", "")
-}
+func getJobsByStatus(status, cluster string) ([]*model.Job, error) {
+	// Check if database connection is open
+	if database == nil {
+		return nil, errors.New("database connection is not open")
+	}
 
-// GetRunningJobs returns all the jobs marked as running[
-func GetRunningJobs(cluster string) ([]model.Job, error) {
-	return getJobsByState("running", cluster)
-}
-
-// GetJobsByState returns all the jobs marked with a certain state
-func getJobsByState(state string, cluster string) ([]model.Job, error) {
 	// Query jobs
-	var query string
 	var rows *sql.Rows
 	var err error
-
-	if len(cluster) > 0 {
-		query = `SELECT CreationTimestamp, ExecutablePath, Type, Priority, Status,
-			  PredictedDuration, FailureProbability, Arguments FROM Job WHERE Status='$1' AND ClusterName='$2'`
-		rows, err = database.Query(query, state, cluster)
+	if len(cluster) == 0 {
+		query := `SELECT ID, CreationTimestamp, ExecutablePath, Type, Status, Priority,
+			PredictedDuration, FailureProbability, Arguments, PlatformDependentID 
+				FROM Job WHERE Status='$1'`
+		rows, err = database.Query(query, status)
 	} else {
-		query = `SELECT CreationTimestamp, ExecutablePath, Type, Priority, Status,
-			  PredictedDuration, FailureProbability, Arguments FROM Job WHERE Status='$1'`
-		rows, err = database.Query(query, state)
+		query := `SELECT ID, CreationTimestamp, ExecutablePath, Type, Status, Priority,
+			PredictedDuration, FailureProbability, Arguments, PlatformDependentID 
+				FROM Job WHERE Status='$1' AND ClusterName='$2'`
+		rows, err = database.Query(query, status, cluster)
 	}
 	defer rows.Close()
 	if err != nil {
 		return nil, err
 	}
+	return extractJobsFromRows(rows)
+}
 
-	// Build job objects
-	var jobs []model.Job
+// GetPendingJobs returns all the jobs marked as running[
+func GetPendingJobs() ([]*model.Job, error) {
+	// Check if database connection is open
+	if database == nil {
+		return nil, errors.New("database connection is not open")
+	}
+
+	// Query jobs
+	query := `SELECT ID, CreationTimestamp, ExecutablePath, Type, Status, Priority,
+			PredictedDuration, FailureProbability, Arguments, PlatformDependentID 
+				FROM Job WHERE Status='pending'`
+	rows, err := database.Query(query)
+	defer rows.Close()
+	if err != nil {
+		return nil, err
+	}
+	return extractJobsFromRows(rows)
+}
+
+// GetRunningJobs returns all the jobs marked as running[
+func GetRunningJobs(cluster string) ([]*model.Job, error) {
+	// Check if database connection is open
+	if database == nil {
+		return nil, errors.New("database connection is not open")
+	}
+
+	// Query jobs
+	query := `SELECT ID, CreationTimestamp, ExecutablePath, Type, Status, Priority,
+			PredictedDuration, FailureProbability, Arguments, PlatformDependentID 
+				FROM Job WHERE Status='running' AND ClusterName=$1`
+	rows, err := database.Query(query, cluster)
+	defer rows.Close()
+	if err != nil {
+		return nil, err
+	}
+	return extractJobsFromRows(rows)
+}
+
+func extractJobsFromRows(rows *sql.Rows) ([]*model.Job, error) {
+	var jobs []*model.Job
 
 	for rows.Next() {
+		var id int
 		var creationTimestamp time.Time
 		var executablePath string
-		var jobType string
-		var jobTypeCode model.JobType
-		var status string
-		var statusCode model.JobStatus
+		var jobTypeDescription string
+		var jobType model.JobType
+		var statusDescription string
+		var status model.JobStatus
 		var priority int32
 		var predictedDuration int
 		var failureProbability float32
 		var args string
+		var platformId string
 
-		err := rows.Scan(&creationTimestamp, &executablePath, &jobType,
-			&status, &priority, &predictedDuration, &failureProbability, &args)
+		err := rows.Scan(&id, &creationTimestamp, &executablePath, &jobTypeDescription,
+			&statusDescription, &priority, &predictedDuration, &failureProbability, &args,
+			&platformId)
 		if err != nil {
 			return nil, err
 		}
 
 		// find out job type
 		for k, v := range model.JobTypeNames {
-			if jobType == v {
-				jobTypeCode = k
+			if jobTypeDescription == v {
+				jobType = k
 			}
 		}
 
 		// find out job type
 		for k, v := range model.JobStatusNames {
-			if status == v {
-				statusCode = k
+			if statusDescription == v {
+				status = k
 			}
 		}
 
-		jobs = append(jobs, model.Job{
-			CreationTimestamp:  creationTimestamp,
-			ExecutablePath:     executablePath,
-			Type:               jobTypeCode,
-			Priority:           priority,
-			Status: 			statusCode,
-			Args:               args,
+		jobs = append(jobs, &model.Job{
+			ID:				   id,
+			CreationTimestamp: creationTimestamp,
+			ExecutablePath:    executablePath,
+			Type:              jobType,
+			Priority:          priority,
+			Status:            status,
+			Args:              args,
+			PlatformDependentID: platformId,
 		})
 	}
 
@@ -316,6 +355,29 @@ func insertClusterQuery(cluster model.ClusterBaseInterface) error {
 		cluster.GetAllocatedJobSlots(),
 	)
 	return nil
+}
+
+func GetRunningDatabaseCreationTimestamp(cluster string) (*time.Time, bool) {
+	// Check if database connection is open
+	if database == nil {
+		return nil, false
+	}
+
+	// Check if the cluster exists in database
+	if !rowExists(`SELECT CreationTimestamp FROM Cluster WHERE Name=$1 AND Status='running'`, cluster) {
+		return nil, false
+	}
+
+	// Query cluster
+	var ts time.Time
+
+	query := `SELECT CreationTimestamp
+				FROM Cluster WHERE Status='running' AND Name=$1`
+	err := database.QueryRow(query, cluster).Scan(&ts)
+	if err != nil {
+		return nil, false
+	}
+	return &ts, true
 }
 
 func updateClusterQuery(cluster model.ClusterBaseInterface) error {

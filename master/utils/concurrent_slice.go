@@ -29,7 +29,7 @@ func NewConcurrentSlice(size int, fixed bool) *ConcurrentSlice {
 // @param item is the item to append
 func (cs *ConcurrentSlice) Append(item interface{}) {
 	cs.Lock()
-	defer cs.Lock()
+	defer cs.Unlock()
 
 	cs.items = append(cs.items, item)
 

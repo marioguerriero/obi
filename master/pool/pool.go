@@ -1,14 +1,13 @@
 package pool
 
 import (
-		"obi/master/autoscaler"
+	"github.com/golang/protobuf/ptypes"
+	"github.com/sirupsen/logrus"
+	"obi/master/autoscaler"
 	"obi/master/model"
-	"obi/master/persistent"
 	"sync"
 	"time"
-	"github.com/sirupsen/logrus"
-	"github.com/golang/protobuf/ptypes"
-	)
+)
 
 // Pool is the struct for clusters monitoring. Each created cluster is added in the pool
 // in order to use them in all the different modules of the system.
@@ -52,11 +51,6 @@ func (p *Pool) AddCluster(cluster model.ClusterBaseInterface, autoscaler *autosc
 // RemoveCluster is for deleting a cluster from the pool, turning off its autoscaler
 // @param clusterName is the name of the cluster
 func (p *Pool) RemoveCluster(clusterName string) {
-	// Update persistent storage
-	c, _ := p.GetCluster(clusterName)
-	c.(model.ClusterBaseInterface).SetStatus(model.ClusterStatusClosed)
-	persistent.Write(c.(model.ClusterBaseInterface))
-
 	// Delete cluster from pool
 	p.clusters.Delete(clusterName)
 

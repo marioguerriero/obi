@@ -65,8 +65,12 @@ func NewDataprocCluster(
 	if err != nil {
 		logrus.WithField("error", err).Error("Could not read previously running jobs")
 	}
-	for j := range runningJobs {
-		cluster.Jobs.Append(&j)
+	for _, j := range runningJobs {
+		logrus.WithField("job", *j).Info("Attaching already running job to this cluster")
+		// Attach current cluster to the job
+		j.Cluster = cluster
+		// Add job in cluster's execution list
+		cluster.Jobs.Append(j)
 	}
 
 	// Start job monitoring routine
@@ -112,6 +116,14 @@ func NewExistingDataprocCluster(projectID string, region string, zone string, cl
 			"dataproc",
 			viper.GetString("heart	beat.host"),
 			8080)
+
+		// Update cluster base creation timestamp
+		ts, ok := persistent.GetRunningDatabaseCreationTimestamp(newBaseCluster.Name)
+		logrus.WithField("ts", ts).WithField("ok", ok).Info("get running database timestamp")
+		if ok {
+			newBaseCluster.CreationTimestamp = *ts
+			logrus.WithField("timestamp", newBaseCluster.CreationTimestamp).Info("Read timestamp")
+		}
 
 		var preemptibleNodes int32
 		if resp.Config.SecondaryWorkerConfig != nil {
@@ -212,10 +224,6 @@ func (c *DataprocCluster) SubmitJob(job *m.Job) error {
 
 	// TODO generalize this function to deploy any type of job, not only PySpark
 
-	// Lock cluster's jobs list
-	c.Jobs.Lock()
-	defer c.Jobs.Unlock()
-
 	req := &dataprocpb.SubmitJobRequest{
 		ProjectId: c.ProjectID,
 		Region:    c.Region,
@@ -234,6 +242,8 @@ func (c *DataprocCluster) SubmitJob(job *m.Job) error {
 
 	dataprocJob, err := controller.SubmitJob(ctx, req)
 	job.PlatformDependentID = dataprocJob.Reference.JobId
+
+	logrus.WithField("cluster", c.ClusterBase.Name).Info("Cluster has been assigned with a new job")
 
 	// Add job to the cluster's list
 	c.Jobs.Append(job)
@@ -318,6 +328,10 @@ func (c *DataprocCluster) AllocateResources() error {
 	}
 	c.Status = m.ClusterStatusRunning
 	logrus.WithField("name", c.Name).Info("New cluster on Dataproc platform")
+
+	// Write created cluster interface to persistent database
+	persistent.Write(c)
+
 	return nil
 }
 
@@ -344,6 +358,11 @@ func (c *DataprocCluster) FreeResources() error {
 		return err
 	}
 	logrus.WithField("name", c.Name).Info("Deleted cluster on Dataproc platform")
+
+	// Update persistent storage
+	c.Status = m.ClusterStatusClosed
+	persistent.Write(c)
+
 	return nil
 }
 
@@ -370,12 +389,15 @@ func (c *DataprocCluster) MonitorJobs() {
 		logrus.WithField("error", err).Error("'NewJobControllerClient' method call failed")
 	}
 
+	logrus.WithField("cluster-name", c.Name).Info("Starting cluster monitoring routine")
+
 	for {
-		time.Sleep(time.Minute)
-
+		time.Sleep(time.Second * 30)
 		for elem := range c.Jobs.Iter() {
+			logrus.WithField("elem", elem).Info("monitoring")
 			job := elem.Value.(*m.Job)
-
+			logrus.WithField("job", job).Info("monitoring job")
+			logrus.WithField("job", *job).Info("monitoring job")
 			// Query job controller
 			j, _ := controller.GetJob(ctx, &dataprocpb.GetJobRequest{
 				ProjectId: c.ProjectID,
