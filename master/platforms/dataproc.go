@@ -421,10 +421,7 @@ func (c *DataprocCluster) MonitorJobs() {
 				}
 
 				// Drop job from the cluster's jobs list
-				logrus.WithField("job", job).Info("Job status updated")
-				logrus.WithField("tombstone", elem.Index).Info("Marking for deletion")
 				c.Jobs.MarkTombstone(elem.Index)
-				logrus.Info("tombstone marked")
 			}
 		}
 		// Force synchronization between tombstone markers and concurrent slice
