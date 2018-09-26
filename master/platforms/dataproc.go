@@ -387,6 +387,7 @@ func (c *DataprocCluster) MonitorJobs() {
 		logrus.WithField("error", err).Error("'NewJobControllerClient' method call failed")
 	}
 
+	c.isMonitoring = true
 	logrus.WithField("cluster-name", c.Name).Info("Starting cluster monitoring routine")
 
 	for {
