@@ -414,3 +414,12 @@ func rowExists(query string, args ...interface{}) bool {
 	}
 	return exists
 }
+
+func ClusterExists(clusterName string) (bool, error) {
+	// Check if database connection is open
+	if database == nil {
+		return false, errors.New("database connection is not open")
+	}
+
+	return rowExists(`SELECT * FROM Cluster WHERE Name = $1 AND Status = 'running'`, clusterName), nil
+}

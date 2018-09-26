@@ -9,6 +9,7 @@ import (
 	"obi/master/model"
 	"obi/master/platforms"
 	"obi/master/pool"
+	"obi/master/persistent"
 )
 
 // Receiver is the heartbeat module in charge of updating clusters metrics.
@@ -89,15 +90,23 @@ func receiverRoutine(pool *pool.Pool) {
 		} else {
 			logrus.Info("Received metrics for a cluster not in the pool.")
 
-			newCluster, err := platforms.NewExistingCluster("dataproc", m.GetClusterName())
-			if err == nil {
-				policy :=  policies.NewWorkload(0.5)
-				a := autoscaler.New(policy, 60, newCluster.(model.Scalable), false)
-				pool.AddCluster(newCluster, a)
+			res, err := persistent.ClusterExists(m.GetClusterName())
+			if err != nil {
+				continue
+			}
+			if res {
+				newCluster, err := platforms.NewExistingCluster("dataproc", m.GetClusterName())
+				if err == nil {
+					policy :=  policies.NewWorkload(0.5)
+					a := autoscaler.New(policy, 60, newCluster.(model.Scalable), false)
+					pool.AddCluster(newCluster, a)
 
-				logrus.WithField("clusterName", m.GetClusterName()).Info("Added cluster in the pool")
-			} else {
-				logrus.WithField("Error", err).Error("Existing cluster not inserted in the pool")
+					a.StartMonitoring()
+
+					logrus.WithField("clusterName", m.GetClusterName()).Info("Added cluster in the pool")
+				} else {
+					logrus.WithField("Error", err).Error("Existing cluster not inserted in the pool")
+				}
 			}
 		}
 	}
