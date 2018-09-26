@@ -88,7 +88,7 @@ func receiverRoutine(pool *pool.Pool) {
 			cluster.AddMetricsSnapshot(m)
 			logrus.WithField("clusterName", m.GetClusterName()).Info("Metrics updated")
 		} else {
-			logrus.Info("Received metrics for a cluster not in the pool.")
+			logrus.WithField("clusterName", m.GetClusterName()).Info("Received metrics for a cluster not in the pool.")
 
 			clusterExists, err := persistent.ClusterExists(m.GetClusterName())
 			if err != nil {
