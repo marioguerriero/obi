@@ -2,13 +2,14 @@ package pool
 
 import (
 	"fmt"
-		"github.com/sirupsen/logrus"
-			"obi/master/model"
-	"obi/master/utils"
-		"obi/master/predictor"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
-		)
+	"obi/master/model"
+	"obi/master/persistent"
+	"obi/master/predictor"
+	"obi/master/utils"
+)
 
 // Submitter is the struct that is used by the scheduler to deploy new jobs.
 // It exposes a method that receives as parameter the list of jobs to deploy in the same cluster.
@@ -44,7 +45,7 @@ func NewSubmitter() *Submitter {
 
 // DeployJobs is for deploying the list of jobs into a single cluster
 // @param jobs is the list of jobs to deploy
-func (s *Submitter) DeployJobs(jobs []model.Job) {
+func (s *Submitter) DeployJobs(jobs []*model.Job) {
 
 	// Create new cluster
 	clusterName := fmt.Sprintf("obi-%s", utils.RandomString(10))
@@ -55,8 +56,12 @@ func (s *Submitter) DeployJobs(jobs []model.Job) {
 	}
 
 	for _, job := range jobs {
-		cluster.AddJob()
-		job.AssignedCluster = clusterName
+		// Update job status
+		job.Cluster = cluster
+		job.Status = model.JobStatusRunning
+		// Submit job for execution
 		cluster.SubmitJob(job)
+		// Update persistent storage
+		persistent.Write(job)
 	}
 }

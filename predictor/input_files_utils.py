@@ -582,8 +582,8 @@ def _get_csv_recreate_input_size(backend, date, day_diff=0):
     storage_client = storage.Client()
     bucket = storage_client.bucket('dhg-backend')
 
-    changed_path = BUCKET_PREFIX + source_prefix + '/changelogs/' + \
-                   today + '.changed.txt'
+    changed_path = \
+        BUCKET_PREFIX + source_prefix + '/changelogs/' + today + '.changed.txt'
     name_clean = changed_path.replace('gs://', '')
     changed_tables = storage.Blob(name_clean, bucket) \
         .download_as_string().split('\n')

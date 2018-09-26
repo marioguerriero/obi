@@ -16,7 +16,7 @@ const (
 )
 
 type bin struct {
-	jobs []model.Job
+	jobs []*model.Job
 	cumulativeValue int32
 }
 
@@ -69,9 +69,9 @@ func (s *Scheduler) Stop() {
 }
 
 // ScheduleJob if for adding a new job in the bins
-func (s *Scheduler) ScheduleJob(job model.Job) {
+func (s *Scheduler) ScheduleJob(job *model.Job) {
 	if job.Priority >= int32(len(s.levels)) {
-		go s.submitter.DeployJobs([]model.Job{job})
+		go s.submitter.DeployJobs([]*model.Job{job})
 	} else {
 		schedulerLevel := &s.levels[job.Priority]
 		switch schedulerLevel.Policy {
@@ -84,7 +84,7 @@ func (s *Scheduler) ScheduleJob(job model.Job) {
 	return
 }
 
-func timeDurationAddJob(ls *levelScheduler, job model.Job) {
+func timeDurationAddJob(ls *levelScheduler, job *model.Job) {
 	ls.Lock()
 	defer ls.Unlock()
 	for i := range ls.bins {
@@ -101,7 +101,7 @@ func timeDurationAddJob(ls *levelScheduler, job model.Job) {
 	ls.bins[len(ls.bins)-1].cumulativeValue = job.PredictedDuration
 }
 
-func countAddJob(ls *levelScheduler, job model.Job) {
+func countAddJob(ls *levelScheduler, job *model.Job) {
 	ls.Lock()
 	defer ls.Unlock()
 	for i := range ls.bins {
@@ -137,4 +137,3 @@ func schedulingRoutine(ls *levelScheduler, s *pool.Submitter, quit <-chan struct
 		time.Sleep(time.Duration(ls.Timeout) * time.Second)
 	}
 }
-

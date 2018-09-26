@@ -4,8 +4,6 @@ import socket
 import sys
 import urllib.request
 
-from google.protobuf.timestamp_pb2 import Timestamp
-
 HOSTNAME = socket.gethostname()
 CLUSTER_NAME = HOSTNAME[:-2]
 

@@ -10,6 +10,7 @@ import (
 	"google.golang.org/genproto/protobuf/field_mask"
 	"math"
 	m "obi/master/model"
+	"obi/master/persistent"
 	"obi/master/utils"
 	"strconv"
 	"strings"
@@ -50,13 +51,28 @@ func NewDataprocCluster(
 		region string,
 		preemptibleNodes int32,
     ) *DataprocCluster {
-	return &DataprocCluster{
+	baseInfo.Platform = "dataproc"
+	cluster := &DataprocCluster{
 		baseInfo,
 		projectID,
 		zone,
 		region,
 		preemptibleNodes,
 	}
+
+	// Recover running jobs (if anny)
+	runningJobs, err := persistent.GetRunningJobs(baseInfo.Name)
+	if err != nil {
+		logrus.WithField("error", err).Error("Could not read previously running jobs")
+	}
+	for j := range runningJobs {
+		cluster.Jobs.Append(&j)
+	}
+
+	// Start job monitoring routine
+	go cluster.MonitorJobs()
+
+	return cluster
 }
 
 // NewExistingDataprocCluster is the constructor of DataprocCluster for already allocated resources in Dataproc
@@ -102,13 +118,13 @@ func NewExistingDataprocCluster(projectID string, region string, zone string, cl
 			preemptibleNodes = resp.Config.SecondaryWorkerConfig.NumInstances
 		}
 
-		newCluster = &DataprocCluster{
+		newCluster = NewDataprocCluster(
 			newBaseCluster,
 			projectID,
 			zone,
 			region,
 			preemptibleNodes,
-		}
+		)
 	}
 	return newCluster, nil
 }
@@ -186,7 +202,7 @@ func (c *DataprocCluster) GetName() string {
 }
 
 // SubmitJob is for sending a new job to Dataproc
-func (c *DataprocCluster) SubmitJob(job m.Job) error {
+func (c *DataprocCluster) SubmitJob(job *m.Job) error {
 	ctx := context.Background()
 	controller, err := dataproc.NewJobControllerClient(ctx)
 	if err != nil {
@@ -195,6 +211,10 @@ func (c *DataprocCluster) SubmitJob(job m.Job) error {
 	}
 
 	// TODO generalize this function to deploy any type of job, not only PySpark
+
+	// Lock cluster's jobs list
+	c.Jobs.Lock()
+	defer c.Jobs.Unlock()
 
 	req := &dataprocpb.SubmitJobRequest{
 		ProjectId: c.ProjectID,
@@ -213,26 +233,10 @@ func (c *DataprocCluster) SubmitJob(job m.Job) error {
 	}
 
 	dataprocJob, err := controller.SubmitJob(ctx, req)
+	job.PlatformDependentID = dataprocJob.Reference.JobId
 
-	// Start routine to kill the cluster once the job is finished
-	go func() {
-		for {
-			time.Sleep(time.Minute)
-			// Query job controller
-			j, _ := controller.GetJob(ctx, &dataprocpb.GetJobRequest{
-				ProjectId: c.ProjectID,
-				Region:    c.Region,
-				JobId:     dataprocJob.Reference.JobId,
-			})
-			if j.Status.State == dataprocpb.JobStatus_DONE ||
-				j.Status.State == dataprocpb.JobStatus_ERROR ||
-				j.Status.State == dataprocpb.JobStatus_CANCELLED {
-
-				c.RemoveJob()
-				return
-			}
-		}
-	}()
+	// Add job to the cluster's list
+	c.Jobs.Append(job)
 
 	if err != nil {
 		logrus.WithField("error", err).Error("'SubmitJob' method call failed")
@@ -312,6 +316,7 @@ func (c *DataprocCluster) AllocateResources() error {
 		logrus.WithField("error", err).Error("'Wait' method call for CreateCluster operation failed")
 		return err
 	}
+	c.Status = m.ClusterStatusRunning
 	logrus.WithField("name", c.Name).Info("New cluster on Dataproc platform")
 	return nil
 }
@@ -342,19 +347,85 @@ func (c *DataprocCluster) FreeResources() error {
 	return nil
 }
 
-// AddJob increments the internal counter of running jobs
-func (c *DataprocCluster) AddJob() {
-	c.ClusterBase.AddJob()
+// GetAllocatedJobSlots returns the number of jobs the cluster is currently handling
+func (c *DataprocCluster) GetAllocatedJobSlots() int {
+	return c.Jobs.Len()
 }
 
-// RemoveJob decrements the internal counter of running jobs and, if none remaining, deallocates the cluster
-func (c *DataprocCluster) RemoveJob() {
-	c.ClusterBase.RemoveJob()
-	if c.AssignedJobs == 0 {
-		logrus.WithField("name", c.Name).Info("No more jobs. Freeing resources on Dataproc")
-		c.FreeResources()
+// GetPlatform returns cluster's platform type e.g. "dataproc"
+func (c *DataprocCluster) GetPlatform() string {
+	return c.Platform
+}
+
+// GetCreationTimestamp return cluster's creation timestamp
+func (c *DataprocCluster) GetCreationTimestamp() time.Time {
+	return c.CreationTimestamp
+}
+
+// MonitorJobs track job execution status
+func (c *DataprocCluster) MonitorJobs() {
+	ctx := context.Background()
+	controller, err := dataproc.NewJobControllerClient(ctx)
+	if err != nil {
+		logrus.WithField("error", err).Error("'NewJobControllerClient' method call failed")
+	}
+
+	for {
+		time.Sleep(time.Minute)
+
+		for elem := range c.Jobs.Iter() {
+			job := elem.Value.(*m.Job)
+
+			// Query job controller
+			j, _ := controller.GetJob(ctx, &dataprocpb.GetJobRequest{
+				ProjectId: c.ProjectID,
+				Region:    c.Region,
+				JobId:     job.PlatformDependentID,
+			})
+			if j.Status.State == dataprocpb.JobStatus_DONE ||
+				j.Status.State == dataprocpb.JobStatus_ERROR ||
+				j.Status.State == dataprocpb.JobStatus_CANCELLED {
+
+				// Update persistent storage with new job status
+				previousState := job.Status
+				if j.Status.State == dataprocpb.JobStatus_DONE {
+					job.Status = m.JobStatusCompleted
+				} else if j.Status.State == dataprocpb.JobStatus_ERROR ||
+					j.Status.State == dataprocpb.JobStatus_CANCELLED {
+					job.Status = m.JobStatusFailed
+				}
+
+				// Update job in persistent store if its state changed
+				if previousState != job.Status {
+					persistent.Write(job)
+				}
+
+				// Drop job from the cluster's jobs list
+				c.Jobs.Remove(elem.Index)
+
+				// Eventually release resources
+				if c.Jobs.Len() == 0 {
+					c.FreeResources()
+				}
+			}
+		}
 	}
 }
 
-// <-- end implementation of `ClusterBaseInterface` interface -->
+// GetCost returns cluster's cost so far in dollars
+func (c *DataprocCluster) GetCost() float32 {
+	metricsCount := c.GetMetrics().Len()
+	m := c.GetMetrics().Get(metricsCount-1).(m.HeartbeatMessage)
+	return m.Cost
+}
 
+// GetStatus returns cluster's status e.g. "running"
+func (c *DataprocCluster) GetStatus() m.ClusterStatus {
+	return c.Status
+}
+
+// SetStatus set cluster's status e.g. "running"
+func (c *DataprocCluster) SetStatus(s m.ClusterStatus) {
+	c.Status = s
+}
+// <-- end implementation of `ClusterBaseInterface` interface -->
