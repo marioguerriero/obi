@@ -174,11 +174,11 @@ func extractJobsFromRows(rows *sql.Rows) ([]*model.Job, error) {
 		var predictedDuration int
 		var failureProbability float32
 		var args string
-		var platformId string
+		var platformID string
 
 		err := rows.Scan(&id, &creationTimestamp, &executablePath, &jobTypeDescription,
 			&statusDescription, &priority, &predictedDuration, &failureProbability, &args,
-			&platformId)
+			&platformID)
 		if err != nil {
 			return nil, err
 		}
@@ -198,14 +198,14 @@ func extractJobsFromRows(rows *sql.Rows) ([]*model.Job, error) {
 		}
 
 		jobs = append(jobs, &model.Job{
-			ID:				   id,
-			CreationTimestamp: creationTimestamp,
-			ExecutablePath:    executablePath,
-			Type:              jobType,
-			Priority:          priority,
-			Status:            status,
-			Args:              args,
-			PlatformDependentID: platformId,
+			ID:                  id,
+			CreationTimestamp:   creationTimestamp,
+			ExecutablePath:      executablePath,
+			Type:                jobType,
+			Priority:            priority,
+			Status:              status,
+			Args:                args,
+			PlatformDependentID: platformID,
 		})
 	}
 
@@ -357,6 +357,7 @@ func insertClusterQuery(cluster model.ClusterBaseInterface) error {
 	return nil
 }
 
+// GetRunningDatabaseCreationTimestamp returns the creation timestamp for a given cluster in running state (if any)
 func GetRunningDatabaseCreationTimestamp(cluster string) (*time.Time, bool) {
 	// Check if database connection is open
 	if database == nil {
