@@ -423,13 +423,14 @@ func (c *DataprocCluster) MonitorJobs() {
 				}
 
 				// Drop job from the cluster's jobs list
-				c.Jobs.Remove(elem.Index)
-
-				// Eventually release resources
-				if c.Jobs.Len() == 0 {
-					c.FreeResources()
-				}
+				c.Jobs.MarkTombstone(elem.Index)
 			}
+		}
+		// Force synchronization between tombstone markers and concurrent slice
+		c.Jobs.Sync()
+		// Eventually release resources
+		if c.Jobs.Len() == 0 {
+			c.FreeResources()
 		}
 	}
 }

@@ -6,18 +6,23 @@ import "sync"
 type ConcurrentSlice struct {
 	sync.RWMutex
 	items []interface{}
+	tombstones []bool
 	maxSize int // ignored if not specified
 }
 
 // ConcurrentSliceItem is a wrapper for a slice item
 type ConcurrentSliceItem struct {
-	Index int
-	Value interface{}
+	Index     int
+	Value     interface{}
+	Tombstone bool
 }
 
 // NewConcurrentSlice creates a new concurrent map
 func NewConcurrentSlice(size int, fixed bool) *ConcurrentSlice {
-	cs := &ConcurrentSlice{items: make([]interface{}, size)}
+	cs := &ConcurrentSlice{
+		items: make([]interface{}, size),
+		tombstones: make([]bool, size),
+	}
 	if fixed {
 		cs.maxSize = size
 	}
@@ -32,9 +37,11 @@ func (cs *ConcurrentSlice) Append(item interface{}) {
 	defer cs.Unlock()
 
 	cs.items = append(cs.items, item)
+	cs.tombstones = append(cs.tombstones, false)
 
 	if cs.maxSize > 0 && len(cs.items) > cs.maxSize {
 		cs.items = cs.items[1:]
+		cs.tombstones = cs.tombstones[1:]
 	}
 }
 
@@ -47,7 +54,7 @@ func (cs *ConcurrentSlice) Iter() <-chan ConcurrentSliceItem {
 		cs.RLock()
 		defer cs.RUnlock()
 		for index, value := range cs.items {
-			c <- ConcurrentSliceItem{index, value}
+			c <- ConcurrentSliceItem{index, value, cs.tombstones[index]}
 		}
 		close(c)
 	}
@@ -70,11 +77,25 @@ func (cs *ConcurrentSlice) Get(idx int) interface{} {
 	return cs.items[idx]
 }
 
-// Remove remove one element from the slice
-func (cs *ConcurrentSlice) Remove(idx int) {
+// MarkTombstone inform the concurrent slice that the element at index idx will be removed on next Sync call
+func (cs *ConcurrentSlice) MarkTombstone(idx int) {
 	cs.Lock()
 	defer cs.Unlock()
-	// Replace element to remove with the last one
-	cs.items[idx] = cs.items[len(cs.items)-1]
-	cs.items = cs.items[:len(cs.items)-1]
+	cs.tombstones[idx] = true
+}
+
+// Synchronize the slice with the given tombstone list
+func (cs *ConcurrentSlice) Sync() {
+	cs.Lock()
+	defer cs.Unlock()
+	// Allocate a new elements list
+	sl := make([]interface{}, 0)
+	for idx, tomb := range cs.tombstones {
+		if !tomb {
+			sl = append(sl, cs.items[idx])
+		}
+	}
+	cs.items = sl
+	// Reset tombstone markers
+	cs.tombstones = make([]bool, len(cs.items))
 }
