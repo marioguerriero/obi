@@ -4,12 +4,12 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/sirupsen/logrus"
 	"net"
-	"obi/master/autoscaler"
-	"obi/master/autoscaler/policies"
-	"obi/master/model"
-	"obi/master/platforms"
-	"obi/master/pool"
+			"obi/master/model"
+		"obi/master/pool"
 	"obi/master/persistent"
+	"obi/master/platforms"
+	"obi/master/autoscaler/policies"
+	"obi/master/autoscaler"
 )
 
 // Receiver is the heartbeat module in charge of updating clusters metrics.
@@ -90,24 +90,31 @@ func receiverRoutine(pool *pool.Pool) {
 		} else {
 			logrus.Info("Received metrics for a cluster not in the pool.")
 
-			res, err := persistent.ClusterExists(m.GetClusterName())
+			clusterExists, err := persistent.ClusterExists(m.GetClusterName())
 			if err != nil {
 				continue
 			}
-			if res {
-				newCluster, err := platforms.NewExistingCluster("dataproc", m.GetClusterName())
-				if err == nil {
-					policy :=  policies.NewWorkload(0.5)
-					a := autoscaler.New(policy, 60, newCluster.(model.Scalable), false)
-					pool.AddCluster(newCluster, a)
 
-					a.StartMonitoring()
+			newCluster, err := platforms.NewExistingCluster("dataproc", m.GetClusterName())
+			if err != nil {
+				logrus.WithField("Error", err).Error("Existing cluster not inserted in the pool")
+				continue
 
-					logrus.WithField("clusterName", m.GetClusterName()).Info("Added cluster in the pool")
-				} else {
-					logrus.WithField("Error", err).Error("Existing cluster not inserted in the pool")
-				}
 			}
+
+			if clusterExists {
+				policy :=  policies.NewWorkload(0.5)
+				a := autoscaler.New(policy, 60, newCluster.(model.Scalable), false)
+				pool.AddCluster(newCluster, a)
+
+				a.StartMonitoring()
+
+				logrus.WithField("clusterName", m.GetClusterName()).Info("Added cluster in the pool")
+			} else {
+				newCluster.FreeResources()
+			}
+
+
 		}
 	}
 }
