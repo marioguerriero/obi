@@ -36,6 +36,7 @@ type DataprocCluster struct {
 	Zone string
 	Region string
 	PreemptibleNodes int32
+	isMonitoring bool
 }
 
 // NewDataprocCluster is the constructor of DataprocCluster struct
@@ -58,6 +59,7 @@ func NewDataprocCluster(
 		zone,
 		region,
 		preemptibleNodes,
+		false,
 	}
 
 	// Recover running jobs (if anny)
@@ -69,12 +71,8 @@ func NewDataprocCluster(
 		logrus.WithField("job", *j).Info("Attaching already running job to this cluster")
 		// Attach current cluster to the job
 		j.Cluster = cluster
-		// Add job in cluster's execution list
-		cluster.Jobs.Append(j)
+		cluster.appendJob(j)
 	}
-
-	// Start job monitoring routine
-	go cluster.MonitorJobs()
 
 	return cluster
 }
@@ -246,7 +244,7 @@ func (c *DataprocCluster) SubmitJob(job *m.Job) error {
 	logrus.WithField("cluster", c.ClusterBase.Name).Info("Cluster has been assigned with a new job")
 
 	// Add job to the cluster's list
-	c.Jobs.Append(job)
+	c.appendJob(job)
 
 	if err != nil {
 		logrus.WithField("error", err).Error("'SubmitJob' method call failed")
@@ -452,3 +450,13 @@ func (c *DataprocCluster) SetStatus(s m.ClusterStatus) {
 	c.Status = s
 }
 // <-- end implementation of `ClusterBaseInterface` interface -->
+
+func (c *DataprocCluster) appendJob(job *m.Job) {
+	// Add job in cluster's execution list
+	c.Jobs.Append(job)
+	// Start monitoring jobs
+	if !c.isMonitoring {
+		// Start job monitoring routine
+		go c.MonitorJobs()
+	}
+}
