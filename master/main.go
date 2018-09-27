@@ -8,7 +8,13 @@ import (
 	"google.golang.org/grpc"
 	"github.com/spf13/viper"
 	"path/filepath"
-	)
+	"context"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/codes"
+	"obi/master/persistent"
+	"strconv"
+)
 
 
 func parseConfig() {
@@ -25,6 +31,37 @@ func parseConfig() {
 	if err != nil {
 		logrus.WithField("err", err).Fatalln("Unable to read configuration")
 	}
+}
+
+func streamInterceptor(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	if err := authorize(stream.Context()); err != nil {
+		return err
+	}
+
+	return handler(srv, stream)
+}
+
+func unaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	if err := authorize(ctx); err != nil {
+		return nil, err
+	}
+
+	return handler(ctx, req)
+}
+
+func authorize(ctx context.Context) error {
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		username := md.Get("username")[0]
+		password := md.Get("password")[0]
+		if id, err := persistent.GetUserID(username, password); err == nil {
+			md.Set("UserID", strconv.Itoa(id))
+			return nil
+		}
+
+		return status.Errorf(codes.PermissionDenied, "Invalid credentials")
+	}
+
+	return status.Errorf(codes.PermissionDenied, "Missing credentials")
 }
 
 func main() {
@@ -46,7 +83,10 @@ func main() {
 	logrus.Info("Successfully opened connection listener")
 
 	// Create gRPC server
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.StreamInterceptor(streamInterceptor),
+		grpc.UnaryInterceptor(unaryInterceptor),
+	)
 	RegisterObiMasterServer(grpcServer, master)
 	logrus.Info("Successfully registered OBI Master server")
 

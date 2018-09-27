@@ -47,7 +47,7 @@ func CreatePersistentConnection() error {
 
 func initTables() error {
 	// Create users table
-	createUsersTableQuery := "CREATE TABLE IF NOT EXISTS RegisteredUser (ID SERIAL PRIMARY KEY, Email TEXT);"
+	createUsersTableQuery := "CREATE TABLE IF NOT EXISTS Users (ID SERIAL PRIMARY KEY, Email TEXT, Password CHAR(32));"
 
 	_, err := database.Exec(createUsersTableQuery)
 	if err != nil {
@@ -422,4 +422,19 @@ func ClusterExists(clusterName string) (bool, error) {
 	}
 
 	return rowExists(`SELECT * FROM Cluster WHERE Name = $1 AND Status = 'running'`, clusterName), nil
+}
+
+func GetUserID(username string, password string) (int, error) {
+	var id int
+	// Check if database connection is open
+	if database == nil {
+		return 0, errors.New("database connection is not open")
+	}
+
+	query := `SELECT ID FROM RegisteredUser WHERE Email = $1 AND Password = $2`
+	database.QueryRow(query, username, password).Scan(&id)
+	if id == 0 {
+		return 0, errors.New("user not authorized")
+	}
+	return id, nil
 }

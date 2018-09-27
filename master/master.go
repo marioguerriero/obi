@@ -17,6 +17,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+	"google.golang.org/grpc/metadata"
+	"strconv"
 )
 
 // ObiMaster structure representing one master instance for OBI
@@ -40,6 +42,9 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 		jobType = model.JobTypeUndefined
 	}
 
+	md, _ := metadata.FromIncomingContext(ctx)
+	userId, _ := strconv.Atoi(md["userid"][0])
+
 	// Create job structure
 	job := model.Job{
 		CreationTimestamp:  time.Now(),
@@ -48,6 +53,7 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 		Priority:           jobRequest.Priority,
 		Status: 			model.JobStatusPending,
 		Args:               jobRequest.JobArgs,
+		Author:             userId,
 	}
 
 	// Generate predictions before submitting the job
