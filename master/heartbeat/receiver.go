@@ -113,8 +113,6 @@ func receiverRoutine(pool *pool.Pool) {
 			} else {
 				newCluster.FreeResources()
 			}
-
-
 		}
 	}
 }

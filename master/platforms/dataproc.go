@@ -387,15 +387,12 @@ func (c *DataprocCluster) MonitorJobs() {
 		logrus.WithField("error", err).Error("'NewJobControllerClient' method call failed")
 	}
 
-	logrus.WithField("cluster-name", c.Name).Info("Starting cluster monitoring routine")
+	logrus.WithField("cluster-name", c.Name).Info("Starting jobs monitoring routine")
 
 	for {
 		time.Sleep(time.Second * 30)
 		for elem := range c.Jobs.Iter() {
-			logrus.WithField("jobs-len", c.Jobs.Len()).Info("monitoring jobs")
 			job := elem.Value.(*m.Job)
-			logrus.WithField("job", job).Info("monitoring job")
-			logrus.WithField("job", *job).Info("monitoring job")
 			// Query job controller
 			j, _ := controller.GetJob(ctx, &dataprocpb.GetJobRequest{
 				ProjectId: c.ProjectID,
@@ -429,9 +426,14 @@ func (c *DataprocCluster) MonitorJobs() {
 		// Eventually release resources
 		if c.Jobs.Len() == 0 {
 			logrus.WithField("cluster", c.Name).Info("Freeing resources")
-			c.FreeResources()
+			err = c.FreeResources()
+			if err == nil {
+				break
+			}
 		}
 	}
+
+	logrus.WithField("cluster-name", c.Name).Info("Stopping jobs monitoring routine")
 }
 
 // GetCost returns cluster's cost so far in dollars
