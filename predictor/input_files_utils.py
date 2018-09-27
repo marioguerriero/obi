@@ -720,6 +720,7 @@ def get_input_size(job_type, task_type=None, backend=None,
     :return:
     """
     if job_type == 'csv':
+        day_diff = int(day_diff)
         c, s = _get_csv_input_size(task_type, backend, date, day_diff)
     elif job_type == 'ulm':
         c, s = _get_ulm_input_size(task_type, date)
