@@ -76,7 +76,7 @@ func initTables() error {
 		ClusterName VARCHAR(50),
         ClusterCreationTimestamp TIMESTAMP, 
 		Status VARCHAR(20), 
-		Author INT REFERENCES RegisteredUser(ID), 
+		Author INT REFERENCES Users(ID), 
 		CreationTimestamp TIMESTAMP, 
 		LastUpdateTimestamp TIMESTAMP, 
 		ExecutablePath TEXT, 
@@ -431,7 +431,7 @@ func GetUserID(username string, password string) (int, error) {
 		return 0, errors.New("database connection is not open")
 	}
 
-	query := `SELECT ID FROM Users WHERE Email = $1 AND Password = = crypt($2, Password);`
+	query := `SELECT ID FROM Users WHERE Email = $1 AND Password = crypt($2, Password);`
 	database.QueryRow(query, username, password).Scan(&id)
 	if id == 0 {
 		return 0, errors.New("user not authorized")

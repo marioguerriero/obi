@@ -83,7 +83,7 @@ func main() {
 
 func submitJob(request JobSubmissionRequest) {
 	creds := obiCreds {
-		"lomluca",
+		"luca",
 		"ciao123",
 	}
 	credentials := credentials.NewTLS( &tls.Config{ InsecureSkipVerify: true } )
