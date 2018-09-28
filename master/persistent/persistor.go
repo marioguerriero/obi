@@ -10,7 +10,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq" // this is required to use the Postgres connector
-)
+			)
 
 var database *sql.DB
 
@@ -47,7 +47,7 @@ func CreatePersistentConnection() error {
 
 func initTables() error {
 	// Create users table
-	createUsersTableQuery := "CREATE TABLE IF NOT EXISTS Users (ID SERIAL PRIMARY KEY, Email TEXT, Password CHAR(32));"
+	createUsersTableQuery := "CREATE TABLE IF NOT EXISTS Users (ID SERIAL PRIMARY KEY, Email TEXT, Password CHAR(60));"
 
 	_, err := database.Exec(createUsersTableQuery)
 	if err != nil {
@@ -431,7 +431,7 @@ func GetUserID(username string, password string) (int, error) {
 		return 0, errors.New("database connection is not open")
 	}
 
-	query := `SELECT ID FROM RegisteredUser WHERE Email = $1 AND Password = $2`
+	query := `SELECT ID FROM Users WHERE Email = $1 AND Password = = crypt($2, Password);`
 	database.QueryRow(query, username, password).Scan(&id)
 	if id == 0 {
 		return 0, errors.New("user not authorized")
