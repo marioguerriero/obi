@@ -81,7 +81,7 @@ func main() {
 	submitJob(jobRequest)
 }
 
-func submitJob(request JobSubmissionRequest) {
+func submitJob(request JobSubmissionRequest) int32 {
 	creds := obiCreds {
 		"luca",
 		"ciao123",
@@ -103,5 +103,9 @@ func submitJob(request JobSubmissionRequest) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(resp.Message)
+	if resp.Succeded == false {
+		fmt.Println("An error occurred during job submission. Please, contact the administrator.")
+	}
+	fmt.Println("The job has been submitted correctly.")
+	fmt.Printf("The JobID is %d\n", resp.JobID)
 }

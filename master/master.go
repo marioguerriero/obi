@@ -91,7 +91,7 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 	logrus.WithField("priority-level", job.Priority).Info("Schedule job for execution")
 	m.scheduler.ScheduleJob(&job)
 
-	return &SubmitJobResponse{Message: "Job successfully created."}, nil
+	return &SubmitJobResponse{Succeded: true, JobID: int32(job.ID)}, nil
 }
 
 // SubmitExecutable accepts and store an executable file
