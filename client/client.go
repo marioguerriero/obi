@@ -16,6 +16,22 @@ import (
 	"fmt"
 )
 
+type obiCreds struct {
+	username string
+	password string
+}
+
+func (c obiCreds) GetRequestMetadata(ctx context.Context, in ...string) (map[string]string, error) {
+	return map[string]string{
+		"username": c.username,
+		"password": c.password,
+	}, nil
+}
+
+func (c obiCreds) RequireTransportSecurity() bool {
+	return true
+}
+
 
 func main() {
 	var jobRequestType JobSubmissionRequest_JobType
@@ -65,9 +81,17 @@ func main() {
 	submitJob(jobRequest)
 }
 
-func submitJob(request JobSubmissionRequest) {
+func submitJob(request JobSubmissionRequest) int32 {
+	creds := obiCreds {
+		"luca",
+		"ciao123",
+	}
 	credentials := credentials.NewTLS( &tls.Config{ InsecureSkipVerify: true } )
-	conn, err := grpc.Dial("obi.dataops.deliveryhero.de:443", grpc.WithTransportCredentials(credentials))
+	conn, err := grpc.Dial(
+		"obi.dataops.deliveryhero.de:443",
+		grpc.WithTransportCredentials(credentials),
+		grpc.WithPerRPCCredentials(creds),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -79,5 +103,9 @@ func submitJob(request JobSubmissionRequest) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(resp.Message)
+	if resp.Succeded == false {
+		fmt.Println("An error occurred during job submission. Please, contact the administrator.")
+	}
+	fmt.Println("The job has been submitted correctly.")
+	fmt.Printf("The JobID is %d\n", resp.JobID)
 }

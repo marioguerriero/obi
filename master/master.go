@@ -17,6 +17,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+	"google.golang.org/grpc/metadata"
+	"strconv"
 )
 
 // ObiMaster structure representing one master instance for OBI
@@ -40,6 +42,9 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 		jobType = model.JobTypeUndefined
 	}
 
+	md, _ := metadata.FromIncomingContext(ctx)
+	userId, _ := strconv.Atoi(md["userid"][0])
+
 	// Create job structure
 	job := model.Job{
 		CreationTimestamp:  time.Now(),
@@ -48,6 +53,7 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 		Priority:           jobRequest.Priority,
 		Status: 			model.JobStatusPending,
 		Args:               jobRequest.JobArgs,
+		Author:             userId,
 	}
 
 	// Generate predictions before submitting the job
@@ -85,7 +91,7 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 	logrus.WithField("priority-level", job.Priority).Info("Schedule job for execution")
 	m.scheduler.ScheduleJob(&job)
 
-	return &SubmitJobResponse{Message: "Job successfully created."}, nil
+	return &SubmitJobResponse{Succeded: true, JobID: int32(job.ID)}, nil
 }
 
 // SubmitExecutable accepts and store an executable file

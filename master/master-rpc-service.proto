@@ -14,7 +14,8 @@ message Infrastructure {
 // Request/Response messages
 
 message SubmitJobResponse {
-    string message = 1;
+    bool succeded = 1;
+    int32 jobID = 2;
 }
 
 message ListInfrastructuresResponse {
