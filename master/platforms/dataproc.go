@@ -21,10 +21,19 @@ import (
 const InitializationAction = "gs://dhg-obi/cluster-script/init_action.sh"
 
 // NormalNodeCostPerSecond unitary cost of a normal node
-const NormalNodeCostPerSecond = 0.2448 / 60
+const NormalNodeCostPerSecond = 0.2448 / 60 / 60
 
 // PreemptibleNodeCostPerSecond unitary cost of a preemptible node
-const PreemptibleNodeCostPerSecond = 0.04920 / 60
+const PreemptibleNodeCostPerSecond = 0.04920 / 60 / 60
+
+// NodeDiskSize disk size in GB of each node
+const NodeDiskSize = 500
+
+// DiskCost GB cost per second
+const DiskCost = 0.000018
+
+// DataprocNodeCost unitary cost of a Dataproc node per second
+const DataprocNodeCost = 0.04 / 60 / 60
 
 // HeartbeatInterval interval of time at which each heartbeat is sent
 const HeartbeatInterval = 10
@@ -290,6 +299,9 @@ func (c *DataprocCluster) AllocateResources() error {
 						"obi-hb-port": strconv.Itoa(c.HeartbeatPort),
 						"normal-node-cost": strconv.FormatFloat(NormalNodeCostPerSecond, 'f', 16, 64),
 						"preemptible-node-cost": strconv.FormatFloat(PreemptibleNodeCostPerSecond, 'f', 16, 64),
+						"node-disk-size": strconv.FormatInt(NodeDiskSize, 10),
+						"disk-cost": strconv.FormatFloat(DiskCost, 'f', 16, 64),
+						"dataproc-node-cost": strconv.FormatFloat(DataprocNodeCost, 'f', 16, 64),
 						"interval": strconv.Itoa(HeartbeatInterval),
 					},
 				},

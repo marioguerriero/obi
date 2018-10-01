@@ -37,6 +37,12 @@ NORMAL_NODE_COST = get_metadata('normal-node-cost')
 NORMAL_NODE_COST = float(NORMAL_NODE_COST)
 PREEMPTIBLE_NODE_COST = get_metadata('preemptible-node-cost')
 PREEMPTIBLE_NODE_COST = float(PREEMPTIBLE_NODE_COST)
+NODE_DISK_SIZE = get_metadata('node-disk-size')
+NODE_DISK_SIZE = int(NODE_DISK_SIZE)
+DISK_COST = get_metadata('disk-cost')
+DISK_COST = float(DISK_COST)
+DATAPROC_NODE_COST = get_metadata('dataproc-node-cost')
+DATAPROC_NODE_COST = float(DATAPROC_NODE_COST)
 INTERVAL = get_metadata('interval')
 INTERVAL = int(INTERVAL)
 
@@ -125,7 +131,26 @@ def compute_hb():
 
     # Compute new cumulative cost and store it
     global cumulative_cost
-    current_cost = INTERVAL * (NORMAL_NODE_COST * PREEMPTIBLE_NODE_COST)
+
+    normal_nodes = int(os.popen("yarn node -list 2>/dev/null "
+                            "| egrep '[a-zA-Z0-9]+\-[a-zA-Z0-9]+\-w\-' "
+                            "| wc -l").read()) + 1
+    secondary_nodes = int(os.popen("yarn node -list 2>/dev/null "
+                                   "| egrep '[a-zA-Z0-9]+\-[a-zA-Z0-9]+\-sw\-' "
+                                   "| wc -l").read())
+
+    gce_cost = normal_nodes * NORMAL_NODE_COST + \
+                    secondary_nodes * PREEMPTIBLE_NODE_COST
+
+    disk_cost = (normal_nodes + secondary_nodes) * NODE_DISK_SIZE * DISK_COST
+
+    dataproc_cost = DATAPROC_NODE_COST * (normal_nodes + secondary_nodes)
+
+    current_cost = INTERVAL * (
+            gce_cost +
+            disk_cost +
+            dataproc_cost
+    )
     cumulative_cost += current_cost
 
     with open(cost_path, 'w+') as f:
