@@ -9,7 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	_ "github.com/lib/pq" // this is required to use the Postgres connector
-	)
+	"time"
+)
 
 var database *sql.DB
 
@@ -31,22 +32,39 @@ func parseConfig() {
 
 func getJob(c *gin.Context) {
 	var status string
+	var email string
+	var createDate time.Time
+	var execPath string
+	var args string
+
 	jobID := c.Query("jobid")
 
 	// Check if database connection is open
 	if database == nil {
 		c.JSON(200, gin.H{
-			"status":  "An error occurred. Please, contact the administrator.",
+			"errorInfo":  "An error occurred. Please, contact the administrator.",
 		})
 	}
 
 	// Query the target job
-	query := `SELECT Status FROM Job WHERE ID = $1;`
-	database.QueryRow(query, jobID).Scan(&status)
+	query := `SELECT Status, Email, CreationTimestamp, ExecutablePath, Arguments 
+			  FROM Job J, Users U
+			  WHERE J.ID = $1 AND J.Author = U.ID;`
+	database.QueryRow(query, jobID).Scan(&status, &email, &createDate, &execPath, &args)
 
-	c.JSON(200, gin.H{
-		"status":  status,
-	})
+	if status != "" {
+		c.JSON(200, gin.H{
+			"status":  status,
+			"user": email,
+			"creationTimeStamp": createDate,
+			"scriptPath": execPath,
+			"args": args,
+		})
+	} else {
+		c.JSON(200, gin.H{
+			"errorInfo":  "The job does not exist",
+		})
+	}
 }
 
 func main() {

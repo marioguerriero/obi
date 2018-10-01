@@ -269,7 +269,7 @@ func insertJobQuery(job *model.Job) error {
 				Arguments, 
 				PlatformDependentID)
 			VALUES (
-				$1, NULL, $2, CURRENT_TIMESTAMP, $3, $4, $5, $6, $7, $8, $9
+				$1, $2, $3, CURRENT_TIMESTAMP, $4, $5, $6, $7, $8, $9, $10
 			) RETURNING ID`
 	stmt, err := database.Prepare(query)
 	defer stmt.Close()
@@ -278,6 +278,7 @@ func insertJobQuery(job *model.Job) error {
 	}
 	err = stmt.QueryRow(
 		model.JobStatusNames[job.Status],
+		job.Author,
 		job.CreationTimestamp,
 		job.ExecutablePath,
 		model.JobTypeNames[job.Type],
@@ -293,38 +294,19 @@ func insertJobQuery(job *model.Job) error {
 	return nil
 }
 
+
 func updateJobQuery(job *model.Job) error {
 	query := `UPDATE Job SET
-				ClusterName = $1,
-				ClusterCreationTimestamp = $2,
-				Status = $3, 
-				CreationTimestamp = $4, 
-				LastUpdateTimestamp = CURRENT_TIMESTAMP, 
-				ExecutablePath = $5, 
-				Type = $6, 
-				Priority = $7,
-				PredictedDuration = $8, 
-				FailureProbability = $9, 
-				Arguments = $10, 
-				PlatformDependentID = $11
-			WHERE Job.ID = $12;`
+				Status = $1, 
+				LastUpdateTimestamp = CURRENT_TIMESTAMP
+			WHERE Job.ID = $2;`
 	stmt, err := database.Prepare(query)
 	defer stmt.Close()
 	if err != nil {
 		return err
 	}
 	stmt.QueryRow(
-		job.Cluster.GetName(),
-		job.Cluster.GetCreationTimestamp(),
 		model.JobStatusNames[job.Status],
-		job.CreationTimestamp,
-		job.ExecutablePath,
-		model.JobTypeNames[job.Type],
-		job.Priority,
-		job.PredictedDuration,
-		job.FailureProbability,
-		job.Args,
-		job.PlatformDependentID,
 		job.ID,
 	)
 	return nil
