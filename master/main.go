@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"obi/master/persistent"
 	"strconv"
+	"google.golang.org/grpc/credentials"
 )
 
 
@@ -51,16 +52,17 @@ func unaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServ
 
 func authorize(ctx context.Context) error {
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
-		username := md.Get("username")[0]
-		password := md.Get("password")[0]
-		if id, err := persistent.GetUserID(username, password); err == nil {
-			md.Set("UserID", strconv.Itoa(id))
-			return nil
+		if len(md.Get("username")) > 0 && len(md.Get("password")) > 0 {
+			username := md.Get("username")[0]
+			password := md.Get("password")[0]
+			if id, err := persistent.GetUserID(username, password); err == nil {
+				md.Set("UserID", strconv.Itoa(id))
+				return nil
+			}
+			return status.Errorf(codes.PermissionDenied, "Invalid credentials")
 		}
-
-		return status.Errorf(codes.PermissionDenied, "Invalid credentials")
+		return status.Errorf(codes.PermissionDenied, "Missing credentials")
 	}
-
 	return status.Errorf(codes.PermissionDenied, "Missing credentials")
 }
 
@@ -82,10 +84,13 @@ func main() {
 	}
 	logrus.Info("Successfully opened connection listener")
 
+	creds, _ := credentials.NewServerTLSFromFile("/go/src/obi/master/server.crt", "/go/src/obi/master/server.key")
+
 	// Create gRPC server
 	grpcServer := grpc.NewServer(
 		grpc.StreamInterceptor(streamInterceptor),
 		grpc.UnaryInterceptor(unaryInterceptor),
+		grpc.Creds(creds),
 	)
 	RegisterObiMasterServer(grpcServer, master)
 	logrus.Info("Successfully registered OBI Master server")
