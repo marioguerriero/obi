@@ -48,16 +48,32 @@ class CsvUpdatePredictor(GenericPredictor):
             return None
 
         # Feature selection
+        short_backends = [
+            'pde_archive_de', 'pde_audit_de', 'lh_payment_de', 'lh_audit_de', '9c',
+            'lh_click_to_claim_de', 'pde_payment_de', 'pde_joker_de', 'midas'
+        ]
+
+        # Feature selection
+        features_names = [
+             'INPUT_SIZE', 'YARN_AVAILABLE_MEMORY',
+             'YARN_AVAILABLE_VIRTUAL_CORES'] + [
+             'be_short', 'bgk_de', 'fd_de',
+             'lh_de', 'pde_de'
+         ]
+
         features = np.array([
-            float(input_info[0]),  # INPUT_FILES_COUNT
             float(input_info[1]),  # INPUT_SIZE
             float(metrics.AvailableMB),  # YARN_AVAILABLE_MEMORY
             float(metrics.AvailableVCores),  # YARN_AVAILABLE_VIRTUAL_CORES
+            int(kwargs['backend'] in short_backends),  # be_short
+            int(kwargs['backend'] == 'bgk_de'),  # bgk_de
+            int(kwargs['backend'] == 'fd_de'),  # fd_de
+            int(kwargs['backend'] == 'lh_de'),  # lh_de
+            int(kwargs['backend'] == 'pde_de'),  # pde_de
         ])
-        data = xgboost.DMatrix(features.reshape(1, -1), feature_names=[
-            'INPUT_FILES_COUNT', 'INPUT_SIZE',
-            'YARN_AVAILABLE_MEMORY', 'YARN_AVAILABLE_VIRTUAL_CORES'
-        ])
+
+        data = xgboost.DMatrix(
+            features.reshape(1, -1), feature_names=features_names)
 
         # Generate predictions
         prediction = self._model.predict(data)
