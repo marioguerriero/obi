@@ -43,7 +43,7 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 	}
 
 	md, _ := metadata.FromIncomingContext(ctx)
-	userId, _ := strconv.Atoi(md["userid"][0])
+	userID, _ := strconv.Atoi(md["userid"][0])
 
 	// Create job structure
 	job := model.Job{
@@ -53,7 +53,7 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 		Priority:           jobRequest.Priority,
 		Status: 			model.JobStatusPending,
 		Args:               jobRequest.JobArgs,
-		Author:             userId,
+		Author:             userID,
 	}
 
 	// Generate predictions before submitting the job
