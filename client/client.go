@@ -83,12 +83,12 @@ func main() {
 
 func submitJob(request JobSubmissionRequest) {
 	creds := obiCreds {
-		"mario",
-		"ciaociao",
+		"luca",
+		"ciao",
 	}
 	credentials := credentials.NewTLS( &tls.Config{ InsecureSkipVerify: true } )
 	conn, err := grpc.Dial(
-		"35.234.88.99:8081",
+		"35.242.246.185:8081",
 		grpc.WithTransportCredentials(credentials),
 		grpc.WithPerRPCCredentials(creds),
 	)
