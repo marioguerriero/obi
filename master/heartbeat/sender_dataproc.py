@@ -139,8 +139,7 @@ def compute_hb():
                                    "| egrep '[a-zA-Z0-9]+\-[a-zA-Z0-9]+\-sw\-' "
                                    "| wc -l").read())
 
-    gce_cost = normal_nodes * NORMAL_NODE_COST + \
-                    secondary_nodes * PREEMPTIBLE_NODE_COST
+    gce_cost = normal_nodes * NORMAL_NODE_COST + secondary_nodes * PREEMPTIBLE_NODE_COST
 
     disk_cost = (normal_nodes + secondary_nodes) * NODE_DISK_SIZE * DISK_COST
 
