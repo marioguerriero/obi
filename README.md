@@ -52,7 +52,7 @@ on the needs. For example, given the requirement of high performance communicati
 between the clusters master node and the heartbeat component, those communication
 is handled through Google's `protobuf` schemas.
 
-![alt text](assets/obi-architecture.png "OBI Architecture")
+![alt text](assets/obi-architecture.jpg "OBI Architecture")
 
 ## Contributions
 
