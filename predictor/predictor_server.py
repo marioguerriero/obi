@@ -73,7 +73,7 @@ class PredictorServer(predictor_service_pb2_grpc.ObiPredictorServicer):
                                         day_diff=day_diff)
         # Return predictions to the user
         res = predictor_service_pb2.PredictionResponse()
-        res.Duration = int(predictions[0])
+        res.Duration = int(predictions)
         res.FailureProbability = 0.0  # predictions[1]
         res.Label = job_type
         log.info('Generated predictions: {}'.format(res))
