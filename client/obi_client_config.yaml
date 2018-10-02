@@ -6,6 +6,7 @@ masterPort: 8081
 defaultMasterPort: 8081
 defaultHeartbeatPort: 8080
 defaultPredictorPort: 8080
+defaultApiPort: 8083
 
 # IP address of the machine hosting the heartbeat service
 heartbeatServiceIp: 10.156.0.24
@@ -46,6 +47,9 @@ masterImage: eu.gcr.io/dhg-data-intelligence-ops/obi-master:production
 # Docker image for the OBI predictor component
 predictorImage: eu.gcr.io/dhg-data-intelligence-ops/obi-predictor
 
+# Docker image for the OBI API component
+apiImage: eu.gcr.io/dhg-data-intelligence-ops/obi-api
+
 # Where to mount the secret within the master's container
 secretMountPath: /etc/sa
 
@@ -59,10 +63,13 @@ persistentVolumeMountPath: /mnt/pv
 typeMetadata: type
 masterType: master
 predictorType: predictor
+apiType: api
 masterServiceName: master-service-name
 heartbeatServiceName: heartbeat-service-name
 predictorServiceName: predictor-service-name
 predictorDeploymentName: predictor-deployment-name
+apiServiceName: api-service-name
+apiDeploymentName: api-deployment-name
 serviceAccountSecretName: service-account-secret
 masterConfigMapName: master-config-map
 masterVolumeClaimName: master-volume-claim
@@ -74,6 +81,7 @@ serviceTypeMetadata: type
 masterServiceType: master=service
 heartbeatServiceType: heartbeat-service
 predictorServiceType: predictor-service
+apiServiceType: api-service
 
 # Node on which schedule the pods
 nodeSelectorKey: cloud.google.com/gke-nodepool

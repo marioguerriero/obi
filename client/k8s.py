@@ -252,6 +252,12 @@ class KubernetesClient(GenericClient):
                 self._user_config['kubernetesNamespace']))
         log.info('Predictor selector label: {}'.format(predictor_selector))
 
+        # Generate label selector for API component
+        api_selector = self._object_name_generator(
+            prefix='{}-api-deployment'.format(
+                self._user_config['kubernetesNamespace']))
+        log.info('API selector label: {}'.format(api_selector))
+
         # Create master service
         master_service_name = self._object_name_generator(
             prefix='{}-master-service'.format(
@@ -306,6 +312,17 @@ class KubernetesClient(GenericClient):
             schedulingLevels=deployment['schedulingLevels'],
             priorityMap=deployment['priorityMap'])
 
+        # Create API service
+        api_deployment_name = self._object_name_generator(
+            prefix='-'.join([name, 'api']))
+        api_service_name = self._object_name_generator(
+            prefix='{}-api-service'.format(
+                self._user_config['kubernetesNamespace'])
+        )
+        self._create_api_component(api_deployment_name, api_service_name,
+                                   namespace, api_selector, config_map_name)
+        log.info('API service created')
+
         # Create deployment
         self._create_infrastructure_deployment(
             name, namespace, deployment['projectId'],
@@ -315,7 +332,9 @@ class KubernetesClient(GenericClient):
             master_service_name,
             heartbeat_service_name,
             predictor_service_name,
-            predictor_deployment_name)
+            predictor_deployment_name,
+            api_service_name,
+            api_deployment_name)
         log.info('Infrastructure successfully created')
 
     def _delete_job(self, **kwargs):
@@ -344,7 +363,9 @@ class KubernetesClient(GenericClient):
         deployment_names = [
             kwargs['infrastructure_name'],
             master_deployment.metadata.annotations[
-                self._user_config['predictorDeploymentName']]
+                self._user_config['predictorDeploymentName']],
+            master_deployment.metadata.annotations[
+                self._user_config['apiDeploymentName']]
         ]
 
         service_names = [
@@ -353,7 +374,9 @@ class KubernetesClient(GenericClient):
             master_deployment.metadata.annotations[
                 self._user_config['heartbeatServiceName']],
             master_deployment.metadata.annotations[
-                self._user_config['predictorServiceName']]
+                self._user_config['predictorServiceName']],
+            master_deployment.metadata.annotations[
+                self._user_config['apiServiceName']],
         ]
 
         secret_names = [
@@ -511,7 +534,9 @@ class KubernetesClient(GenericClient):
                                           master_service_name,
                                           heartbeat_service_name,
                                           predictor_service_name,
-                                          predictor_deployment_name):
+                                          predictor_deployment_name,
+                                          api_service_name,
+                                          api_deployment_name):
         """
         This function is used to generate the deployment for the OBI
         master for a certain infrastructure. This function returns the
@@ -533,6 +558,9 @@ class KubernetesClient(GenericClient):
             self._user_config['predictorServiceName']: predictor_service_name,
             self._user_config['predictorDeploymentName']:
                 predictor_deployment_name,
+            self._user_config['apiServiceName']: api_service_name,
+            self._user_config['predictorDeploymentName']:
+                api_deployment_name,
             self._user_config['serviceAccountSecretName']: sa_secret,
             self._user_config['masterConfigMapName']: config_map_name,
         }
@@ -820,6 +848,189 @@ class KubernetesClient(GenericClient):
 
         # Return host and port to contact the predictor component
         return pred_host, pred_port
+
+    def _create_api_component(self, deployment_name, service_name, namespace,
+                              label, config_map):
+        """
+        Create a deployment attached to service for serving OBI's public API
+        :param deployment_name:
+        :param service_name:
+        :param namespace:
+        :param label:
+        :param config_map:
+        :return:
+        """
+        # Create service for predictive component
+        log.info('Creating predictive component service. '
+                 'This operation may take a while')
+        api_host, api_port = self._create_api_service(
+            service_name, namespace, label)
+
+        # Create deployment for predictive component
+        self._create_api_deployment(deployment_name, namespace, label, config_map)
+
+        # Return host and port to contact the predictor component
+        return api_host, api_port
+
+    def _create_api_service(self, name, namespace, label):
+        """
+        Create API component external service
+        :param name:
+        :param namespace:
+        :param label:
+        :return:
+        """
+        # Create service object
+        service = k8s.client.V1Service()
+
+        # Metadata object
+        metadata = k8s.client.V1ObjectMeta()
+        metadata.name = name
+        metadata.annotations = {
+            self._user_config['serviceTypeMetadata']:
+                self._user_config['apiServiceType']
+        }
+        metadata.namespace = namespace
+        service.metadata = metadata
+
+        # Spec object
+        spec = k8s.client.V1ServiceSpec()
+        spec.type = 'LoadBalancer'
+        port = k8s.client.V1ServicePort(
+            port=self._user_config['defaultApiPort']
+        )
+        port.protocol = 'TCP'
+        spec.ports = [
+            port
+        ]
+        spec.selector = {
+            self._user_config['defaultServiceSelectorName']: label
+        }
+
+        service.spec = spec
+
+        try:
+            self._core_client.create_namespaced_service(
+                namespace, service, pretty='true')
+            while True:
+                status = self._core_client.read_namespaced_service_status(
+                    name, namespace)
+                if status.status.load_balancer.ingress is not None \
+                        and status.status.load_balancer.ingress[0].ip \
+                        is not None:
+                    return (status.status.load_balancer.ingress[0].ip,
+                            port.port)
+        except k8s.client.rest.ApiException as e:
+            log.error(
+                "Exception when calling CoreV1Api->create_namespaced_service: "
+                "%s\n" % e)
+            return None
+
+    def _create_api_deployment(self, name, namespace, label, config_map_name):
+        """
+        Create API component deployment
+        :param name:
+        :param namespace:
+        :param label:
+        :param config_map:
+        :return:
+        """
+        # Create Deployment Object
+        deployment = k8s.client.V1Deployment()
+
+        # Create metadata object
+        metadata = k8s.client.V1ObjectMeta()
+        metadata.name = name
+        metadata.namespace = namespace
+        metadata.annotations = {
+            self._user_config['typeMetadata']:
+                self._user_config['apiType'],
+        }
+        deployment.metadata = metadata
+
+        # Build selector object
+        selector = k8s.client.V1LabelSelector()
+        selector.match_labels = {
+            self._user_config['defaultServiceSelectorName']: label
+        }
+
+        # Build spec template object
+        template = k8s.client.V1PodTemplateSpec()
+        meta = k8s.client.V1ObjectMeta()
+        meta.labels = {
+            self._user_config['defaultServiceSelectorName']: label
+        }
+        template.metadata = meta
+
+        # Build containers list
+        container = k8s.client.V1Container(name=self._object_name_generator(
+            prefix="{}-api-container".format(
+                self._user_config['kubernetesNamespace'])
+        ))
+        container.image = self._user_config['apiImage']
+        container.image_pull_policy = 'Always'
+
+        # Environment variables
+        env_config = k8s.client.V1EnvVar(
+            name='CONFIG_PATH', value=os.path.join(
+                self._user_config['configMountPath'],
+                self._user_config['defaultConfigMapName'])
+        )
+
+        container.env = [
+            env_config
+        ]
+
+        # Volume mount for config map
+        volume_mount_config_map_name = self._object_name_generator(
+            prefix='{}-volume-mount'.format(
+                self._user_config['kubernetesNamespace']))
+        volume_mount_config_map = k8s.client.V1VolumeMount(
+            name=volume_mount_config_map_name,
+            mount_path=self._user_config['configMountPath'])
+
+        container.volume_mounts = [
+            volume_mount_config_map
+        ]
+
+        template_spec = k8s.client.V1PodSpec(containers=[
+            container
+        ])
+
+        # Node selector
+        template_spec.node_selector = {
+            self._user_config['nodeSelectorKey']:
+                self._user_config['nodeSelectorValue']
+        }
+
+        # Volume for config map
+        volume_config_map = k8s.client.V1Volume(
+            name=volume_mount_config_map_name)
+        volume_config_map.config_map = k8s.client.V1ConfigMapVolumeSource()
+        volume_config_map.config_map.name = config_map_name
+
+        template_spec.volumes = [
+            volume_config_map
+        ]
+        template.spec = template_spec
+
+        # Build spec object
+        spec = k8s.client.V1DeploymentSpec(
+            selector=selector, template=template)
+        spec.replicas = self._user_config['predictorReplicas']
+
+        # Attach spec to deployment
+        deployment.spec = spec
+
+        # Send deployment creation request
+        try:
+            self._apps_client.create_namespaced_deployment(
+                namespace, deployment, pretty='true')
+        except k8s.client.rest.ApiException as e:
+            log.error(
+                "Exception when calling "
+                "CoreV1Api->create_namespaced_deployment: "
+                "%s" % e)
 
     def _create_predictive_deployment(self, name, namespace, project_id,
                                       gcs_secret_name,
