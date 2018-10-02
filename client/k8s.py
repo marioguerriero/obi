@@ -559,7 +559,7 @@ class KubernetesClient(GenericClient):
             self._user_config['predictorDeploymentName']:
                 predictor_deployment_name,
             self._user_config['apiServiceName']: api_service_name,
-            self._user_config['predictorDeploymentName']:
+            self._user_config['apiDeploymentName']:
                 api_deployment_name,
             self._user_config['serviceAccountSecretName']: sa_secret,
             self._user_config['masterConfigMapName']: config_map_name,
