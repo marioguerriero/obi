@@ -86,7 +86,7 @@ func (cs *ConcurrentSlice) MarkTombstone(idx int) {
 	cs.tombstones[idx] = true
 }
 
-// Synchronize the slice with the given tombstone list
+// Sync synchronize the slice with the given tombstone list
 func (cs *ConcurrentSlice) Sync() {
 	cs.Lock()
 	defer cs.Unlock()

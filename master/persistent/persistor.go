@@ -397,6 +397,7 @@ func rowExists(query string, args ...interface{}) bool {
 	return exists
 }
 
+// ClusterExists queries the database to see if a certain cluster exists
 func ClusterExists(clusterName string) (bool, error) {
 	// Check if database connection is open
 	if database == nil {
@@ -406,6 +407,7 @@ func ClusterExists(clusterName string) (bool, error) {
 	return rowExists(`SELECT * FROM Cluster WHERE Name = $1 AND Status = 'running'`, clusterName), nil
 }
 
+// GetUserID given a username and a password, this function returns the corresponding user's ID
 func GetUserID(username string, password string) (int, error) {
 	var id int
 	// Check if database connection is open
