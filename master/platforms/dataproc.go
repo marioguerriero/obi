@@ -21,16 +21,16 @@ import (
 const InitializationAction = "gs://dhg-obi/cluster-script/init_action.sh"
 
 // NormalNodeCostPerSecond unitary cost of a normal node
-const NormalNodeCostPerSecond = 0.2448 / 60 / 60
+const NormalNodeCostPerSecond = 0.1900 / 60 / 60
 
 // PreemptibleNodeCostPerSecond unitary cost of a preemptible node
-const PreemptibleNodeCostPerSecond = 0.04920 / 60 / 60
+const PreemptibleNodeCostPerSecond = 0.0400 / 60 / 60
 
 // NodeDiskSize disk size in GB of each node
 const NodeDiskSize = 500
 
 // DiskCost GB cost per second
-const DiskCost = 0.000018
+const DiskCost = 0.040 / 30 / 24 / 60 / 60
 
 // DataprocNodeCost unitary cost of a Dataproc node per second
 const DataprocNodeCost = 0.04 / 60 / 60
