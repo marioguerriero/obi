@@ -301,7 +301,7 @@ func (c *DataprocCluster) AllocateResources() error {
 						"preemptible-node-cost": strconv.FormatFloat(PreemptibleNodeCostPerSecond, 'f', 16, 64),
 						"node-disk-size": strconv.FormatInt(NodeDiskSize, 10),
 						"disk-cost": strconv.FormatFloat(DiskCost, 'f', 16, 64),
-						"dataproc-node-cost": strconv.FormatFloat(DataprocNodeCost, 'f', 16, 64),
+						"dp-node-cost": strconv.FormatFloat(DataprocNodeCost, 'f', 16, 64),
 						"interval": strconv.Itoa(HeartbeatInterval),
 					},
 				},

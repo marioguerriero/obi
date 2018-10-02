@@ -40,3 +40,5 @@ client/il_launcher.py
 
 predictor/message_pb2.py
 master/model/message.pb.go
+
+client/master-rpc-service.pb.go
