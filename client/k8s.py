@@ -861,7 +861,7 @@ class KubernetesClient(GenericClient):
         :return:
         """
         # Create service for predictive component
-        log.info('Creating predictive component service. '
+        log.info('Creating API component service. '
                  'This operation may take a while')
         api_host, api_port = self._create_api_service(
             service_name, namespace, label)
