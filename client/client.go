@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"time"
 	"encoding/json"
+	"io/ioutil"
 )
 
 type JobInfoResponse struct {
@@ -34,14 +35,14 @@ type JobInfoResponse struct {
 }
 
 type obiCreds struct {
-	username string
-	password string
+	Username string
+	Password string
 }
 
 func (c obiCreds) GetRequestMetadata(ctx context.Context, in ...string) (map[string]string, error) {
 	return map[string]string{
-		"username": c.username,
-		"password": c.password,
+		"username": c.Username,
+		"password": c.Password,
 	}, nil
 }
 
@@ -51,73 +52,52 @@ func (c obiCreds) RequireTransportSecurity() bool {
 
 
 func main() {
-	var jobRequestType JobSubmissionRequest_JobType
-	var username string
+	var credentials obiCreds
 
 	// parsing arguments
 	execPath := flag.StringP("path", "f", "", "a string")
 	infrastructure := flag.StringP("infrastructure", "i", "", "a string")
 	jobType := flag.StringP("type", "t", "", "a string")
 	priority := flag.Int32P("priority", "p", 0, "an int")
-	wait := flag.BoolP("wait", "w", true, "wait for job completion")
-
+	wait := flag.BoolP("wait", "w", false, "wait for job completion")
+	useLocalCreds := flag.Bool("localcreds", false, "get local credentials")
 
 	flag.Parse()
 
-	// fill job request struct
-	jobArgs :=strings.Join(flag.Args(), " ")
+	jobRequest := prepareJobRequest(*jobType, *execPath, *infrastructure, *priority)
 
-	if *jobType == "PySpark" {
-		jobRequestType = JobSubmissionRequest_PYSPARK
-	} else {
-		log.Fatal("Job type unknown")
-	}
-
-	file, err := os.Open(*execPath)
-	if err == nil {
-		// local file, let's update on GCS
-		ctx := context.Background()
-		client, err := storage.NewClient(ctx)
+	if *useLocalCreds == true {
+		credsFile, err := ioutil.ReadFile("/etc/obi/credentials")
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("Impossible to get local credentials.")
 		}
-		bkt := client.Bucket("dhg-obi")
-		filename := uuid.Must(uuid.NewV4()).String() + path.Ext(*execPath)
-		obj := bkt.Object("tmp/" + filename)
-		w := obj.NewWriter(ctx)
-		if _, err := io.Copy(w, file); err != nil {
-			log.Fatal(err)
+		creds := string(credsFile)
+		credsArray := strings.Split(creds, ",")
+
+		if len(credsArray) != 2 {
+			log.Fatal("Credentials file wrong format.")
 		}
-		if err := w.Close(); err != nil {
-			log.Fatal(err)
+
+		credentials.Username = credsArray[0]
+		credentials.Password = credsArray[1]
+	} else {
+		var username string
+		// ask for credentials
+		fmt.Println("Username: ")
+		fmt.Scanf("%s\n", &username)
+		fmt.Println("Password: ")
+		password, err := terminal.ReadPassword(0)
+		if err != nil {
+			log.Fatal("Something went wrong. Sorry.")
 		}
-		*execPath = "gs://dhg-obi/tmp/" + filename
+
+		credentials.Username = username
+		credentials.Password = string(password)
 	}
 
-	jobRequest := JobSubmissionRequest{
-		ExecutablePath:       *execPath,
-		Infrastructure:       *infrastructure,
-		Type:                 jobRequestType,
-		JobArgs:              jobArgs,
-		Priority:             *priority,
-	}
-
-	// ask for credentials
-	fmt.Println("Username: ")
-	fmt.Scanf("%s\n", &username)
-	fmt.Println("Password: ")
-	password, err := terminal.ReadPassword(0)
-	if err != nil {
-		log.Fatal("Something went wrong. Sorry.")
-	}
-
-	creds := obiCreds {
-		username,
-		string(password),
-	}
 
 	masterServiceAddress, apiServiceAddress := getEndpoints(*infrastructure)
-	jobID := submitJob(jobRequest, creds, masterServiceAddress)
+	jobID := submitJob(jobRequest, credentials, masterServiceAddress)
 	if *wait {
 		fmt.Println("Waiting for job completion...")
 		client := &http.Client{Timeout: 30 * time.Second}
@@ -228,4 +208,48 @@ func getEndpoints(infrastructure string) (string, string) {
 		log.Fatal("API service not reachable.")
 	}
 	return masterService.Status.LoadBalancer.Ingress[0].IP, apiService.Status.LoadBalancer.Ingress[0].IP
+}
+
+func prepareJobRequest(jobType string, execPath string, infrastructure string, priority int32) JobSubmissionRequest {
+	var jobRequestType JobSubmissionRequest_JobType
+
+	// fill job request struct
+	jobArgs :=strings.Join(flag.Args(), " ")
+
+	if jobType == "PySpark" {
+		jobRequestType = JobSubmissionRequest_PYSPARK
+	} else {
+		log.Fatal("Job type unknown")
+	}
+
+	file, err := os.Open(execPath)
+	if err == nil {
+		// local file, let's update on GCS
+		ctx := context.Background()
+		client, err := storage.NewClient(ctx)
+		if err != nil {
+			log.Fatal(err)
+		}
+		bkt := client.Bucket("dhg-obi")
+		filename := uuid.Must(uuid.NewV4()).String() + path.Ext(execPath)
+		obj := bkt.Object("tmp/" + filename)
+		w := obj.NewWriter(ctx)
+		if _, err := io.Copy(w, file); err != nil {
+			log.Fatal(err)
+		}
+		if err := w.Close(); err != nil {
+			log.Fatal(err)
+		}
+		execPath = "gs://dhg-obi/tmp/" + filename
+	}
+
+	jobRequest := JobSubmissionRequest{
+		ExecutablePath:       execPath,
+		Infrastructure:       infrastructure,
+		Type:                 jobRequestType,
+		JobArgs:              jobArgs,
+		Priority:             priority,
+	}
+
+	return jobRequest
 }
