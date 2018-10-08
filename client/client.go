@@ -32,6 +32,7 @@ type JobInfoResponse struct {
 	CreationTimeStamp string
 	ScriptPath string
 	Args string
+	DriverOutputURI string
 }
 
 type obiCreds struct {
@@ -122,7 +123,8 @@ func main() {
 			if jobInfo.Status == "completed" {
 				break
 			} else if jobInfo.Status == "failed" {
-				log.Fatal("The job execution failed.")
+				log.Fatal("The job execution failed. For more informations see the driver output of the job: " +
+					jobInfo.DriverOutputURI)
 			}
 			time.Sleep(10 * time.Second)
 		}

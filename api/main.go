@@ -36,6 +36,7 @@ func getJob(c *gin.Context) {
 	var createDate time.Time
 	var execPath string
 	var args string
+	var driverOutputURI string
 
 	jobID := c.Query("jobid")
 
@@ -47,10 +48,10 @@ func getJob(c *gin.Context) {
 	}
 
 	// Query the target job
-	query := `SELECT Status, Email, CreationTimestamp, ExecutablePath, Arguments 
+	query := `SELECT Status, Email, CreationTimestamp, ExecutablePath, Arguments, DriverOutputURI
 			  FROM Job J, Users U
 			  WHERE J.ID = $1 AND J.Author = U.ID;`
-	database.QueryRow(query, jobID).Scan(&status, &email, &createDate, &execPath, &args)
+	database.QueryRow(query, jobID).Scan(&status, &email, &createDate, &execPath, &args, &driverOutputURI)
 
 	if status != "" {
 		c.JSON(200, gin.H{
@@ -59,6 +60,7 @@ func getJob(c *gin.Context) {
 			"creationTimeStamp": createDate,
 			"scriptPath": execPath,
 			"args": args,
+			"driverOutputURI": driverOutputURI,
 		})
 	} else {
 		c.JSON(200, gin.H{

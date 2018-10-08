@@ -86,6 +86,7 @@ func initTables() error {
 		FailureProbability Float, 
 		Arguments TEXT, 
 		PlatformDependentID TEXT,
+        DriverOutputURI TEXT,
 		FOREIGN KEY (ClusterName, ClusterCreationTimestamp) REFERENCES Cluster(Name, CreationTimestamp)
 			ON DELETE CASCADE)`
 
@@ -267,9 +268,10 @@ func insertJobQuery(job *model.Job) error {
 				PredictedDuration, 
 				FailureProbability, 
 				Arguments, 
-				PlatformDependentID)
+				PlatformDependentID,
+				DriverOutputURI)
 			VALUES (
-				$1, $2, $3, CURRENT_TIMESTAMP, $4, $5, $6, $7, $8, $9, $10
+				$1, $2, $3, CURRENT_TIMESTAMP, $4, $5, $6, $7, $8, $9, $10, $11
 			) RETURNING ID`
 	stmt, err := database.Prepare(query)
 	defer stmt.Close()
@@ -287,6 +289,7 @@ func insertJobQuery(job *model.Job) error {
 		job.FailureProbability,
 		job.Args,
 		job.PlatformDependentID,
+		job.DriverOutputPath,
 	).Scan(&job.ID)
 	if err != nil {
 		return err
@@ -308,8 +311,9 @@ func updateJobQuery(job *model.Job) error {
 				PredictedDuration = $8, 
 				FailureProbability = $9, 
 				Arguments = $10, 
-				PlatformDependentID = $11
-			WHERE Job.ID = $12;`
+				PlatformDependentID = $11,
+				DriverOutputURI = $12
+			WHERE Job.ID = $13;`
 	stmt, err := database.Prepare(query)
 	defer stmt.Close()
 	if err != nil {
@@ -327,6 +331,7 @@ func updateJobQuery(job *model.Job) error {
 		job.FailureProbability,
 		job.Args,
 		job.PlatformDependentID,
+		job.DriverOutputPath,
 		job.ID,
 	)
 	return nil

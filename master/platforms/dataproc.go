@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
-)
+	)
 
 // InitializationAction initialization script for installing necessary requirements
 const InitializationAction = "gs://dhg-obi/cluster-script/init_action.sh"
@@ -411,6 +411,12 @@ func (c *DataprocCluster) MonitorJobs() {
 				Region:    c.Region,
 				JobId:     job.PlatformDependentID,
 			})
+
+			if job.DriverOutputPath == "" {
+				job.DriverOutputPath = j.DriverOutputResourceUri
+				persistent.Write(job)
+			}
+
 			if j.Status.State == dataprocpb.JobStatus_DONE ||
 				j.Status.State == dataprocpb.JobStatus_ERROR ||
 				j.Status.State == dataprocpb.JobStatus_CANCELLED {

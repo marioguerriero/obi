@@ -54,4 +54,5 @@ type Job struct {
 	FailureProbability float32
 	Args 			   string
 	PlatformDependentID string
+	DriverOutputPath string
 }
