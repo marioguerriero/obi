@@ -20,7 +20,18 @@ import (
 	"path/filepath"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"net/http"
+	"time"
+	"encoding/json"
 )
+
+type JobInfoResponse struct {
+	Status string
+	User string
+	CreationTimeStamp string
+	ScriptPath string
+	Args string
+}
 
 type obiCreds struct {
 	username string
@@ -42,13 +53,14 @@ func (c obiCreds) RequireTransportSecurity() bool {
 func main() {
 	var jobRequestType JobSubmissionRequest_JobType
 	var username string
-	var kubeconfig *string
 
 	// parsing arguments
 	execPath := flag.StringP("path", "f", "", "a string")
 	infrastructure := flag.StringP("infrastructure", "i", "", "a string")
 	jobType := flag.StringP("type", "t", "", "a string")
 	priority := flag.Int32P("priority", "p", 0, "an int")
+	wait := flag.BoolP("wait", "w", true, "wait for job completion")
+
 
 	flag.Parse()
 
@@ -104,6 +116,75 @@ func main() {
 		string(password),
 	}
 
+	masterServiceAddress, apiServiceAddress := getEndpoints(*infrastructure)
+	jobID := submitJob(jobRequest, creds, masterServiceAddress)
+	if *wait {
+		fmt.Println("Waiting for job completion...")
+		client := &http.Client{Timeout: 30 * time.Second}
+		apiJobs := "http://" + apiServiceAddress + ":8083/api/jobs"
+		req, _ := http.NewRequest("GET", apiJobs, nil)
+		q := req.URL.Query()
+		q.Add("jobid", fmt.Sprint(jobID))
+		req.URL.RawQuery = q.Encode()
+		for {
+			resp, err := client.Do(req)
+			if err != nil {
+				log.Fatal("An error occurring during status request.")
+				break
+			}
+			defer resp.Body.Close()
+			jobInfo := JobInfoResponse{}
+			err = json.NewDecoder(resp.Body).Decode(&jobInfo)
+			if err != nil {
+				log.Fatal("An error occurring during status request.")
+				break
+			}
+			if jobInfo.Status == "completed" {
+				break
+			} else if jobInfo.Status == "failed" {
+				log.Fatal("The job execution failed.")
+			}
+			time.Sleep(10 * time.Second)
+		}
+	}
+}
+
+func submitJob(request JobSubmissionRequest, creds obiCreds, address string) int32 {
+	credentials := credentials.NewTLS( &tls.Config{ InsecureSkipVerify: true } )
+	conn, err := grpc.Dial(
+		address + ":8081",
+		grpc.WithTransportCredentials(credentials),
+		grpc.WithPerRPCCredentials(creds),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+
+	client := NewObiMasterClient(conn)
+	resp, err := client.SubmitJob(context.Background(), &request)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	if resp.Succeded == false {
+		log.Fatal("An error occurred during job submission. Please, contact the administrator.")
+	}
+	fmt.Println("The job has been submitted correctly.")
+	fmt.Printf("The JobID is %d\n", resp.JobID)
+	return resp.JobID
+}
+
+func homeDir() string {
+	if h := os.Getenv("HOME"); h != "" {
+		return h
+	}
+	return os.Getenv("USERPROFILE") // windows
+}
+
+func getEndpoints(infrastructure string) (string, string) {
+	var kubeconfig *string
+
 	// load kubeconfig
 	if home := homeDir(); home != "" {
 		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
@@ -125,47 +206,26 @@ func main() {
 	}
 
 	// get service to contact obi master endpoint
-	deployment, err := clientset.AppsV1().Deployments("obi").Get(*infrastructure, metav1.GetOptions{})
+	deployment, err := clientset.AppsV1().Deployments("obi").Get(infrastructure, metav1.GetOptions{})
 	if err != nil {
 		panic(err.Error())
 	}
-	serviceName := deployment.Annotations["master-service-name"]
-	service, err := clientset.CoreV1().Services("obi").Get(serviceName, metav1.GetOptions{})
-	if ingresses := service.Status.LoadBalancer.Ingress;  len(ingresses) == 0 {
-		log.Fatal("Service not reachable.")
-	}
-	serviceAddress := service.Status.LoadBalancer.Ingress[0].IP
-	submitJob(jobRequest, creds, serviceAddress)
-}
-
-func submitJob(request JobSubmissionRequest, creds obiCreds, address string) {
-	credentials := credentials.NewTLS( &tls.Config{ InsecureSkipVerify: true } )
-	conn, err := grpc.Dial(
-		address + ":8081",
-		grpc.WithTransportCredentials(credentials),
-		grpc.WithPerRPCCredentials(creds),
-	)
+	masterServiceName := deployment.Annotations["master-service-name"]
+	masterService, err := clientset.CoreV1().Services("obi").Get(masterServiceName, metav1.GetOptions{})
 	if err != nil {
-		log.Fatal(err)
+		panic(err.Error())
 	}
-	defer conn.Close()
+	if ingresses := masterService.Status.LoadBalancer.Ingress;  len(ingresses) == 0 {
+		log.Fatal("Master service not reachable.")
+	}
 
-	client := NewObiMasterClient(conn)
-	resp, err := client.SubmitJob(context.Background(), &request)
-
+	apiServiceName := deployment.Annotations["api-service-name"]
+	apiService, err := clientset.CoreV1().Services("obi").Get(apiServiceName, metav1.GetOptions{})
 	if err != nil {
-		log.Fatal(err)
+		panic(err.Error())
 	}
-	if resp.Succeded == false {
-		fmt.Println("An error occurred during job submission. Please, contact the administrator.")
+	if ingresses := apiService.Status.LoadBalancer.Ingress;  len(ingresses) == 0 {
+		log.Fatal("API service not reachable.")
 	}
-	fmt.Println("The job has been submitted correctly.")
-	fmt.Printf("The JobID is %d\n", resp.JobID)
-}
-
-func homeDir() string {
-	if h := os.Getenv("HOME"); h != "" {
-		return h
-	}
-	return os.Getenv("USERPROFILE") // windows
+	return masterService.Status.LoadBalancer.Ingress[0].IP, apiService.Status.LoadBalancer.Ingress[0].IP
 }
