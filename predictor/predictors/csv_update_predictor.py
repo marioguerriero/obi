@@ -43,29 +43,30 @@ class CsvUpdatePredictor(GenericPredictor):
             input_info = input_files_utils.get_input_size(
                 'csv', 'update', kwargs['backend'],
                 date.today(), kwargs['day_diff'])
-        except ValueError:
-            log.error('Could not generate predictions')
+        except ValueError as e:
+            log.error('Could not generate predictions: {}'.format(e))
             return None
 
         # Feature selection
-        short_backends = [
-            'pde_archive_de', 'pde_audit_de', 'lh_payment_de', 'lh_audit_de', '9c',
-            'lh_click_to_claim_de', 'pde_payment_de', 'pde_joker_de', 'midas'
-        ]
-
-        # Feature selection
         features_names = [
-             'INPUT_SIZE', 'YARN_AVAILABLE_MEMORY',
-             'YARN_AVAILABLE_VIRTUAL_CORES'] + [
-             'be_short', 'bgk_de', 'fd_de',
-             'lh_de', 'pde_de'
+            'INPUT_SIZE',
+            'pde_archive_de', 'pde_audit_de', 'lh_payment_de',
+            'lh_audit_de', '9c', 'lh_click_to_claim_de',
+            'pde_payment_de', 'pde_joker_de', 'midas',
+            'bgk_de', 'fd_de', 'lh_de', 'pde_de'
          ]
 
         features = np.array([
             float(input_info[1]),  # INPUT_SIZE
-            float(metrics.AvailableMB),  # YARN_AVAILABLE_MEMORY
-            float(metrics.AvailableVCores),  # YARN_AVAILABLE_VIRTUAL_CORES
-            int(kwargs['backend'] in short_backends),  # be_short
+            int(kwargs['backend'] == 'pde_archive_de'),  # bgk_de
+            int(kwargs['backend'] == 'pde_audit_de'),  # bgk_de
+            int(kwargs['backend'] == 'lh_payment_de'),  # bgk_de
+            int(kwargs['backend'] == 'lh_audit_de'),  # bgk_de
+            int(kwargs['backend'] == '9c'),  # bgk_de
+            int(kwargs['backend'] == 'lh_click_to_claim_de'),  # bgk_de
+            int(kwargs['backend'] == 'pde_payment_de'),  # bgk_de
+            int(kwargs['backend'] == 'pde_joker_de'),  # bgk_de
+            int(kwargs['backend'] == 'midas'),  # bgk_de
             int(kwargs['backend'] == 'bgk_de'),  # bgk_de
             int(kwargs['backend'] == 'fd_de'),  # fd_de
             int(kwargs['backend'] == 'lh_de'),  # lh_de

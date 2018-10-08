@@ -272,8 +272,17 @@ def get_list_count_size(bucket, prefix):
     count, size = 0, 0
     for b in bucket.list_blobs(prefix=prefix):
         count += 1
-        size += b.size
+        size += _scale_size(b.size)
     return count, size
+
+
+def _scale_size(size):
+    """
+    Scales a certain size from byte to gigabytes
+    :param size:
+    :return:
+    """
+    return size / 1e9
 
 
 def get_blobs_size(bucket, name):
@@ -283,14 +292,18 @@ def get_blobs_size(bucket, name):
     for b in bucket.list_blobs(prefix=path):
         if b.path.endswith(last):
             count += 1
-            size += b.size
+            size += _scale_size(b.size)
     return count, size
 
 
 def get_blob_size(bucket, name):
     name_clean = name.replace('gs://', '')
-    size = storage.Blob(name_clean, bucket).size
-    return size if size is not None else 0
+    name_clean = name_clean.replace(bucket.name, '')
+    if name_clean[0] == '/':
+        name_clean = name_clean[1:]
+    b = bucket.get_blob(name_clean)
+    size = b.size if b is not None else 0
+    return _scale_size(size) if size is not None else 0
 
 
 def get_count_size_from_prefixes(bucket, prefixes):
@@ -300,7 +313,7 @@ def get_count_size_from_prefixes(bucket, prefixes):
         for b in bucket.list_blobs(prefix=p):
             existed_file_list.append('gs://dhg-backend/' + b.name)
             count += 1
-            size += b.size
+            size += _scale_size(b.size)
     return count, size, existed_file_list
 
 
@@ -312,7 +325,7 @@ def get_count_size_all_csv(bucket, check_del, existed_file_list,
                 prefix=changed_file_base_path + '/' + table + "/del"):
             if 'csv' in b.name.split('.')[-1]:
                 count += 1
-                size += b.size
+                size += _scale_size(b.size)
     return count, size
 
 
@@ -419,7 +432,7 @@ def _get_csv_input_size(task_type, backend, date, day_diff=0):
     if task_type == 'find':
         return _get_csv_find_input_size(backend, date, day_diff)
     elif task_type == 'update':
-        return _get_csv_update_input_size_v2(backend, day_diff)
+        return _get_csv_update_input_size_v2(backend, date, day_diff)
     elif task_type == 'recreate':
         return _get_csv_recreate_input_size(backend, date, day_diff)
     else:
@@ -442,16 +455,8 @@ def _get_csv_find_input_size(backend, date=None, day_diff=0):
     yesterday_path = 'gs://dhg-backend/dwh_psql_' + source_splitted[0] \
                      + '/unique/' + yesterday
 
-    existed_file_list = []
     storage_client = storage.Client()
     bucket = storage_client.bucket('dhg-backend')
-
-    id_md5_changes_prefix = 'dwh_psql_' + source_splitted[0] \
-                            + '/id_md5_changes/' + today
-
-    tmp_count, tmp_size = get_list_count_size(bucket, id_md5_changes_prefix)
-    count += tmp_count
-    size += tmp_size
 
     for table in table_list:
         if backend == 'fd_de' and table in blacklisted_list:
@@ -463,22 +468,16 @@ def _get_csv_find_input_size(backend, date=None, day_diff=0):
         if backend == 'pde_payment_de' and table in blacklisted_list:
             continue
 
-        output_mod = today_path + '/' + table + '/mod'
-
-        if check_path_in_list(output_mod, existed_file_list):
-            if check_path_in_list(output_mod + '/_SUCCESS', existed_file_list):
-                continue
-
         count += 1
         tmp_size = get_blob_size(
             bucket, today_path + '/' + table + ".id_md5.csv")
         size += tmp_size if tmp_size is not None else 0
 
-        for b in bucket.list_blobs(
-                prefix=yesterday_path + '/' + table):
-            if 'csv' in b.name.split('.')[-1]:
-                count += 1
-                size += b.size
+        c, s = get_blobs_size(
+            bucket,
+            yesterday_path + '/' + table + "/*.csv")
+        count += c
+        size += s
 
     return count, size
 
@@ -542,7 +541,7 @@ def _get_csv_update_input_size(backend, date=None, day_diff=0):
         for b in bucket.list_blobs(prefix=full_file_base_path + '/' + table):
             if 'csv' in b.name.split('.')[-1]:
                 count += 1
-                size += b.size
+                size += _scale_size(b.size)
 
         mod_path = changed_file_base_path + '/' + table + ".mod.csv"
         new_path = changed_file_base_path + '/' + table + ".new.csv"
@@ -619,7 +618,7 @@ def _get_csv_recreate_input_size(backend, date, day_diff=0):
     return count, size
 
 
-def _get_csv_update_input_size_v2(source_name, day_diff):
+def _get_csv_update_input_size_v2(source_name, date, day_diff):
     """
     Update changes from backend to csv and output today files
     :param source_name: name of brand
@@ -631,16 +630,18 @@ def _get_csv_update_input_size_v2(source_name, day_diff):
     table_list = get_table_list[source_name]
     blacklisted_list = get_table_list['blacklisted']
     source_splitted = source_name.split('_de')
-    today = (datetime.now().astimezone(timezone('Europe/Berlin'))) \
-        .strftime('%Y-%m-%d')
-    yesterday = (datetime.now().astimezone(timezone('Europe/Berlin'))
-                 - timedelta(days=1 + day_diff)) \
-        .strftime('%Y-%m-%d')
+    tz = timezone('Europe/Berlin')
+    now_localized = tz.localize(date, is_dst=None)
+    today = now_localized.strftime('%Y-%m-%d')
+    yesterday_localized = tz.localize(
+        date - timedelta(days=1 + day_diff), is_dst=None)
+    yesterday = yesterday_localized.strftime('%Y-%m-%d')
 
     full_file_base_path = 'gs://dhg-backend/dwh_psql_' + source_splitted[0] \
                           + '/unique_full/' + yesterday
 
-    changed_file_base_path = 'gs://dhg-backend/dwh_psql_' + source_splitted[0] \
+    changed_file_base_path = 'gs://dhg-backend/' \
+                             'dwh_psql_' + source_splitted[0] \
                              + '/id_md5_changes/' + today
 
     id_md5_changes_prefix = 'dwh_psql_' + source_splitted[0] \
@@ -673,7 +674,7 @@ def _get_csv_update_input_size_v2(source_name, day_diff):
         if source_name in blacklistable_sn and table in blacklisted_list:
             continue
 
-        s, c = get_blobs_size(
+        c, s = get_blobs_size(
             bucket,
             full_file_base_path.replace('gs://dhg-backend/', '') +
             '/' + table + "/*.csv")
@@ -686,7 +687,7 @@ def _get_csv_update_input_size_v2(source_name, day_diff):
 
         check_del = del_path[:-5] + 'part-0000'
         if check_path_in_list(check_del, existed_file_list):
-            s, c = get_blobs_size(
+            c, s = get_blobs_size(
                 bucket,
                 del_path.replace('gs://dhg-backend/', ''))
             s += s
@@ -726,4 +727,4 @@ def get_input_size(job_type, task_type=None, backend=None,
         c, s = _get_ulm_input_size(task_type, date)
     else:
         raise ValueError('Invalid job type')
-    return c, int(s) / 1e6  # Size is in megabytes
+    return c, s  # Size is in gigabytes

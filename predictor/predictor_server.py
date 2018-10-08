@@ -68,9 +68,13 @@ class PredictorServer(predictor_service_pb2_grpc.ObiPredictorServicer):
                 # Next one is day difference
                 day_diff = args[i + 1]
         # Generate predictions
+        log.info('Requesting prediction for {}, {}, with day diff={}'.format(
+            job_type, backend, day_diff
+        ))
         predictions = predictor.predict(req.Metrics,
                                         backend=backend,
                                         day_diff=day_diff)
+        log.info('Predicted values: {}'.format(predictions))
         # Return predictions to the user
         res = predictor_service_pb2.PredictionResponse()
         res.Duration = int(predictions)

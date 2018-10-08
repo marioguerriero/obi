@@ -43,3 +43,6 @@ predictor/message_pb2.py
 master/model/message.pb.go
 
 client/master-rpc-service.pb.go
+
+master/server.crt
+master/server.key
