@@ -1,6 +1,6 @@
 #!/bin/sh
 
-pylama $1
+pylama $1 --skip master/heartbeat/sender_dataproc.py
 
 if [ $? -eq 0 ]; then
         echo "no errors found"
