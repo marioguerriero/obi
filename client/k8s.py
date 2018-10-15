@@ -867,7 +867,8 @@ class KubernetesClient(GenericClient):
             service_name, namespace, label)
 
         # Create deployment for predictive component
-        self._create_api_deployment(deployment_name, namespace, label, config_map)
+        self._create_api_deployment(
+            deployment_name, namespace, label, config_map)
 
         # Return host and port to contact the predictor component
         return api_host, api_port

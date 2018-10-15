@@ -1,31 +1,32 @@
 package main
 
 import (
-	flag "github.com/spf13/pflag"
-	"context"
-	"google.golang.org/grpc"
-	"log"
-	"google.golang.org/grpc/credentials"
-	"crypto/tls"
-			"strings"
-	"os"
 	"cloud.google.com/go/storage"
-	"io"
-	"path"
-	"github.com/satori/go.uuid"
-	"fmt"
-	"golang.org/x/crypto/ssh/terminal"
-			"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
-	"path/filepath"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	"net/http"
-	"time"
+	"context"
+	"crypto/tls"
 	"encoding/json"
+	"fmt"
+	"github.com/satori/go.uuid"
+	flag "github.com/spf13/pflag"
+	"golang.org/x/crypto/ssh/terminal"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"io"
 	"io/ioutil"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"k8s.io/client-go/tools/clientcmd"
+	"log"
+	"net/http"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
+	"time"
 )
 
+// JobInfoResponse defines the response type for job information requests
 type JobInfoResponse struct {
 	Status string
 	User string
@@ -40,6 +41,7 @@ type obiCreds struct {
 	Password string
 }
 
+// GetRequestMetadata indicates whether the credentials requires transport security.
 func (c obiCreds) GetRequestMetadata(ctx context.Context, in ...string) (map[string]string, error) {
 	return map[string]string{
 		"username": c.Username,
@@ -47,88 +49,9 @@ func (c obiCreds) GetRequestMetadata(ctx context.Context, in ...string) (map[str
 	}, nil
 }
 
+// RequireTransportSecurity unimplemented fo
 func (c obiCreds) RequireTransportSecurity() bool {
 	return true
-}
-
-
-func main() {
-	var credentials obiCreds
-
-	// parsing arguments
-	execPath := flag.StringP("path", "f", "", "a string")
-	infrastructure := flag.StringP("infrastructure", "i", "", "a string")
-	jobType := flag.StringP("type", "t", "", "a string")
-	priority := flag.Int32P("priority", "p", 0, "an int")
-	wait := flag.BoolP("wait", "w", false, "wait for job completion")
-	useLocalCreds := flag.Bool("localcreds", false, "get local credentials")
-
-	flag.Parse()
-
-	jobRequest := prepareJobRequest(*jobType, *execPath, *infrastructure, *priority)
-
-	if *useLocalCreds == true {
-		credsFile, err := ioutil.ReadFile("/etc/obi/credentials")
-		if err != nil {
-			log.Fatal("Impossible to get local credentials.")
-		}
-		creds := string(credsFile)
-		credsArray := strings.Split(creds, ",")
-
-		if len(credsArray) != 2 {
-			log.Fatal("Credentials file wrong format.")
-		}
-
-		credentials.Username = credsArray[0]
-		credentials.Password = credsArray[1]
-	} else {
-		var username string
-		// ask for credentials
-		fmt.Println("Username: ")
-		fmt.Scanf("%s\n", &username)
-		fmt.Println("Password: ")
-		password, err := terminal.ReadPassword(0)
-		if err != nil {
-			log.Fatal("Something went wrong. Sorry.")
-		}
-
-		credentials.Username = username
-		credentials.Password = string(password)
-	}
-
-
-	masterServiceAddress, apiServiceAddress := getEndpoints(*infrastructure)
-	jobID := submitJob(jobRequest, credentials, masterServiceAddress)
-	if *wait {
-		fmt.Println("Waiting for job completion...")
-		client := &http.Client{Timeout: 30 * time.Second}
-		apiJobs := "http://" + apiServiceAddress + ":8083/api/jobs"
-		req, _ := http.NewRequest("GET", apiJobs, nil)
-		q := req.URL.Query()
-		q.Add("jobid", fmt.Sprint(jobID))
-		req.URL.RawQuery = q.Encode()
-		for {
-			resp, err := client.Do(req)
-			if err != nil {
-				log.Fatal("An error occurring during status request.")
-				break
-			}
-			defer resp.Body.Close()
-			jobInfo := JobInfoResponse{}
-			err = json.NewDecoder(resp.Body).Decode(&jobInfo)
-			if err != nil {
-				log.Fatal("An error occurring during status request.")
-				break
-			}
-			if jobInfo.Status == "completed" {
-				break
-			} else if jobInfo.Status == "failed" {
-				log.Fatal("The job execution failed. For more informations see the driver output of the job: " +
-					jobInfo.DriverOutputURI)
-			}
-			time.Sleep(10 * time.Second)
-		}
-	}
 }
 
 func submitJob(request JobSubmissionRequest, creds obiCreds, address string) int32 {
@@ -254,4 +177,83 @@ func prepareJobRequest(jobType string, execPath string, infrastructure string, p
 	}
 
 	return jobRequest
+}
+
+func main() {
+	var credentials obiCreds
+
+	// parsing arguments
+	execPath := flag.StringP("path", "f", "", "a string")
+	infrastructure := flag.StringP("infrastructure", "i", "", "a string")
+	jobType := flag.StringP("type", "t", "", "a string")
+	priority := flag.Int32P("priority", "p", 0, "an int")
+	wait := flag.BoolP("wait", "w", false, "wait for job completion")
+	useLocalCreds := flag.Bool("localcreds", false, "get local credentials")
+
+	flag.Parse()
+
+	jobRequest := prepareJobRequest(*jobType, *execPath, *infrastructure, *priority)
+
+	if *useLocalCreds == true {
+		credsFile, err := ioutil.ReadFile("/etc/obi/credentials")
+		if err != nil {
+			log.Fatal("Impossible to get local credentials.")
+		}
+		creds := string(credsFile)
+		credsArray := strings.Split(creds, ",")
+
+		if len(credsArray) != 2 {
+			log.Fatal("Credentials file wrong format.")
+		}
+
+		credentials.Username = credsArray[0]
+		credentials.Password = credsArray[1]
+	} else {
+		var username string
+		// ask for credentials
+		fmt.Println("Username: ")
+		fmt.Scanf("%s\n", &username)
+		fmt.Println("Password: ")
+		password, err := terminal.ReadPassword(0)
+		if err != nil {
+			log.Fatal("Something went wrong. Sorry.")
+		}
+
+		credentials.Username = username
+		credentials.Password = string(password)
+	}
+
+
+	masterServiceAddress, apiServiceAddress := getEndpoints(*infrastructure)
+	jobID := submitJob(jobRequest, credentials, masterServiceAddress)
+	if *wait {
+		fmt.Println("Waiting for job completion...")
+		client := &http.Client{Timeout: 30 * time.Second}
+		apiJobs := "http://" + apiServiceAddress + ":8083/api/jobs"
+		req, _ := http.NewRequest("GET", apiJobs, nil)
+		q := req.URL.Query()
+		q.Add("jobid", fmt.Sprint(jobID))
+		req.URL.RawQuery = q.Encode()
+		for {
+			resp, err := client.Do(req)
+			if err != nil {
+				log.Fatal("An error occurring during status request.")
+				break
+			}
+			defer resp.Body.Close()
+			jobInfo := JobInfoResponse{}
+			err = json.NewDecoder(resp.Body).Decode(&jobInfo)
+			if err != nil {
+				log.Fatal("An error occurring during status request.")
+				break
+			}
+			if jobInfo.Status == "completed" {
+				break
+			} else if jobInfo.Status == "failed" {
+				log.Fatal("The job execution failed. For more informations see the driver output of the job: " +
+					jobInfo.DriverOutputURI)
+			}
+			time.Sleep(10 * time.Second)
+		}
+	}
 }

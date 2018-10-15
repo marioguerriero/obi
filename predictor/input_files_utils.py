@@ -600,9 +600,9 @@ def _get_csv_recreate_input_size(backend, date, day_diff=0):
 
     for table in changed_tables:
         table = table.split('\n')[0]
-        input = BUCKET_PREFIX + source_prefix + '/csv_export_md5'
-        unique_output_path = BUCKET_PREFIX + source_prefix + '/unique/' \
-                             + yesterday
+        input_blob = BUCKET_PREFIX + source_prefix + '/csv_export_md5'
+        unique_output_path = BUCKET_PREFIX + \
+            source_prefix + '/unique/' + yesterday
 
         if check_path_in_list(unique_output_path + '/' + table + '/',
                               existed_file_list):
@@ -612,7 +612,7 @@ def _get_csv_recreate_input_size(backend, date, day_diff=0):
                 continue
 
         count += 1
-        size += get_blob_size(bucket, input + '/' + table + ".csv")
+        size += get_blob_size(bucket, input_blob + '/' + table + ".csv")
 
     # Return results
     return count, size
