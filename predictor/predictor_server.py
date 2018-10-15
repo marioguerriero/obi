@@ -9,25 +9,15 @@ import predictor_service_pb2
 import predictor_service_pb2_grpc
 import predictor_utils
 import predictors
-import yaml
 from logger import log
 
 sys.path.append('.')
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
-# Read configuration file
-config_path = os.environ['CONFIG_PATH']
-if config_path is not None:
-    with open(config_path, 'r') as f:
-        config = yaml.load(f)
-else:
-    log.fatal('Unable to read configuration file {}'.format(config_path))
-    sys.exit(1)
-
 # Create autoscaler dataset path name
 AUTOSCALER_DATASET_PATH = os.path.join(
-    config['bucketMountPath'],
+    os.environ['BUCKET_DIRECTORY'],
     'autoscaler-dataset',
     predictor_utils.random_string(prefix='obi-autoscaler', suffix='.csv')
 )
