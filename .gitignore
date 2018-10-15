@@ -9,6 +9,7 @@ heartbeat/message_pb2.py
 
 predictor/__pycache__/
 predictor/**/__pycache__/
+predictor/__init__.py
 
 .DS_Store
 assets/.DS_Store
