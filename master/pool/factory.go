@@ -8,6 +8,8 @@ import (
 	"obi/master/autoscaler/policies"
 	"obi/master/model"
 	"obi/master/platforms"
+	"os"
+	"strconv"
 )
 
 func newCluster(name, platform string) (model.ClusterBaseInterface, error) {
@@ -34,9 +36,11 @@ func newCluster(name, platform string) (model.ClusterBaseInterface, error) {
 }
 
 func newDataprocCluster(name string) (*platforms.DataprocCluster, error) {
+	nodePort, _ := strconv.Atoi(os.Getenv("HEARTBEAT_SERVICE_NODEPORT"))
+
 	cb := model.NewClusterBase(name, 2, "dataproc",
 		viper.GetString("heartbeatHost"),
-		viper.GetInt("heartbeatPort"))
+		nodePort)
 
 	cluster := platforms.NewDataprocCluster(cb, viper.GetString("projectId"),
 		viper.GetString("zone"),

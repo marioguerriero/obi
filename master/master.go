@@ -19,7 +19,7 @@ import (
 	"time"
 	"google.golang.org/grpc/metadata"
 	"strconv"
-)
+	)
 
 // ObiMaster structure representing one master instance for OBI
 type ObiMaster struct {
@@ -65,7 +65,7 @@ func (m *ObiMaster) SubmitJob(ctx context.Context,
 			Metrics: model.MetricsDidBorn,
 		})
 	if err != nil {
-		logrus.WithField("response", resp).Warning("Could not generate predictions")
+		logrus.WithField("error", err).Warning("Could not generate predictions")
 		job.PredictedDuration = 0
 
 		if job.Priority < 0 {
@@ -151,10 +151,10 @@ func CreateMaster() (*ObiMaster) {
 	scheduler.Start()
 
 	// Open connection to predictor server
-	serverAddr := fmt.Sprintf("%s:%s",
-		viper.GetString("predictorHost"),
-		viper.GetString("predictorPort"))
-	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure()) // TODO: encrypt communication
+	serverAddr := fmt.Sprintf("%s:%d",
+		os.Getenv("PREDICTOR_SERVICE_DNS_NAME"),
+		8080)
+	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
 	if err != nil {
 		logrus.Fatalf("fail to dial: %v", err)
 	}
