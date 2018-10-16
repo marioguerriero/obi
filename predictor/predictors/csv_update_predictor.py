@@ -1,5 +1,5 @@
 import os
-from datetime import date
+from datetime import datetime
 
 import numpy as np
 
@@ -42,7 +42,7 @@ class CsvUpdatePredictor(GenericPredictor):
         try:
             input_info = input_files_utils.get_input_size(
                 'csv', 'update', kwargs['backend'],
-                date.today(), kwargs['day_diff'])
+                datetime.now(), kwargs['day_diff'])
         except ValueError as e:
             log.error('Could not generate predictions: {}'.format(e))
             return None

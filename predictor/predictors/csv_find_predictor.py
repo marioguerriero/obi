@@ -1,5 +1,5 @@
 import os
-from datetime import date
+from datetime import datetime
 
 import yaml
 
@@ -44,7 +44,7 @@ class CsvFindPredictor(GenericPredictor):
         try:
             input_info = input_files_utils.get_input_size(
                 'csv', 'find', kwargs['backend'],
-                date.today(), kwargs['day_diff'])
+                datetime.now(), kwargs['day_diff'])
         except ValueError:
             log.error('Could not generate predictions')
             return None
