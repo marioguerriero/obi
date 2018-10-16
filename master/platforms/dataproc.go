@@ -242,6 +242,10 @@ func (c *DataprocCluster) SubmitJob(job *m.Job) error {
 				PysparkJob: &dataprocpb.PySparkJob{
 					MainPythonFileUri: job.ExecutablePath,
 					Args: strings.Fields(job.Args),
+					Properties: map[string]string{
+						"spark.driver.extraJavaOptions": "-XX:+UseG1GC",
+						"spark.executor.extraJavaOptions": "-XX:+UseG1GC",
+					},
 				},
 			},
 		},
