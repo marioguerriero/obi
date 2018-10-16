@@ -175,7 +175,7 @@ func prepareJobRequest(jobType string, execPath string, infrastructure string, p
 			log.Fatal(err)
 		}
 		bkt := client.Bucket("dhg-obi")
-		filename := md5FileContent(execPath) + "-" + path.Base(execPath)
+		filename := md5FileContent(execPath) + "/" + path.Base(execPath)
 		obj := bkt.Object("tmp/" + filename)
 		w := obj.NewWriter(ctx)
 		if _, err := io.Copy(w, file); err != nil {
