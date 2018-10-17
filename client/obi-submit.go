@@ -261,8 +261,11 @@ func main() {
 			if jobInfo.Status == "completed" {
 				break
 			} else if jobInfo.Status == "failed" {
-				log.Fatal("The job execution failed. For more informations see the driver output of the job: " +
-					jobInfo.DriverOutputURI)
+				url := fmt.Sprintf("%s/%s",
+					"https://console.cloud.google.com/storage/browser",
+					strings.Replace(jobInfo.DriverOutputURI, "gs://", "", 1))
+				log.Fatal("The job execution failed. For more information see the driver output of the job: " +
+					url)
 			}
 			time.Sleep(10 * time.Second)
 		}
