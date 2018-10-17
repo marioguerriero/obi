@@ -76,7 +76,7 @@ func (c obiCreds) RequireTransportSecurity() bool {
 func submitJob(request JobSubmissionRequest, creds obiCreds, address string) int32 {
 	credentials := credentials.NewTLS( &tls.Config{ InsecureSkipVerify: true } )
 	conn, err := grpc.Dial(
-		address + ":443",
+		address + ":8081",
 		grpc.WithTransportCredentials(credentials),
 		grpc.WithPerRPCCredentials(creds),
 	)
@@ -130,12 +130,7 @@ func getEndpoints(infrastructure string) string {
 	}
 
 	// get service to contact obi master endpoint
-	deployment, err := clientset.AppsV1().Deployments("obi").Get(infrastructure, metav1.GetOptions{})
-	if err != nil {
-		panic(err.Error())
-	}
-	masterServiceName := deployment.Annotations["master-service-name"]
-	masterService, err := clientset.CoreV1().Services("obi").Get(masterServiceName, metav1.GetOptions{})
+	masterService, err := clientset.CoreV1().Services("obi").Get(infrastructure + "-submit-jobs", metav1.GetOptions{})
 	if err != nil {
 		panic(err.Error())
 	}
@@ -235,7 +230,7 @@ func main() {
 	}
 
 
-	masterServiceAddress := "obi.dataops.deliveryhero.de" //getEndpoints(*infrastructure)
+	masterServiceAddress := getEndpoints(*infrastructure)
 	jobID := submitJob(jobRequest, credentials, masterServiceAddress)
 	if *wait {
 		fmt.Println("Waiting for job completion...")
