@@ -89,6 +89,6 @@ func main() {
 	// Set the router as the default one shipped with Gin
 	r := gin.Default()
 
-	r.GET("/api/jobs", getJob)
+	r.GET("/jobs", getJob)
 	r.Run(":8083")
 }

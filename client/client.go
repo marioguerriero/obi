@@ -57,7 +57,7 @@ func (c obiCreds) RequireTransportSecurity() bool {
 func submitJob(request JobSubmissionRequest, creds obiCreds, address string) int32 {
 	credentials := credentials.NewTLS( &tls.Config{ InsecureSkipVerify: true } )
 	conn, err := grpc.Dial(
-		address + ":8081",
+		address + ":443",
 		grpc.WithTransportCredentials(credentials),
 		grpc.WithPerRPCCredentials(creds),
 	)
@@ -87,7 +87,7 @@ func homeDir() string {
 	return os.Getenv("USERPROFILE") // windows
 }
 
-func getEndpoints(infrastructure string) (string, string) {
+func getEndpoints(infrastructure string) string {
 	var kubeconfig *string
 
 	// load kubeconfig
@@ -124,15 +124,7 @@ func getEndpoints(infrastructure string) (string, string) {
 		log.Fatal("Master service not reachable.")
 	}
 
-	apiServiceName := deployment.Annotations["api-service-name"]
-	apiService, err := clientset.CoreV1().Services("obi").Get(apiServiceName, metav1.GetOptions{})
-	if err != nil {
-		panic(err.Error())
-	}
-	if ingresses := apiService.Status.LoadBalancer.Ingress;  len(ingresses) == 0 {
-		log.Fatal("API service not reachable.")
-	}
-	return masterService.Status.LoadBalancer.Ingress[0].IP, apiService.Status.LoadBalancer.Ingress[0].IP
+	return masterService.Status.LoadBalancer.Ingress[0].IP
 }
 
 func prepareJobRequest(jobType string, execPath string, infrastructure string, priority int32) JobSubmissionRequest {
@@ -224,12 +216,12 @@ func main() {
 	}
 
 
-	masterServiceAddress, apiServiceAddress := getEndpoints(*infrastructure)
+	masterServiceAddress := "obi.dataops.deliveryhero.de" //getEndpoints(*infrastructure)
 	jobID := submitJob(jobRequest, credentials, masterServiceAddress)
 	if *wait {
 		fmt.Println("Waiting for job completion...")
 		client := &http.Client{Timeout: 30 * time.Second}
-		apiJobs := "http://" + apiServiceAddress + ":8083/api/jobs"
+		apiJobs := "http://obi.dataops.deliveryhero.de/" + *infrastructure +"/api/jobs"
 		req, _ := http.NewRequest("GET", apiJobs, nil)
 		q := req.URL.Query()
 		q.Add("jobid", fmt.Sprint(jobID))
