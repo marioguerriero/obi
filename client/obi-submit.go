@@ -3,10 +3,11 @@ package main
 import (
 	"cloud.google.com/go/storage"
 	"context"
+	"crypto/md5"
 	"crypto/tls"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/satori/go.uuid"
 	flag "github.com/spf13/pflag"
 	"golang.org/x/crypto/ssh/terminal"
 	"google.golang.org/grpc"
@@ -39,6 +40,24 @@ type JobInfoResponse struct {
 type obiCreds struct {
 	Username string
 	Password string
+}
+
+func md5FileContent(path string) string {
+	f, err := os.Open(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+
+	// Copy file into hash structure
+	h := md5.New()
+	if _, err := io.Copy(h, f); err != nil {
+		log.Fatal(err)
+	}
+
+	hashInBytes := h.Sum(nil)
+	md5String := hex.EncodeToString(hashInBytes)
+	return md5String
 }
 
 // GetRequestMetadata indicates whether the credentials requires transport security.
@@ -148,7 +167,7 @@ func prepareJobRequest(jobType string, execPath string, infrastructure string, p
 			log.Fatal(err)
 		}
 		bkt := client.Bucket("dhg-obi")
-		filename := uuid.Must(uuid.NewV4()).String() + path.Ext(execPath)
+		filename := md5FileContent(execPath) + "/" + path.Base(execPath)
 		obj := bkt.Object("tmp/" + filename)
 		w := obj.NewWriter(ctx)
 		if _, err := io.Copy(w, file); err != nil {

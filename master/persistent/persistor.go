@@ -10,7 +10,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq" // this is required to use the Postgres connector
-			)
+)
 
 var database *sql.DB
 
@@ -319,7 +319,7 @@ func updateJobQuery(job *model.Job) error {
 	if err != nil {
 		return err
 	}
-	stmt.QueryRow(
+	return stmt.QueryRow(
 		job.Cluster.GetName(),
 		job.Cluster.GetCreationTimestamp(),
 		model.JobStatusNames[job.Status],
@@ -333,8 +333,7 @@ func updateJobQuery(job *model.Job) error {
 		job.PlatformDependentID,
 		job.DriverOutputPath,
 		job.ID,
-	)
-	return nil
+	).Scan()
 }
 
 func insertClusterQuery(cluster model.ClusterBaseInterface) error {
@@ -355,13 +354,12 @@ func insertClusterQuery(cluster model.ClusterBaseInterface) error {
 		fmt.Println(err)
 		return err
 	}
-	stmt.QueryRow(cluster.GetName(),
+	return stmt.QueryRow(cluster.GetName(),
 		cluster.GetPlatform(),
 		model.ClusterStatusNames[cluster.GetStatus()],
 		cluster.GetCreationTimestamp(),
 		cluster.GetAllocatedJobSlots(),
-	)
-	return nil
+	).Scan()
 }
 
 // GetRunningDatabaseCreationTimestamp returns the creation timestamp for a given cluster in running state (if any)
@@ -401,15 +399,14 @@ func updateClusterQuery(cluster model.ClusterBaseInterface) error {
 	if err != nil {
 		return err
 	}
-	stmt.QueryRow(
+	return stmt.QueryRow(
 		cluster.GetPlatform(),
 		model.ClusterStatusNames[cluster.GetStatus()],
 		cluster.GetCost(),
 		cluster.GetAllocatedJobSlots(),
 		cluster.GetName(),
 		cluster.GetCreationTimestamp(),
-	)
-	return nil
+	).Scan()
 }
 
 func rowExists(query string, args ...interface{}) bool {
