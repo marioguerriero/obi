@@ -134,7 +134,7 @@ func getEndpoints(infrastructure string) string {
 	if err != nil {
 		panic(err.Error())
 	}
-	if ingresses := masterService.Status.LoadBalancer.Ingress;  len(ingresses) == 0 {
+	if ingresses := masterService.Status.LoadBalancer.Ingress; len(ingresses) == 0 {
 		log.Fatal("Master service not reachable.")
 	}
 
@@ -201,7 +201,7 @@ func main() {
 	jobRequest := prepareJobRequest(*jobType, *execPath, *infrastructure, *priority)
 
 	if *useLocalCreds == true {
-		credsFile, err := ioutil.ReadFile("/etc/obi/credentials")
+		credsFile, err := ioutil.ReadFile("/usr/local/airflow/dags/obi-exec/credentials")
 		if err != nil {
 			log.Fatal("Impossible to get local credentials.")
 		}
@@ -258,7 +258,7 @@ func main() {
 			} else if jobInfo.Status == "failed" {
 				url := fmt.Sprintf("%s/%s",
 					"https://console.cloud.google.com/storage/browser",
-					strings.Replace(jobInfo.DriverOutputURI, "gs://", "", 1))
+					strings.Replace(filepath.Dir(jobInfo.DriverOutputURI), "gs://", "", 1))
 				log.Fatal("The job execution failed. For more information see the driver output of the job: " +
 					url)
 			}
