@@ -2,7 +2,11 @@ syntax = "proto3";
 
 package predictor;
 
+#ifdef GOLANG
+import "obi/master/model/message.proto";
+#else
 import "message.proto";
+#endif
 
 service ObiPredictor {
     rpc RequestPrediction(PredictionRequest) returns (PredictionResponse) {}

@@ -81,6 +81,7 @@ func submitJob(request JobSubmissionRequest, creds obiCreds, address string) int
 		grpc.WithPerRPCCredentials(creds),
 	)
 	if err != nil {
+		fmt.Println("Err")
 		log.Fatal(err)
 	}
 	defer conn.Close()
@@ -89,6 +90,7 @@ func submitJob(request JobSubmissionRequest, creds obiCreds, address string) int
 	resp, err := client.SubmitJob(context.Background(), &request)
 
 	if err != nil {
+		fmt.Println("error")
 		log.Fatal(err)
 	}
 	if resp.Succeded == false {
@@ -201,7 +203,7 @@ func main() {
 	jobRequest := prepareJobRequest(*jobType, *execPath, *infrastructure, *priority)
 
 	if *useLocalCreds == true {
-		credsFile, err := ioutil.ReadFile("/usr/local/airflow/dags/obi-exec/credentials")
+		credsFile, err := ioutil.ReadFile("/etc/obi/credentials")
 		if err != nil {
 			log.Fatal("Impossible to get local credentials.")
 		}
@@ -258,7 +260,7 @@ func main() {
 			} else if jobInfo.Status == "failed" {
 				url := fmt.Sprintf("%s/%s",
 					"https://console.cloud.google.com/storage/browser",
-					strings.Replace(filepath.Dir(jobInfo.DriverOutputURI), "gs://", "", 1))
+					strings.Replace(filepath.Dir(jobInfo.DriverOutputURI), "gs:/", "", 1))
 				log.Fatal("The job execution failed. For more information see the driver output of the job: " +
 					url)
 			}

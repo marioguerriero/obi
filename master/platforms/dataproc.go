@@ -245,6 +245,7 @@ func (c *DataprocCluster) SubmitJob(job *m.Job) error {
 					Properties: map[string]string{
 						"spark.driver.extraJavaOptions": "-XX:+UseG1GC",
 						"spark.executor.extraJavaOptions": "-XX:+UseG1GC",
+						"spark.sql.autoBroadcastJoinThreshold": "-1",
 					},
 				},
 			},
