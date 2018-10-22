@@ -34,18 +34,10 @@ func CreatePersistentConnection() error {
 		logrus.Fatal("Unable to read stolon password")
 	}
 
-	// Create connection string
-	//connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/postgres?sslmode=disable",
-	//	string(username),
-	//	string(password), os.Getenv("STOLON_PROXY_DNS_NAME"),
-	//	os.Getenv("STOLON_PROXY_PORT"),
-	//)
-
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
 		"password=%s dbname=%s sslmode=disable",
 		os.Getenv("STOLON_PROXY_DNS_NAME"), os.Getenv("STOLON_PROXY_PORT"), string(username), string(password), "postgres")
 
-	fmt.Println(psqlInfo)
 	// Connect to database
 	logrus.Info("Connecting to persistent storage database")
 	database, err = sql.Open("postgres", psqlInfo)
