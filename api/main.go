@@ -3,32 +3,15 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"fmt"
-	"github.com/spf13/viper"
-	"github.com/sirupsen/logrus"
+		"github.com/sirupsen/logrus"
 	"database/sql"
 	"os"
-	"path/filepath"
-	_ "github.com/lib/pq" // this is required to use the Postgres connector
+		_ "github.com/lib/pq" // this is required to use the Postgres connector
 	"time"
+	"io/ioutil"
 )
 
 var database *sql.DB
-
-func parseConfig() {
-	configPath := os.Getenv("CONFIG_PATH")
-	dir, filename := filepath.Split(configPath)
-	ext := filepath.Ext(filename)
-	name := filename[0:len(filename)-len(ext)]
-
-	logrus.Info("Reading configuration")
-
-	viper.AddConfigPath(dir)
-	viper.SetConfigName(name)
-	err := viper.ReadInConfig()
-	if err != nil {
-		logrus.WithField("err", err).Fatalln("Unable to read configuration")
-	}
-}
 
 func getJob(c *gin.Context) {
 	var status string
@@ -70,18 +53,23 @@ func getJob(c *gin.Context) {
 }
 
 func main() {
-	parseConfig()
+	username, err := ioutil.ReadFile("/etc/db/credentials/username")
+	if err != nil {
+		logrus.Fatal("Unable to read stolon username")
+	}
 
-	connStr := fmt.Sprintf("%s://%s:%s@%s:%s/%s?sslmode=disable",
-		viper.GetString("dbType"), viper.GetString("dbUser"),
-		viper.GetString("dbPassword"), viper.GetString("dbHost"),
-		viper.GetString("dbPort"), viper.GetString("dbName"),
-	)
+	password, err := ioutil.ReadFile("/etc/db/credentials/password")
+	if err != nil {
+		logrus.Fatal("Unable to read stolon password")
+	}
+
+	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
+		"password=%s dbname=%s sslmode=disable",
+		os.Getenv("STOLON_PROXY_DNS_NAME"), os.Getenv("STOLON_PROXY_PORT"), string(username), string(password), "postgres")
 
 	// Connect to database
-	var err error
 	logrus.Info("Connecting to persistent storage database")
-	database, err = sql.Open(viper.GetString("dbType"), connStr)
+	database, err = sql.Open("postgres", psqlInfo)
 	if err != nil {
 		logrus.Fatal("Unable to open database connection for persistent storage")
 	}

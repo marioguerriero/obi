@@ -5,11 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
-	"obi/master/model"
+		"obi/master/model"
 	"time"
 
 	_ "github.com/lib/pq" // this is required to use the Postgres connector
+	"os"
+	"io/ioutil"
 )
 
 var database *sql.DB
@@ -23,17 +24,31 @@ type Record struct {
 
 // CreatePersistentConnection opens connection to the persistent storage database
 func CreatePersistentConnection() error {
-	// Create connection string
-	connStr := fmt.Sprintf("%s://%s:%s@%s:%s/%s?sslmode=disable",
-		viper.GetString("dbType"), viper.GetString("dbUser"),
-		viper.GetString("dbPassword"), viper.GetString("dbHost"),
-		viper.GetString("dbPort"), viper.GetString("dbName"),
-	)
+	username, err := ioutil.ReadFile("/etc/db/credentials/username")
+	if err != nil {
+		logrus.Fatal("Unable to read stolon username")
+	}
 
+	password, err := ioutil.ReadFile("/etc/db/credentials/password")
+	if err != nil {
+		logrus.Fatal("Unable to read stolon password")
+	}
+
+	// Create connection string
+	//connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/postgres?sslmode=disable",
+	//	string(username),
+	//	string(password), os.Getenv("STOLON_PROXY_DNS_NAME"),
+	//	os.Getenv("STOLON_PROXY_PORT"),
+	//)
+
+	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
+		"password=%s dbname=%s sslmode=disable",
+		os.Getenv("STOLON_PROXY_DNS_NAME"), os.Getenv("STOLON_PROXY_PORT"), string(username), string(password), "postgres")
+
+	fmt.Println(psqlInfo)
 	// Connect to database
-	var err error
 	logrus.Info("Connecting to persistent storage database")
-	database, err = sql.Open(viper.GetString("dbType"), connStr)
+	database, err = sql.Open("postgres", psqlInfo)
 	if err != nil {
 		logrus.Fatal("Unable to open database connection for persistent storage")
 	}
