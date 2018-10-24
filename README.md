@@ -126,6 +126,32 @@ Assuming that you put your OBI deployment YAML file in
 python3 client/generic_client.py  create infrastructure -f examples/deployment.yaml
 ```
 
+Once an OBI instance is deployed, jobs can be submitted to it. In order to do
+that you need to compile the OBI submitter client:
+
+```bash
+cd client/
+go get .
+got build .
+```
+
+This process requires you to install Go lang compiler and will produce you a
+`client` executable as output. Jobs can be submitted using the following
+command:
+
+```bash
+./client -f EXE_PATH -t PySpark -i OBI_DEPLOYMENT_NAME -p PRIORITY -- EXE_ARGS
+```
+
+The executable path be either a Google Cloud Storage URI or local executable.
+The `-t` option defines the type of the job the user is submitting and, so far,
+only PySpark is supported. The `OBI_DEPLOYMENT_NAME` is the one defined in the
+OBI deployment YAML file when the OBI instance was created.
+
+When submitting a job, the user is asked for username and password. Those values
+should be written by the system administrator  in the `Users` table of the SQL 
+database which is used by OBI to store its state.
+
 ### Helm Chart
 
 In order to make the Kubernetes deployment process easier, we have also provided
