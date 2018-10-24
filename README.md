@@ -130,9 +130,9 @@ Once an OBI instance is deployed, jobs can be submitted to it. In order to do
 that you need to compile the OBI submitter client:
 
 ```bash
-cd client/
-go get .
-got build .
+$ cd client/
+$ go get .
+$ got build .
 ```
 
 This process requires you to install Go lang compiler and will produce you a
@@ -140,7 +140,7 @@ This process requires you to install Go lang compiler and will produce you a
 command:
 
 ```bash
-./client -f EXE_PATH -t PySpark -i OBI_DEPLOYMENT_NAME -p PRIORITY -- EXE_ARGS
+$ ./client -f JOB_SCRIPT_PATH -t PySpark -i OBI_DEPLOYMENT_NAME -p PRIORITY -- EXE_ARGS
 ```
 
 The executable path be either a Google Cloud Storage URI or local executable.
@@ -156,6 +156,18 @@ database which is used by OBI to store its state.
 
 In order to make the Kubernetes deployment process easier, we have also provided
 an Helm chart.
+
+Let's download the helm chart with:
+
+```bash
+$ git clone https://gitlab.dataops.deliveryhero.de/obi/helm-chart
+```
+Open `values.yaml` and fill in all the empty fields. Once the configuration is
+completed, just deploy on your Kubernetes cluster with"
+
+```bash
+$ helm install obi-chart
+```
 
 ## Contributions
 
