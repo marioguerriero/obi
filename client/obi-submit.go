@@ -203,7 +203,7 @@ func main() {
 	jobRequest := prepareJobRequest(*jobType, *execPath, *infrastructure, *priority)
 
 	if *useLocalCreds == true {
-		credsFile, err := ioutil.ReadFile("/etc/obi/credentials")
+		credsFile, err := ioutil.ReadFile("/usr/local/airflow/dags/obi-exec/credentials")
 		if err != nil {
 			log.Fatal("Impossible to get local credentials.")
 		}
