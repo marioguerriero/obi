@@ -114,35 +114,7 @@ completed, just deploy on your Kubernetes cluster with"
 $ helm install obi-chart
 ```
 
-## Building
-
-The first step to compile OBI is to generate the `protobuf` code required for
-RPC communication between the components. Both
-[protobuf](https://developers.google.com/protocol-buffers/) and
-[gRPC](https://grpc.io) are strict requirements for this process. Keep in mind
-that OBI is written mainly in Go with some parts in Python so the dependencies
-have to be satisfied for both languages.
-
-To generate the `protobuf` code we provide a script, `proto-gen.sh` which will
-take care of all the development process.
-
-After the `protobuf` files are generated, for each component you can find a
-`Dockerfile` which can be used to create images from them to be deployed
-anywhere.
-
-We have also provided a client which can automatically deploy OBI on your
-platform. So far, only Kubernetes is supported as a container orchestration
-deployment platform. In order to deploy OBI in your Kubernetes infrastructure
-you can use the `master/generic_client.py` script which is supposed to be a
-client for system adiministrators.
-
-Assuming that you put your OBI deployment YAML file in
-`examples/deployment.yaml`, you can deploy a new OBI with the following command:
-
-```bash
-$ python3 client/generic_client.py  create infrastructure -f examples/deployment.yaml
-```
-
+## Usage
 Once an OBI instance is deployed, jobs can be submitted to it. In order to do
 that you need to compile the OBI submitter client:
 
@@ -181,3 +153,50 @@ extending `model.ClusterBase` and implementing `model.ClusterBaseInterface`.
 
 As a reference, you can have a look at the existing Dataproc implementation
 available in `master/platforms/dataproc.go`.
+
+### Building
+
+The first step to compile OBI is to generate the `protobuf` code required for
+RPC communication between the components. Both
+[protobuf](https://developers.google.com/protocol-buffers/) and
+[gRPC](https://grpc.io) are strict requirements for this process. Keep in mind
+that OBI is written mainly in Go with some parts in Python so the dependencies
+have to be satisfied for both languages.
+
+Install protobuf following the [instructions](https://github.com/protocolbuffers/protobufs) for your specific environment. 
+
+To generate the `protobuf` code we provide a script, `proto-gen.sh` which will
+take care of all the development process.
+
+```bash
+$ ./proto-gen.sh
+```
+
+After the `protobuf` files are generated, for each component you can find a
+`Dockerfile` which can be used to create images from them to be deployed
+anywhere.
+
+In order to rebuild the docker image of the modules:
+```bash
+$ cd <module-name>
+$ docker build -t <registry-name>:<tag> .
+$ docker push -t <registry-name>:<tag>
+```
+
+At this point you should simply specify the new image in the 'values.yaml' file 
+for the Helm chart and install again.
+
+
+### Depracated
+We have also provided a client which can automatically deploy OBI on your
+platform. So far, only Kubernetes is supported as a container orchestration
+deployment platform. In order to deploy OBI in your Kubernetes infrastructure
+you can use the `master/generic_client.py` script which is supposed to be a
+client for system adiministrators.
+
+Assuming that you put your OBI deployment YAML file in
+`examples/deployment.yaml`, you can deploy a new OBI with the following command:
+
+```bash
+$ python3 client/generic_client.py  create infrastructure -f examples/deployment.yaml
+```
