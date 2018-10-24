@@ -97,7 +97,7 @@ possible amount of nodes at each time step. Indeed, each cluster created by OBI
 starts with the minimum possible amount of nodes, which are dynamically adjusted
 according to the needs of the running jobs.
 
-### Helm Chart
+## Helm Chart
 
 In order to make the Kubernetes deployment process easier, we have also provided
 an Helm chart.
