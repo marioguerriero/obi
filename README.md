@@ -1,10 +1,23 @@
 # OBI (Objectively Better Infrastructure)
+### Simplified batch data processing platform for Google Cloud Dataproc
 
 OBI is a project from Delivery Hero's Data Insight team which represents an
 attempt to optimize clusters resource utilization in order to limit their
 operational costs. 
 
-Project goals:
+- [Objectives](#objectives)
+- [Code structure](#code-structure)
+- [Architecture](#architecture)
+    - [The workflow](#obi-workflow)
+- [Helm chart](#helm-chart)
+- [Usage](#usage)
+- [Contributions](#contributions)
+    - [Integrate OBI in your infrastructure](#integrate-obi-in-your-infrastracture)
+    - [Building](#building)
+    - [Deprecated](#deprecated)
+- [License](#license)
+
+## Objectives
 
  - Optimize resource usage for low dimensional topologies (e.g., Borg/k8s was
    developed for contexts with vast amount of resources).
