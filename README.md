@@ -21,6 +21,11 @@ Project goals:
  - `api` web server exposing OBI's internal database for external usage e.g.
    querying the status of a job while it's running
  - `assets` generic assets e.g. images used in the code
+ - `client` contains the code for using OBI from a remote client. Two clients
+   are made available: the first one, written in Python and accessible through
+   the `client/generic_client.py` script is meant for system administrators and
+   another one, accessible by compiling `client/obi-submit.go` which is meant
+   for the final user to allow him to submit his jobs
  - `examples` contains example YAML files to showcase how a system administrator
    can attach a cloud computing platform with an OBI deployment
  - `master/autoscaler` code written for the autoscaler feature
@@ -59,6 +64,39 @@ requests.
 
 ![alt text](assets/obi-architecture.jpg "OBI Architecture")
 
+### OBI Workflow
+
+OBI is meant to provide an abstraction layer between the user and the cluster
+infrastructure, in order to simplify the job submission process and to optimize
+operational costs.
+
+OBI jobs may have different priority levels. If a job having maximum priority is
+submitted, OBI will create a cluster which will be exclusivelly allocated to
+that job. Otherwise, if a job with lower priority is submitted, OBI will try to
+pack it with similar jobs in bins, following a certain policy.
+
+OBI scheduler supports two scheduling policies while packaging jobs into bins:
+ - **count based**: bin are filled with jobs coming from the same priority band
+   up to a certain count
+ - **time based**: in this policy the scheduler asks the predictor module to
+   generate an estimation of how long a certain job will last and then tries to
+   pack jobs with the same priority into homogenous bins e.g. each bin should
+   contain jobs for a maximum total duration of 1 hour
+
+The scheduling policy and the priority levels are configurable through the OBI
+deployment YAML file.
+
+After jobs are scheduled and one or more clusters are allocated, each cluster is
+assigned with an autoscaler routine. This routine will monitor the cluster
+status through the heartbeat the OBI Master receives from them. Those heartbeats
+contain information about the resources utilization in the cluster which are
+used by the autoscaler to decide whether to add (or remove) nodes.
+
+The goal of the autoscaler is to make the cluster working with the least
+possible amount of nodes at each time step. Indeed, each cluster created by OBI
+starts with the minimum possible amount of nodes, which are dynamically adjusted
+according to the needs of the running jobs.
+
 ## Development
 
 The first step to compile OBI is to generate the `protobuf` code required for
@@ -87,6 +125,11 @@ Assuming that you put your OBI deployment YAML file in
 ```bash
 python3 client/generic_client.py  create infrastructure -f examples/deployment.yaml
 ```
+
+### Helm Chart
+
+In order to make the Kubernetes deployment process easier, we have also provided
+an Helm chart.
 
 ## Contributions
 
