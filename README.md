@@ -97,7 +97,24 @@ possible amount of nodes at each time step. Indeed, each cluster created by OBI
 starts with the minimum possible amount of nodes, which are dynamically adjusted
 according to the needs of the running jobs.
 
-## Development
+### Helm Chart
+
+In order to make the Kubernetes deployment process easier, we have also provided
+an Helm chart.
+
+Let's download the helm chart with:
+
+```bash
+$ git clone https://gitlab.dataops.deliveryhero.de/obi/helm-chart
+```
+Open `values.yaml` and fill in all the empty fields. Once the configuration is
+completed, just deploy on your Kubernetes cluster with"
+
+```bash
+$ helm install obi-chart
+```
+
+## Building
 
 The first step to compile OBI is to generate the `protobuf` code required for
 RPC communication between the components. Both
@@ -123,7 +140,7 @@ Assuming that you put your OBI deployment YAML file in
 `examples/deployment.yaml`, you can deploy a new OBI with the following command:
 
 ```bash
-python3 client/generic_client.py  create infrastructure -f examples/deployment.yaml
+$ python3 client/generic_client.py  create infrastructure -f examples/deployment.yaml
 ```
 
 Once an OBI instance is deployed, jobs can be submitted to it. In order to do
@@ -152,23 +169,6 @@ When submitting a job, the user is asked for username and password. Those values
 should be written by the system administrator  in the `Users` table of the SQL 
 database which is used by OBI to store its state.
 
-### Helm Chart
-
-In order to make the Kubernetes deployment process easier, we have also provided
-an Helm chart.
-
-Let's download the helm chart with:
-
-```bash
-$ git clone https://gitlab.dataops.deliveryhero.de/obi/helm-chart
-```
-Open `values.yaml` and fill in all the empty fields. Once the configuration is
-completed, just deploy on your Kubernetes cluster with"
-
-```bash
-$ helm install obi-chart
-```
-
 ## Contributions
 
 ### Integrate OBI in your infrastructure
@@ -179,5 +179,5 @@ fact, you would need to just add the code for you platform under the
 `master/platforms` folder. In this code you should provide your own struct
 extending `model.ClusterBase` and implementing `model.ClusterBaseInterface`.
 
-As a refence, you can have a look at the existing Dataproc implementation
+As a reference, you can have a look at the existing Dataproc implementation
 available in `master/platforms/dataproc.go`.
