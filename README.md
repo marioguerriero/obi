@@ -101,8 +101,8 @@ according to the needs of the running jobs.
 
 The first step to compile OBI is to generate the `protobuf` code required for
 RPC communication between the components. Both
-(protobuf)[https://developers.google.com/protocol-buffers/] and
-(gRPC)[https://grpc.io] are strict requirements for this process. Keep in mind
+[protobuf](https://developers.google.com/protocol-buffers/) and
+[gRPC](https://grpc.io) are strict requirements for this process. Keep in mind
 that OBI is written mainly in Go with some parts in Python so the dependencies
 have to be satisfied for both languages.
 
