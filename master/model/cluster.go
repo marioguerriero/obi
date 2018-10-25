@@ -53,7 +53,7 @@ type ClusterBaseInterface interface {
 	SubmitJob(*Job) error
 	GetMetricsWindow() *utils.ConcurrentSlice
 	AddMetricsSnapshot(message HeartbeatMessage)
-	AllocateResources() error
+	AllocateResources(highPerformance bool) error
 	FreeResources() error
 	MonitorJobs()
 	GetAllocatedJobSlots() int

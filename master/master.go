@@ -6,6 +6,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"io"
 	"obi/master/heartbeat"
 	"obi/master/model"
@@ -16,10 +17,9 @@ import (
 	"obi/master/utils"
 	"os"
 	"path/filepath"
-	"time"
-	"google.golang.org/grpc/metadata"
 	"strconv"
-	)
+	"time"
+)
 
 // ObiMaster structure representing one master instance for OBI
 type ObiMaster struct {

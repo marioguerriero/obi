@@ -12,7 +12,7 @@ import (
 	"strconv"
 )
 
-func newCluster(name, platform string) (model.ClusterBaseInterface, error) {
+func newCluster(name, platform string, highPerformance bool) (model.ClusterBaseInterface, error) {
 	var cluster model.ClusterBaseInterface
 	var err error
 
@@ -20,7 +20,7 @@ func newCluster(name, platform string) (model.ClusterBaseInterface, error) {
 
 	switch platform {
 	case "dataproc":
-		cluster, err = newDataprocCluster(name)
+		cluster, err = newDataprocCluster(name, highPerformance)
 	default:
 		logrus.WithField("platform-type", platform).Error("Invalid platform type")
 		return nil, errors.New("invalid platform type")
@@ -35,7 +35,7 @@ func newCluster(name, platform string) (model.ClusterBaseInterface, error) {
 	return cluster, err
 }
 
-func newDataprocCluster(name string) (*platforms.DataprocCluster, error) {
+func newDataprocCluster(name string, highPerformance bool) (*platforms.DataprocCluster, error) {
 	nodePort, _ := strconv.Atoi(os.Getenv("HEARTBEAT_SERVICE_NODEPORT"))
 
 	cb := model.NewClusterBase(name, 2, "dataproc",
@@ -54,7 +54,7 @@ func newDataprocCluster(name string) (*platforms.DataprocCluster, error) {
 	GetPool().AddCluster(cluster, a)
 
 	// Allocate cluster resources
-	err := cluster.AllocateResources()
+	err := cluster.AllocateResources(highPerformance)
 	if err != nil {
 		return nil, err
 	}

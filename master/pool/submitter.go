@@ -29,14 +29,18 @@ func NewSubmitter() *Submitter {
 
 // DeployJobs is for deploying the list of jobs into a single cluster
 // @param jobs is the list of jobs to deploy
-func (s *Submitter) DeployJobs(jobs []*model.Job) {
+func (s *Submitter) DeployJobs(jobs []*model.Job, highPerformance bool) {
 
 	// Create new cluster
 	clusterName := fmt.Sprintf("obi-%s", utils.RandomString(10))
-	cluster, err := newCluster(clusterName, "dataproc")
+	cluster, err := newCluster(clusterName, "dataproc", highPerformance)
 
 	if err != nil {
-		return
+		for _, job := range jobs {
+			// Update job
+			job.Status = model.JobStatusFailed
+			persistent.Write(job)
+		}
 	}
 
 	for _, job := range jobs {

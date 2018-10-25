@@ -70,8 +70,10 @@ func (s *Scheduler) Stop() {
 
 // ScheduleJob if for adding a new job in the bins
 func (s *Scheduler) ScheduleJob(job *model.Job) {
-	if job.Priority >= int32(len(s.levels)) {
-		go s.submitter.DeployJobs([]*model.Job{job})
+	if job.Priority == int32(len(s.levels)) {
+		go s.submitter.DeployJobs([]*model.Job{job}, false)
+	} else if job.Priority > int32(len(s.levels)) {
+		go s.submitter.DeployJobs([]*model.Job{job}, true)
 	} else {
 		schedulerLevel := &s.levels[job.Priority]
 		switch schedulerLevel.Policy {
@@ -120,7 +122,7 @@ func flush(ls *levelScheduler, s *pool.Submitter) {
 	ls.Lock()
 	defer ls.Unlock()
 	for i := range ls.bins {
-		go s.DeployJobs(ls.bins[i].jobs)
+		go s.DeployJobs(ls.bins[i].jobs, false)
 	}
 	ls.bins = nil
 }

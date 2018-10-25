@@ -20,20 +20,11 @@ import (
 // InitializationAction initialization script for installing necessary requirements
 const InitializationAction = "gs://dhg-obi/cluster-script/init_action.sh"
 
-// NormalNodeCostPerSecond unitary cost of a normal node
-const NormalNodeCostPerSecond = 0.1900 / 60 / 60
-
-// PreemptibleNodeCostPerSecond unitary cost of a preemptible node
-const PreemptibleNodeCostPerSecond = 0.0400 / 60 / 60
-
 // NodeDiskSize disk size in GB of each node
 const NodeDiskSize = 500
 
 // DiskCost GB cost per second
 const DiskCost = 0.040 / 30 / 24 / 60 / 60
-
-// DataprocNodeCost unitary cost of a Dataproc node per second
-const DataprocNodeCost = 0.04 / 60 / 60
 
 // HeartbeatInterval interval of time at which each heartbeat is sent
 const HeartbeatInterval = 10
@@ -248,6 +239,7 @@ func (c *DataprocCluster) SubmitJob(job *m.Job) error {
 						"spark.driver.extraJavaOptions": "-XX:+UseG1GC",
 						"spark.executor.extraJavaOptions": "-XX:+UseG1GC",
 						"spark.sql.autoBroadcastJoinThreshold": "-1",
+						"spark.maxRemoteBlockSizeFetchToMem": "2g",
 					},
 				},
 			},
@@ -282,13 +274,34 @@ func (c *DataprocCluster) AddMetricsSnapshot(newMetrics m.HeartbeatMessage) {
 }
 
 // AllocateResources instantiate physical resources for the given cluster
-func (c *DataprocCluster) AllocateResources() error {
+func (c *DataprocCluster) AllocateResources(highPerformance bool) error {
 	// Create cluster controller
 	ctx := context.Background()
 	controller, err := dataproc.NewClusterControllerClient(ctx)
 	if err != nil {
 		logrus.WithField("error", err).Error("NewClusterControllerClient' method call failed")
 		return err
+	}
+
+	// Choose machine type
+	machineType := "n1-standard-4"
+	if highPerformance {
+		machineType = "n1-standard-16"
+	}
+
+	// Update unitary costs based on the machine type
+
+	// NormalNodeCostPerSecond unitary cost of a normal node
+	NormalNodeCostPerSecond := 0.2448 / 60 / 60
+	// PreemptibleNodeCostPerSecond unitary cost of a preemptible node
+	PreemptibleNodeCostPerSecond := 0.04920 / 60 / 60
+	// DataprocNodeCost unitary cost of a Dataproc node per second
+	DataprocNodeCost := 0.04 / 60 / 60
+
+	if highPerformance {
+		NormalNodeCostPerSecond = 0.9792 / 60 / 60
+		PreemptibleNodeCostPerSecond = 0.19680 / 60 / 60
+		DataprocNodeCost = 0.16 / 60 / 60
 	}
 
 	// Send request to allocate cluster resources
@@ -314,14 +327,17 @@ func (c *DataprocCluster) AllocateResources() error {
 				},
 				MasterConfig: &dataprocpb.InstanceGroupConfig{
 					ImageUri: "projects/dhg-data-intelligence-ops/global/images/dhg-di-v6",
+					MachineTypeUri: machineType,
 				},
 				WorkerConfig: &dataprocpb.InstanceGroupConfig{
 					ImageUri: "projects/dhg-data-intelligence-ops/global/images/dhg-di-v6",
 					NumInstances: int32(c.WorkerNodes),
+					MachineTypeUri: machineType,
 				},
 				SecondaryWorkerConfig: &dataprocpb.InstanceGroupConfig{
 					ImageUri: "projects/dhg-data-intelligence-ops/global/images/dhg-di-v6",
 					NumInstances: int32(c.PreemptibleNodes),
+					MachineTypeUri: machineType,
 				},
 				InitializationActions: []*dataprocpb.NodeInitializationAction{
 					{
