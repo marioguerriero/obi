@@ -284,7 +284,7 @@ func (c *DataprocCluster) AllocateResources(highPerformance bool) error {
 	// Choose machine type
 	machineType := "n1-standard-4"
 	if highPerformance {
-		machineType = "n1-standard-8"
+		machineType = "n1-standard-16"
 	}
 
 	// Update unitary costs based on the machine type
@@ -297,9 +297,9 @@ func (c *DataprocCluster) AllocateResources(highPerformance bool) error {
 	DataprocNodeCost := 0.04 / 60 / 60
 
 	if highPerformance {
-		NormalNodeCostPerSecond = 0.4896 / 60 / 60
-		PreemptibleNodeCostPerSecond = 0.09840 / 60 / 60
-		DataprocNodeCost = 0.08 / 60 / 60
+		NormalNodeCostPerSecond = 0.9792 / 60 / 60
+		PreemptibleNodeCostPerSecond = 0.19680 / 60 / 60
+		DataprocNodeCost = 0.16 / 60 / 60
 	}
 
 	// Send request to allocate cluster resources
