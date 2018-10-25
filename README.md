@@ -1,10 +1,23 @@
 # OBI (Objectively Better Infrastructure)
+### Simplified batch data processing platform for Google Cloud Dataproc
 
 OBI is a project from Delivery Hero's Data Insight team which represents an
 attempt to optimize clusters resource utilization in order to limit their
 operational costs. 
 
-Project goals:
+- [Objectives](#objectives)
+- [Code structure](#code-structure)
+- [Architecture](#architecture)
+    - [The workflow](#obi-workflow)
+- [Helm chart](#helm-chart)
+- [Usage](#usage)
+- [Contributions](#contributions)
+    - [Integrate OBI in your infrastructure](#integrate-obi-in-your-infrastracture)
+    - [Building](#building)
+    - [Deprecated](#deprecated)
+- [License](#license)
+
+## Objectives
 
  - Optimize resource usage for low dimensional topologies (e.g., Borg/k8s was
    developed for contexts with vast amount of resources).
@@ -97,42 +110,31 @@ possible amount of nodes at each time step. Indeed, each cluster created by OBI
 starts with the minimum possible amount of nodes, which are dynamically adjusted
 according to the needs of the running jobs.
 
-## Development
+## Helm Chart
 
-The first step to compile OBI is to generate the `protobuf` code required for
-RPC communication between the components. Both
-[protobuf](https://developers.google.com/protocol-buffers/) and
-[gRPC](https://grpc.io) are strict requirements for this process. Keep in mind
-that OBI is written mainly in Go with some parts in Python so the dependencies
-have to be satisfied for both languages.
+In order to make the Kubernetes deployment process easier, we have also provided
+an Helm chart.
 
-To generate the `protobuf` code we provide a script, `proto-gen.sh` which will
-take care of all the development process.
-
-After the `protobuf` files are generated, for each component you can find a
-`Dockerfile` which can be used to create images from them to be deployed
-anywhere.
-
-We have also provided a client which can automatically deploy OBI on your
-platform. So far, only Kubernetes is supported as a container orchestration
-deployment platform. In order to deploy OBI in your Kubernetes infrastructure
-you can use the `master/generic_client.py` script which is supposed to be a
-client for system adiministrators.
-
-Assuming that you put your OBI deployment YAML file in
-`examples/deployment.yaml`, you can deploy a new OBI with the following command:
+Let's download the helm chart with:
 
 ```bash
-python3 client/generic_client.py  create infrastructure -f examples/deployment.yaml
+$ git clone https://gitlab.dataops.deliveryhero.de/obi/helm-chart
+```
+Open `values.yaml` and fill in all the empty fields. Once the configuration is
+completed, just deploy on your Kubernetes cluster with"
+
+```bash
+$ helm install obi-chart
 ```
 
+## Usage
 Once an OBI instance is deployed, jobs can be submitted to it. In order to do
 that you need to compile the OBI submitter client:
 
 ```bash
-cd client/
-go get .
-got build .
+$ cd client/
+$ go get .
+$ got build .
 ```
 
 This process requires you to install Go lang compiler and will produce you a
@@ -140,7 +142,7 @@ This process requires you to install Go lang compiler and will produce you a
 command:
 
 ```bash
-./client -f EXE_PATH -t PySpark -i OBI_DEPLOYMENT_NAME -p PRIORITY -- EXE_ARGS
+$ ./client -f JOB_SCRIPT_PATH -t PySpark -i OBI_DEPLOYMENT_NAME -p PRIORITY -- EXE_ARGS
 ```
 
 The executable path be either a Google Cloud Storage URI or local executable.
@@ -152,11 +154,6 @@ When submitting a job, the user is asked for username and password. Those values
 should be written by the system administrator  in the `Users` table of the SQL 
 database which is used by OBI to store its state.
 
-### Helm Chart
-
-In order to make the Kubernetes deployment process easier, we have also provided
-an Helm chart.
-
 ## Contributions
 
 ### Integrate OBI in your infrastructure
@@ -167,5 +164,52 @@ fact, you would need to just add the code for you platform under the
 `master/platforms` folder. In this code you should provide your own struct
 extending `model.ClusterBase` and implementing `model.ClusterBaseInterface`.
 
-As a refence, you can have a look at the existing Dataproc implementation
+As a reference, you can have a look at the existing Dataproc implementation
 available in `master/platforms/dataproc.go`.
+
+### Building
+
+The first step to compile OBI is to generate the `protobuf` code required for
+RPC communication between the components. Both
+[protobuf](https://developers.google.com/protocol-buffers/) and
+[gRPC](https://grpc.io) are strict requirements for this process. Keep in mind
+that OBI is written mainly in Go with some parts in Python so the dependencies
+have to be satisfied for both languages.
+
+Install protobuf following the [instructions](https://github.com/protocolbuffers/protobufs) for your specific environment. 
+
+To generate the `protobuf` code we provide a script, `proto-gen.sh` which will
+take care of all the development process.
+
+```bash
+$ ./proto-gen.sh
+```
+
+After the `protobuf` files are generated, for each component you can find a
+`Dockerfile` which can be used to create images from them to be deployed
+anywhere.
+
+In order to rebuild the docker image of the modules:
+```bash
+$ cd <module-name>
+$ docker build -t <registry-name>:<tag> .
+$ docker push -t <registry-name>:<tag>
+```
+
+At this point you should simply specify the new image in the 'values.yaml' file 
+for the Helm chart and install again.
+
+
+### Depracated
+We have also provided a client which can automatically deploy OBI on your
+platform. So far, only Kubernetes is supported as a container orchestration
+deployment platform. In order to deploy OBI in your Kubernetes infrastructure
+you can use the `master/generic_client.py` script which is supposed to be a
+client for system adiministrators.
+
+Assuming that you put your OBI deployment YAML file in
+`examples/deployment.yaml`, you can deploy a new OBI with the following command:
+
+```bash
+$ python3 client/generic_client.py  create infrastructure -f examples/deployment.yaml
+```
