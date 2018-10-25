@@ -237,6 +237,7 @@ func (c *DataprocCluster) SubmitJob(job *m.Job) error {
 						"spark.driver.extraJavaOptions": "-XX:+UseG1GC",
 						"spark.executor.extraJavaOptions": "-XX:+UseG1GC",
 						"spark.sql.autoBroadcastJoinThreshold": "-1",
+						"spark.maxRemoteBlockSizeFetchToMem": "2g",
 					},
 				},
 			},

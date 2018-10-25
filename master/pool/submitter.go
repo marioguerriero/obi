@@ -36,7 +36,11 @@ func (s *Submitter) DeployJobs(jobs []*model.Job, highPerformance bool) {
 	cluster, err := newCluster(clusterName, "dataproc", highPerformance)
 
 	if err != nil {
-		return
+		for _, job := range jobs {
+			// Update job
+			job.Status = model.JobStatusFailed
+			persistent.Write(job)
+		}
 	}
 
 	for _, job := range jobs {
