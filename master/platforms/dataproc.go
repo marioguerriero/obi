@@ -44,6 +44,7 @@ type DataprocCluster struct {
 	ProjectID string
 	Zone string
 	Region string
+	MinPreemptibleNodes int32
 	PreemptibleNodes int32
 	isMonitoring bool
 }
@@ -67,6 +68,7 @@ func NewDataprocCluster(
 		projectID,
 		zone,
 		region,
+		preemptibleNodes,
 		preemptibleNodes,
 		false,
 	}
@@ -157,10 +159,10 @@ func NewExistingDataprocCluster(projectID string, region string, zone string, cl
 func (c *DataprocCluster) Scale(delta int32) bool {
 	var newSize int32
 
-	if delta < 0 && c.PreemptibleNodes == 0 {
+	if delta < 0 && c.PreemptibleNodes == c.MinPreemptibleNodes {
 		return true
 	}
-	newSize = int32(math.Max(0, float64(c.PreemptibleNodes + delta)))
+	newSize = int32(math.Max(float64(c.MinPreemptibleNodes), float64(c.PreemptibleNodes + delta)))
 
 	ctx := context.Background()
 	controller, err := dataproc.NewClusterControllerClient(ctx)
@@ -199,7 +201,7 @@ func (c *DataprocCluster) Scale(delta int32) bool {
 		return false
 	}
 
-	c.PreemptibleNodes= newSize
+	c.PreemptibleNodes = newSize
 	logrus.WithFields(logrus.Fields{
 		"clusterName": c.Name,
 		"additionalWorkers": newSize,
