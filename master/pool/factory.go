@@ -36,15 +36,21 @@ func newCluster(name, platform string, highPerformance bool) (model.ClusterBaseI
 }
 
 func newDataprocCluster(name string, highPerformance bool) (*platforms.DataprocCluster, error) {
+	var minPreemptiveSize int32
+
 	nodePort, _ := strconv.Atoi(os.Getenv("HEARTBEAT_SERVICE_NODEPORT"))
 
 	cb := model.NewClusterBase(name, 2, "dataproc",
 		viper.GetString("heartbeatHost"),
 		nodePort)
 
+	if highPerformance {
+		minPreemptiveSize = 10
+	}
+
 	cluster := platforms.NewDataprocCluster(cb, viper.GetString("projectId"),
 		viper.GetString("zone"),
-		viper.GetString("region"), 0)
+		viper.GetString("region"), minPreemptiveSize)
 
 	// Instantiate a new autoscaler for the new cluster and start monitoring
 	policy := policies.NewWorkload(0.35)
