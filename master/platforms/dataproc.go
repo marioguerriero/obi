@@ -29,6 +29,8 @@ const DiskCost = 0.040 / 30 / 24 / 60 / 60
 // HeartbeatInterval interval of time at which each heartbeat is sent
 const HeartbeatInterval = 10
 
+var jobProperties map[string]string
+
 // DataprocCluster is the extended cluster struct of Google Dataproc
 type DataprocCluster struct {
 	*m.ClusterBase
@@ -235,12 +237,7 @@ func (c *DataprocCluster) SubmitJob(job *m.Job) error {
 				PysparkJob: &dataprocpb.PySparkJob{
 					MainPythonFileUri: job.ExecutablePath,
 					Args: strings.Fields(job.Args),
-					Properties: map[string]string{
-						"spark.driver.extraJavaOptions": "-XX:+UseG1GC",
-						"spark.executor.extraJavaOptions": "-XX:+UseG1GC",
-						"spark.sql.autoBroadcastJoinThreshold": "-1",
-						"spark.maxRemoteBlockSizeFetchToMem": "2g",
-					},
+					Properties: jobProperties,
 				},
 			},
 		},
@@ -286,7 +283,7 @@ func (c *DataprocCluster) AllocateResources(highPerformance bool) error {
 	// Choose machine type
 	machineType := "n1-standard-4"
 	if highPerformance {
-		machineType = "n1-standard-16"
+		machineType = "n1-highmem-16"
 	}
 
 	// Update unitary costs based on the machine type
@@ -299,9 +296,21 @@ func (c *DataprocCluster) AllocateResources(highPerformance bool) error {
 	DataprocNodeCost := 0.04 / 60 / 60
 
 	if highPerformance {
-		NormalNodeCostPerSecond = 0.9792 / 60 / 60
-		PreemptibleNodeCostPerSecond = 0.19680 / 60 / 60
-		DataprocNodeCost = 0.16 / 60 / 60
+		NormalNodeCostPerSecond = 1.2184 / 60 / 60
+		PreemptibleNodeCostPerSecond = 0.24400 / 60 / 60
+		DataprocNodeCost = 0.32 / 60 / 60
+	}
+
+	// Initialize the properties that jobs will have
+	jobProperties = make(map[string]string)
+	jobProperties["spark.driver.extraJavaOptions"] = "-XX:+UseG1GC"
+	jobProperties["spark.executor.extraJavaOptions"] = "-XX:+UseG1GC"
+	jobProperties["spark.sql.autoBroadcastJoinThreshold"] = "-1"
+	jobProperties["spark.maxRemoteBlockSizeFetchToMem"] = "2g"
+	if highPerformance {
+		jobProperties["spark.executor.memoryOverhead"] = "2048"
+		jobProperties["spark.yarn.maxAppAttempts"] = "4"
+		jobProperties["spark.executor.memory"] = "78G"
 	}
 
 	// Send request to allocate cluster resources
