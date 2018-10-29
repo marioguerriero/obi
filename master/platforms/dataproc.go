@@ -351,16 +351,16 @@ func (c *DataprocCluster) AllocateResources(highPerformance bool) error {
 					},
 				},
 				MasterConfig: &dataprocpb.InstanceGroupConfig{
-					ImageUri: "projects/dhg-data-intelligence-ops/global/images/dhg-di-v6",
+					ImageUri: viper.GetString("dataproc-image"),
 					MachineTypeUri: machineType,
 				},
 				WorkerConfig: &dataprocpb.InstanceGroupConfig{
-					ImageUri: "projects/dhg-data-intelligence-ops/global/images/dhg-di-v6",
+					ImageUri: viper.GetString("dataproc-image"),
 					NumInstances: int32(c.WorkerNodes),
 					MachineTypeUri: machineType,
 				},
 				SecondaryWorkerConfig: &dataprocpb.InstanceGroupConfig{
-					ImageUri: "projects/dhg-data-intelligence-ops/global/images/dhg-di-v6",
+					ImageUri: viper.GetString("dataproc-image"),
 					NumInstances: int32(c.PreemptibleNodes),
 					MachineTypeUri: machineType,
 				},
