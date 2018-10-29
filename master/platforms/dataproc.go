@@ -303,14 +303,30 @@ func (c *DataprocCluster) AllocateResources(highPerformance bool) error {
 
 	// Initialize the properties that jobs will have
 	jobProperties = make(map[string]string)
-	jobProperties["spark.driver.extraJavaOptions"] = "-XX:+UseG1GC"
-	jobProperties["spark.executor.extraJavaOptions"] = "-XX:+UseG1GC"
-	jobProperties["spark.sql.autoBroadcastJoinThreshold"] = "-1"
-	jobProperties["spark.maxRemoteBlockSizeFetchToMem"] = "2g"
+	jobProperties["spark.executor.cores"] = "4"
 	if highPerformance {
-		jobProperties["spark.executor.memoryOverhead"] = "2048"
-		jobProperties["spark.yarn.maxAppAttempts"] = "4"
-		jobProperties["spark.executor.memory"] = "78G"
+		//jobProperties["spark.executor.extraJavaOptions"] = "-XX:+UseG1GC"
+		//jobProperties["spark.driver.extraJavaOptions"] = "-XX:+UseG1GC"
+		//jobProperties["spark.sql.autoBroadcastJoinThreshold"] = "-1"
+		//jobProperties["spark.executor.memoryOverhead"] = "2048"
+		//jobProperties["spark.dynamicAllocation.enabled"] = "false"
+		//jobProperties["spark.shuffle.service.enabled"] = "false"
+		//jobProperties["spark.yarn.maxAppAttempts"] = "4"
+		//jobProperties["spark.executor.memory"] = "78G"
+		//jobProperties["spark.executor.instances"] = "5"
+		//jobProperties["spark.numExecutors"] = "5"
+		//jobProperties["spark.default.parallelism"] = "40"
+		//jobProperties["spark.driver.memory"] = "20G"
+		//jobProperties["spark.yarn.am.attemptFailuresValidityInterval"] = "1h"
+		//jobProperties["spark.yarn.executor.failuresValidityInterval"] = "1h"
+		//jobProperties["spark.task.maxFailures"] = "8"
+		//jobProperties["spark.driver.cores"] = "2"
+	}
+
+	// Change number of executors in case of high performances
+	if highPerformance {
+		c.WorkerNodes = 5
+		c.PreemptibleNodes = 0
 	}
 
 	// Send request to allocate cluster resources
@@ -351,6 +367,11 @@ func (c *DataprocCluster) AllocateResources(highPerformance bool) error {
 				InitializationActions: []*dataprocpb.NodeInitializationAction{
 					{
 						ExecutableFile: InitializationAction,
+					},
+				},
+				SoftwareConfig: &dataprocpb.SoftwareConfig{
+					Properties:	map[string]string{
+						"yarn:yarn.nodemanager.vmem-check-enabled": "false",
 					},
 				},
 			},
