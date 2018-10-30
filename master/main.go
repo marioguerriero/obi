@@ -84,7 +84,10 @@ func main() {
 	}
 	logrus.Info("Successfully opened connection listener")
 
-	creds, _ := credentials.NewServerTLSFromFile("/go/src/obi/master/server.crt", "/go/src/obi/master/server.key")
+	creds, err := credentials.NewServerTLSFromFile("/go/src/obi/master/server.crt", "/go/src/obi/master/server.key")
+	if err != nil {
+		logrus.WithField("error", err).Fatalln("Unable to load server certificates")
+	}
 
 	// Create gRPC server
 	grpcServer := grpc.NewServer(
