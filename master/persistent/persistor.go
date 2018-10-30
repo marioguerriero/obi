@@ -326,9 +326,15 @@ func updateJobQuery(job *model.Job) error {
 	if err != nil {
 		return err
 	}
+	var clusterName string
+	var creationTimestamp time.Time
+	if job.Cluster != nil {
+		clusterName = job.Cluster.GetName()
+		creationTimestamp = job.Cluster.GetCreationTimestamp()
+	}
 	return stmt.QueryRow(
-		job.Cluster.GetName(),
-		job.Cluster.GetCreationTimestamp(),
+		clusterName,
+		creationTimestamp,
 		model.JobStatusNames[job.Status],
 		job.CreationTimestamp,
 		job.ExecutablePath,
