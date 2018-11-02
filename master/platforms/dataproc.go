@@ -325,7 +325,7 @@ func (c *DataprocCluster) AllocateResources(highPerformance bool) error {
 
 	// Change number of executors in case of high performances
 	if highPerformance {
-		c.WorkerNodes = 5
+		c.WorkerNodes = 7
 		c.PreemptibleNodes = 0
 	}
 
