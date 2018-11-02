@@ -41,6 +41,7 @@ func (s *Submitter) DeployJobs(jobs []*model.Job, highPerformance bool) {
 			job.Status = model.JobStatusFailed
 			persistent.Write(job)
 		}
+		return
 	}
 
 	for _, job := range jobs {
