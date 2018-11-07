@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"log"
 	"math"
 	"obi/master/model"
 	"obi/master/predictor"
 	"obi/master/utils"
+	"os"
 )
 
 // ScalingTrigger integer constant used to decide when to trigger autoscaler
@@ -26,9 +26,9 @@ type MLPolicy struct {
 // NewMLPolicy is the constructor of the MLPolicy struct
 func NewMLPolicy() *MLPolicy {
 	// Open predictor connection
-	serverAddr := fmt.Sprintf("%s:%s",
-		viper.GetString("predictorHost"),
-		viper.GetString("predictorPort"))
+	serverAddr := fmt.Sprintf("%s:%d",
+		os.Getenv("PREDICTOR_SERVICE_DNS_NAME"),
+		8080)
 	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure()) // TODO: encrypt communication
 	if err != nil {
 		log.Fatalf("fail to dial: %v", err)
