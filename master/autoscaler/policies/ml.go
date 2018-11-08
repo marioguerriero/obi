@@ -125,5 +125,11 @@ func (p *MLPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 		}
 	}
 
+	// (Down)scaling factor should never be too low since we do not have
+	// graceful decommission and jobs may crash
+	if p.scalingFactor < -5 {
+		p.scalingFactor = 5
+	}
+
 	return p.scalingFactor
 }
