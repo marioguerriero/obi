@@ -306,7 +306,10 @@ func insertJobQuery(job *model.Job) error {
 
 
 func updateJobQuery(job *model.Job) error {
-	query := `UPDATE Job SET
+	// Handle normal case and case in which the cluster could not be created
+	if job.Cluster != nil && len(job.Cluster.GetName()) > 0 {
+		// Normal case
+		query := `UPDATE Job SET
 				ClusterName = $1,
 				ClusterCreationTimestamp = $2,
 				Status = $3, 
@@ -321,7 +324,6 @@ func updateJobQuery(job *model.Job) error {
 				PlatformDependentID = $11,
 				DriverOutputURI = $12
 			WHERE Job.ID = $13;`
-<<<<<<< HEAD
 		stmt, err := database.Prepare(query)
 		defer stmt.Close()
 		if err != nil {
@@ -363,26 +365,12 @@ func updateJobQuery(job *model.Job) error {
 				PlatformDependentID = $9,
 				DriverOutputURI = $10
 			WHERE Job.ID = $11;`
-=======
->>>>>>> parent of ecbff50... fix persistor bug causing job belonging to failed cluster not to be updated
 	stmt, err := database.Prepare(query)
 	defer stmt.Close()
 	if err != nil {
 		return err
 	}
-<<<<<<< HEAD
 	return stmt.QueryRow(
-=======
-	var clusterName string
-	var creationTimestamp time.Time
-	if job.Cluster != nil {
-		clusterName = job.Cluster.GetName()
-		creationTimestamp = job.Cluster.GetCreationTimestamp()
-	}
-	return stmt.QueryRow(
-		clusterName,
-		creationTimestamp,
->>>>>>> parent of ecbff50... fix persistor bug causing job belonging to failed cluster not to be updated
 		model.JobStatusNames[job.Status],
 		job.CreationTimestamp,
 		job.ExecutablePath,
