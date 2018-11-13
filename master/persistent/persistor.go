@@ -306,7 +306,10 @@ func insertJobQuery(job *model.Job) error {
 
 
 func updateJobQuery(job *model.Job) error {
-	query := `UPDATE Job SET
+	// Handle normal case and case in which the cluster could not be created
+	if job.Cluster != nil && len(job.Cluster.GetName()) > 0 {
+		// Normal case
+		query := `UPDATE Job SET
 				ClusterName = $1,
 				ClusterCreationTimestamp = $2,
 				Status = $3, 
@@ -321,32 +324,67 @@ func updateJobQuery(job *model.Job) error {
 				PlatformDependentID = $11,
 				DriverOutputURI = $12
 			WHERE Job.ID = $13;`
-	stmt, err := database.Prepare(query)
-	defer stmt.Close()
-	if err != nil {
-		return err
+		stmt, err := database.Prepare(query)
+		defer stmt.Close()
+		if err != nil {
+			return err
+		}
+		var clusterName string
+		var creationTimestamp time.Time
+		if job.Cluster != nil {
+			clusterName = job.Cluster.GetName()
+			creationTimestamp = job.Cluster.GetCreationTimestamp()
+		}
+		return stmt.QueryRow(
+			clusterName,
+			creationTimestamp,
+			model.JobStatusNames[job.Status],
+			job.CreationTimestamp,
+			job.ExecutablePath,
+			model.JobTypeNames[job.Type],
+			job.Priority,
+			job.PredictedDuration,
+			job.FailureProbability,
+			job.Args,
+			job.PlatformDependentID,
+			job.DriverOutputPath,
+			job.ID,
+		).Scan()
+	} else {
+		// Cluster creation failure case
+		query := `UPDATE Job SET
+				Status = $1, 
+				CreationTimestamp = $2, 
+				LastUpdateTimestamp = CURRENT_TIMESTAMP, 
+				ExecutablePath = $3, 
+				Type = $4, 
+				Priority = $5,
+				PredictedDuration = $6, 
+				FailureProbability = $7, 
+				Arguments = $8, 
+				PlatformDependentID = $9,
+				DriverOutputURI = $10
+			WHERE Job.ID = $11;`
+		stmt, err := database.Prepare(query)
+		defer stmt.Close()
+		if err != nil {
+			return err
+		}
+		return stmt.QueryRow(
+			model.JobStatusNames[job.Status],
+			job.CreationTimestamp,
+			job.ExecutablePath,
+			model.JobTypeNames[job.Type],
+			job.Priority,
+			job.PredictedDuration,
+			job.FailureProbability,
+			job.Args,
+			job.PlatformDependentID,
+			job.DriverOutputPath,
+			job.ID,
+		).Scan()
 	}
-	var clusterName string
-	var creationTimestamp time.Time
-	if job.Cluster != nil {
-		clusterName = job.Cluster.GetName()
-		creationTimestamp = job.Cluster.GetCreationTimestamp()
-	}
-	return stmt.QueryRow(
-		clusterName,
-		creationTimestamp,
-		model.JobStatusNames[job.Status],
-		job.CreationTimestamp,
-		job.ExecutablePath,
-		model.JobTypeNames[job.Type],
-		job.Priority,
-		job.PredictedDuration,
-		job.FailureProbability,
-		job.Args,
-		job.PlatformDependentID,
-		job.DriverOutputPath,
-		job.ID,
-	).Scan()
+
 }
 
 func insertClusterQuery(cluster model.ClusterBaseInterface) error {
