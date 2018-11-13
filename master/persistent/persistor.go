@@ -350,9 +350,9 @@ func updateJobQuery(job *model.Job) error {
 			job.DriverOutputPath,
 			job.ID,
 		).Scan()
-	} else {
-		// Cluster creation failure case
-		query := `UPDATE Job SET
+	}
+	// Cluster creation failure case
+	query := `UPDATE Job SET
 				Status = $1, 
 				CreationTimestamp = $2, 
 				LastUpdateTimestamp = CURRENT_TIMESTAMP, 
@@ -365,26 +365,24 @@ func updateJobQuery(job *model.Job) error {
 				PlatformDependentID = $9,
 				DriverOutputURI = $10
 			WHERE Job.ID = $11;`
-		stmt, err := database.Prepare(query)
-		defer stmt.Close()
-		if err != nil {
-			return err
-		}
-		return stmt.QueryRow(
-			model.JobStatusNames[job.Status],
-			job.CreationTimestamp,
-			job.ExecutablePath,
-			model.JobTypeNames[job.Type],
-			job.Priority,
-			job.PredictedDuration,
-			job.FailureProbability,
-			job.Args,
-			job.PlatformDependentID,
-			job.DriverOutputPath,
-			job.ID,
-		).Scan()
+	stmt, err := database.Prepare(query)
+	defer stmt.Close()
+	if err != nil {
+		return err
 	}
-
+	return stmt.QueryRow(
+		model.JobStatusNames[job.Status],
+		job.CreationTimestamp,
+		job.ExecutablePath,
+		model.JobTypeNames[job.Type],
+		job.Priority,
+		job.PredictedDuration,
+		job.FailureProbability,
+		job.Args,
+		job.PlatformDependentID,
+		job.DriverOutputPath,
+		job.ID,
+	).Scan()
 }
 
 func insertClusterQuery(cluster model.ClusterBaseInterface) error {
