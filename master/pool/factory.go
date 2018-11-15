@@ -53,7 +53,7 @@ func newDataprocCluster(name string, highPerformance bool) (*platforms.DataprocC
 		viper.GetString("region"), minPreemptiveSize)
 
 	// Instantiate a new autoscaler for the new cluster and start monitoring
-	policy := policies.NewWorkload(0.35)
+	policy := policies.NewMLPolicy()
 	a := autoscaler.New(policy, 60, cluster, true)
 
 	// Add in the pool

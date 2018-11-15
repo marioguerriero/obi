@@ -14,7 +14,7 @@ import (
 )
 
 // ScalingTrigger integer constant used to decide when to trigger autoscaler
-const ScalingTrigger = 8
+const ScalingTrigger = 4
 
 // MLPolicy contains all useful state-variable to apply the policy
 type MLPolicy struct {
@@ -129,6 +129,11 @@ func (p *MLPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 	// graceful decommission and jobs may crash
 	if p.scalingFactor < -5 {
 		p.scalingFactor = 5
+	}
+
+	// TODO: downscaling is disabled till graceful decommission is available
+	if p.scalingFactor < 0 {
+		p.scalingFactor = 0
 	}
 
 	return p.scalingFactor
