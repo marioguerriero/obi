@@ -147,16 +147,26 @@ $ ./client -f JOB_SCRIPT_PATH -t PySpark -i OBI_DEPLOYMENT_NAME -p PRIORITY -- E
 
 The executable path be either a Google Cloud Storage URI or local executable.
 The `-t` option defines the type of the job the user is submitting and, so far,
-only PySpark is supported. The `OBI_DEPLOYMENT_NAME` is the one defined in the
-OBI deployment YAML file when the OBI instance was created.
+only PySpark is supported. The `OBI_DEPLOYMENT_NAME` is the chart name used
+in the Helm install.
 
 When submitting a job, the user is asked for username and password. Those values
-should be written by the system administrator  in the `Users` table of the SQL 
+should be written by the system administrator  in the `Users` table of the
+PostgreSQL. OBI leverages [Stolon](https://github.com/sorintlab/stolon) in order
+to provide HA for the dmbs. The administrator can access the dbms with the following
+commands, using the `superuserPassword` specified in `values.yaml`:
+```bash
+$ kubectl exec -it <pod-name-stolon-proxy> bash -n <namespace>
+$ psql --host <helm-chart-name>-stolon-proxy --port 5432 postgres -U stolon -W
+```
 database which is used by OBI to store its state.
+
+For more info about configuration and customization, see the README 
+of each component (master, predictor, api).
 
 ## Contributions
 
-### Integrate OBI in your infrastructure
+### Integrate OBI in your cloud infrastracture
 
 OBI supports only Dataproc as a cloud computing service for now. However, it is
 easily extensible to support new platforms by simply adding new code for it. In
@@ -198,18 +208,3 @@ $ docker push -t <registry-name>:<tag>
 
 At this point you should simply specify the new image in the 'values.yaml' file 
 for the Helm chart and install again.
-
-
-### Depracated
-We have also provided a client which can automatically deploy OBI on your
-platform. So far, only Kubernetes is supported as a container orchestration
-deployment platform. In order to deploy OBI in your Kubernetes infrastructure
-you can use the `master/generic_client.py` script which is supposed to be a
-client for system adiministrators.
-
-Assuming that you put your OBI deployment YAML file in
-`examples/deployment.yaml`, you can deploy a new OBI with the following command:
-
-```bash
-$ python3 client/generic_client.py  create infrastructure -f examples/deployment.yaml
-```
