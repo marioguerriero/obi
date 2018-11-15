@@ -72,16 +72,9 @@ submitted, OBI will create a cluster which will be exclusivelly allocated to
 that job. Otherwise, if a job with lower priority is submitted, OBI will try to
 pack it with similar jobs in bins, following a certain policy.
 
-OBI scheduler supports two scheduling policies while packaging jobs into bins:
- - **count based**: bin are filled with jobs coming from the same priority band
-   up to a certain count
- - **time based**: in this policy the scheduler asks the predictor module to
-   generate an estimation of how long a certain job will last and then tries to
-   pack jobs with the same priority into homogenous bins e.g. each bin should
-   contain jobs for a maximum total duration of 1 hour
-
 The scheduling policy and the priority levels are configurable through the OBI
-deployment YAML file.
+deployment YAML file. For more information about how to do that, see the README
+of the master component.
 
 After jobs are scheduled and one or more clusters are allocated, each cluster is
 assigned with an autoscaler routine. This routine will monitor the cluster
