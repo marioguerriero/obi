@@ -48,3 +48,5 @@ client/master-rpc-service.pb.go
 
 master/server.crt
 master/server.key
+
+client/autoscaler_test.py

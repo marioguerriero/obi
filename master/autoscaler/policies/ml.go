@@ -1,3 +1,17 @@
+// Copyright 2018 
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+//     Unless required by applicable law or agreed to in writing, software
+//     distributed under the License is distributed on an "AS IS" BASIS,
+//     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//     See the License for the specific language governing permissions and
+//     limitations under the License.
+
 package policies
 
 import (
@@ -14,7 +28,7 @@ import (
 )
 
 // ScalingTrigger integer constant used to decide when to trigger autoscaler
-const ScalingTrigger = 8
+const ScalingTrigger = 4
 
 // MLPolicy contains all useful state-variable to apply the policy
 type MLPolicy struct {
@@ -123,6 +137,17 @@ func (p *MLPolicy) Apply(metricsWindow *utils.ConcurrentSlice) int32 {
 			ScalingFactor:     p.scalingFactor,
 			MetricsBefore:     &previousMetrics,
 		}
+	}
+
+	// (Down)scaling factor should never be too low since we do not have
+	// graceful decommission and jobs may crash
+	if p.scalingFactor < -5 {
+		p.scalingFactor = 5
+	}
+
+	// TODO: downscaling is disabled till graceful decommission is available
+	if p.scalingFactor < 0 {
+		p.scalingFactor = 0
 	}
 
 	return p.scalingFactor
