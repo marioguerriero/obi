@@ -77,7 +77,7 @@ schedulingLevels:
 # level 3 is one job one High Performance cluster
 ```
 
-In every case the two highest level are the "one job one cluster", with high-performance
+In every case, the two highest levels are the "one job one cluster", with high-performance
 or not. All the lower level can be fully customizable. The policy `0` is the
-`time-based`, the policy `1` is the `count-based`.
+`time-based`, policy `1` is the `count-based`.
 
