@@ -34,4 +34,50 @@ settings about the scheduler. Specifically:
     More information in the next section.
 
 ## Scheduler overview and configuration
+In a cloud-based environment, we have to rethink our approach about job submission: 
+we don’t have long-living on-premise clusters. We work with the so-called 
+“ephemeral model”: only when the user needs to submit jobs, he will create a specific
+cluster on the cloud, submit the jobs and delete it when every task has finished. 
+In this way, we pay for what we actually use. 
+
+The main goal of the OBI scheduler is grouping together jobs submitted by different 
+users in the same time period, in order to reduce the number of spawned cluster. 
+The scheduler can accommodate many little jobs in a single cluster or one heavy 
+and few light ones, for example. In this way the module does not affect too much 
+the performances of each single job.
+
+These are the main concepts of the OBI scheduler:
+- There are N priority level
+- For each level, we have many bins
+- One bin contains many job
+- Upon job submission, the new size of the current bin is checked: if it exceeds 
+  the threshold, another empty bin is added in the level
+- When the level-timeout expires, all the jobs in a bin will be deployed in single cluster
+
+OBI scheduler supports two scheduling policies while packaging jobs into bins:
+ - **count based**: bin are filled with jobs coming from the same priority band
+   up to a certain count
+ - **time based**: in this policy the scheduler asks the predictor module to
+   generate an estimation of how long a certain job will last and then tries to
+   pack jobs with the same priority into homogenous bins e.g. each bin should
+   contain jobs for a maximum total duration of 1 hour
+
+This is an example of configuration for the scheduler:
+```
+schedulingLevels:
+# level 0
+- timeout: 180
+  policy: 0
+  binCapacity: 3600
+# level 1
+- timeout: 300
+  policy: 1
+  binCapacity: 3
+# level 2 is one job one cluster
+# level 3 is one job one High Performance cluster
+```
+
+In every case the two highest level are the "one job one cluster", with high-performance
+or not. All the lower level can be fully customizable. The policy `0` is the
+`time-based`, the policy `1` is the `count-based`.
 
