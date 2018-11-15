@@ -18,3 +18,20 @@
    communication between OBI Master and the predictor component
  - `master/scheduling` contains the logic for the OBI scheduler
  - `master/utils` general utility functions
+
+
+## Configuration
+In the `values.yaml` inside the Helm chart folder there is the `masterConfig` map,
+where the administrator have to set infos about the Google Cloud project and
+settings about the scheduler. Specifically:
+ - `projectId` the project id used in the Google Cloud Platform
+ - `region` the region used for Google Cloud Dataproc
+ - `zone` the zone used for Google Cloud Dataproc
+ - `dataproc-image` the custom image used for Google Cloud Dataproc
+ - `heartbeatHost` private IP address of any Kubernetes node, used by master
+    nodes of Dataproc cluster to send hearbeat to a NodePort service
+ - `schedulingLevels` the levels of the scheduler (from the lowest to the highest one)
+    More information in the next section.
+
+## Scheduler overview and configuration
+
