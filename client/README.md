@@ -14,6 +14,15 @@ client only supports deployments on Kubernetes (which is actually deprecated in
 favor of OBI's Helm chart) and on local system through Docker (this feature is
 still a work in progress though).
 
+The creation of an instance through the system administrator client requires
+an OBI deployment Yaml file, containing all the specifications for the deployment
+the user is trying to create. Assuming that the OBI deployment YAML file is in
+`examples/deployment.yaml`, you can deploy a new OBI with the following command:
+
+```bash
+$ python3 generic_client.py create infrastructure -f ../examples/deployment.yaml
+```
+
 On the other hand, the client accessible through the `obi-submit.go` file,
 is meant for end users and is written in Go. Unlike the previous one, the
 features of this client are limited to the submission of jobs a given OBI
