@@ -21,18 +21,19 @@ import (
 	"github.com/spf13/viper"
 	"google.golang.org/api/iterator"
 	dataprocpb "google.golang.org/genproto/googleapis/cloud/dataproc/v1"
-	"google.golang.org/genproto/protobuf/field_mask"
-	"math"
+		"math"
 	m "obi/master/model"
 	"obi/master/persistent"
 	"obi/master/utils"
 	"strconv"
 	"strings"
 	"time"
-	)
+	dataproc2 "google.golang.org/api/dataproc/v1"
+	"golang.org/x/oauth2/google"
+)
 
 // InitializationAction initialization script for installing necessary requirements
-const InitializationAction = "gs://dhg-obi/cluster-script/init_action.sh"
+const InitializationAction = "gs://dhg-obi/cluster-script/init_action2.sh"
 
 // NodeDiskSize disk size in GB of each node
 const NodeDiskSize = 500
@@ -162,51 +163,78 @@ func NewExistingDataprocCluster(projectID string, region string, zone string, cl
 // @param nodes is the number of nodes to add
 // @param direction is for specifying if there is the need to add o remove nodes
 func (c *DataprocCluster) Scale(delta int32) bool {
-	var newSize int32
+	var newSize int64
+
+	logrus.WithField("nodes", delta).Info("Start")
 
 	if delta < 0 && c.PreemptibleNodes == c.MinPreemptibleNodes {
 		return true
 	}
-	newSize = int32(math.Max(float64(c.MinPreemptibleNodes), float64(c.PreemptibleNodes + delta)))
+	newSize = int64(math.Max(float64(c.MinPreemptibleNodes), float64(c.PreemptibleNodes + delta)))
+	logrus.WithField("nodes", newSize).Info("After check")
 
 	ctx := context.Background()
-	controller, err := dataproc.NewClusterControllerClient(ctx)
+	//controller, err := dataproc.NewClusterControllerClient(ctx)
+	//if err != nil {
+	//	logrus.WithField("error", err).Error("'NewClusterControllerClient' method call failed")
+	//	return false
+	//}
+	gClient, err := google.DefaultClient(ctx, "https://www.googleapis.com/auth/cloud-platform")
 	if err != nil {
-		logrus.WithField("error", err).Error("'NewClusterControllerClient' method call failed")
+		logrus.WithField("error", err).Error("New Default Client method call failed")
 		return false
 	}
-
-	req := &dataprocpb.UpdateClusterRequest{
-		ProjectId:   c.ProjectID,
-		Region:      c.Region,
-		ClusterName: c.Name,
-		Cluster: &dataprocpb.Cluster{
-			Config: &dataprocpb.ClusterConfig{
-				SecondaryWorkerConfig: &dataprocpb.InstanceGroupConfig{
-					NumInstances: newSize,
-				},
-			},
-		},
-		UpdateMask:  &field_mask.FieldMask{
-			Paths: []string{
-				"config.secondary_worker_config.num_instances",
-			},
-		},
-	}
-
-	op, err := controller.UpdateCluster(ctx, req)
+	service, err := dataproc2.New(gClient)
 	if err != nil {
-		logrus.WithField("error", err).Error("'UpdateCluster' method call failed")
+		logrus.WithField("error", err).Error("New Dataproc2 New method call failed")
 		return false
 	}
+	cServ := dataproc2.NewProjectsRegionsClustersService(service)
 
-	_, err = op.Wait(ctx)
+	call := cServ.Patch(c.ProjectID, c.Region, c.Name, &dataproc2.Cluster{
+		Config: &dataproc2.ClusterConfig{
+			SecondaryWorkerConfig: &dataproc2.InstanceGroupConfig{
+				NumInstances: newSize,
+			},
+		},
+	})
+	call.Context(ctx)
+	call.UpdateMask("config.secondary_worker_config.num_instances")
+	call.GracefulDecommissionTimeout("300s")
+
+	_, err = call.Do()
+
+	//req := &dataprocpb.UpdateClusterRequest{
+	//	ProjectId:   c.ProjectID,
+	//	Region:      c.Region,
+	//	ClusterName: c.Name,
+	//	Cluster: &dataprocpb.Cluster{
+	//		Config: &dataprocpb.ClusterConfig{
+	//			SecondaryWorkerConfig: &dataprocpb.InstanceGroupConfig{
+	//				NumInstances: newSize,
+	//			},
+	//		},
+	//	},
+	//	UpdateMask:  &field_mask.FieldMask{
+	//		Paths: []string{
+	//			"config.secondary_worker_config.num_instances",
+	//		},
+	//	},
+	//}
+	//
+	//op, err := controller.UpdateCluster(ctx, req)
+	//if err != nil {
+	//	logrus.WithField("error", err).Error("'UpdateCluster' method call failed")
+	//	return false
+	//}
+
+	//_, err = op.Wait(ctx)
 	if err != nil {
 		logrus.WithField("error", err).Error("'Wait' method call for UpdateCluster operation failed")
 		return false
 	}
 
-	c.PreemptibleNodes = newSize
+	c.PreemptibleNodes = int32(newSize)
 	logrus.WithFields(logrus.Fields{
 		"clusterName": c.Name,
 		"additionalWorkers": newSize,
@@ -345,16 +373,16 @@ func (c *DataprocCluster) AllocateResources(highPerformance bool) error {
 					},
 				},
 				MasterConfig: &dataprocpb.InstanceGroupConfig{
-					ImageUri: viper.GetString("dataproc-image"),
+					//ImageUri: viper.GetString("dataproc-image"),
 					MachineTypeUri: machineType,
 				},
 				WorkerConfig: &dataprocpb.InstanceGroupConfig{
-					ImageUri: viper.GetString("dataproc-image"),
+					//ImageUri: viper.GetString("dataproc-image"),
 					NumInstances: int32(c.WorkerNodes),
 					MachineTypeUri: machineType,
 				},
 				SecondaryWorkerConfig: &dataprocpb.InstanceGroupConfig{
-					ImageUri: viper.GetString("dataproc-image"),
+					//ImageUri: viper.GetString("dataproc-image"),
 					NumInstances: int32(c.PreemptibleNodes),
 					MachineTypeUri: machineType,
 				},
@@ -363,11 +391,15 @@ func (c *DataprocCluster) AllocateResources(highPerformance bool) error {
 						ExecutableFile: InitializationAction,
 					},
 				},
-				//SoftwareConfig: &dataprocpb.SoftwareConfig{
-				//	Properties:	map[string]string{
-				//		"yarn:yarn.nodemanager.vmem-check-enabled": "false",
-				//	},
-				//},
+				SoftwareConfig: &dataprocpb.SoftwareConfig{
+					Properties:	map[string]string{
+						"spark:spark.blacklist.enabled": "true",
+						"spark:spark.blacklist.timeout": "2m",
+						"spark:spark.blacklist.task.maxTaskAttemptsPerNode": "2",
+						"spark:spark.blacklist.stage.maxFailedExecutorsPerNode": "2",
+						"spark:spark.blacklist.application.maxFailedExecutorsPerNode": "2",
+					},
+				},
 			},
 		},
 	}
