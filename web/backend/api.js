@@ -8,6 +8,10 @@ const auth_verifier = jwt_middleware({
     secret: secret
 });
 
+const jwt_options = {
+    expiresIn: '7 days'
+};
+
 const query = require('./db');
 
 // Define API router
@@ -117,7 +121,7 @@ router.post('/login', async function (req, res) {
     try {
         let qres = await query(q, v);
         if(qres.rows[0].exists === true) {
-            const token = jwt.sign({username: username}, secret);
+            const token = jwt.sign({username: username}, secret, jwt_options);
             res.send(token);
         }
         return res.sendStatus(401);
