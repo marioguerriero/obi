@@ -1,8 +1,15 @@
 const express = require('express');
 const path = require('path');
+const bodyParser = require('body-parser');
 
 // Create Express app
 const app = express();
+
+// Support JSON and URL encoded bodies
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({
+    extended: true
+}));
 
 // Logging capabilities
 const morgan = require('morgan');
@@ -30,4 +37,6 @@ app.get('/', function (req, res) {
 });
 
 // Start listening
-app.listen(process.env.PORT || 8080);
+const port = process.env.PORT || 8080;
+console.log('Start listening on port', port);
+app.listen(port);

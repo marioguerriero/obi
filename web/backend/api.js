@@ -16,11 +16,17 @@ const router = express.Router();
 // Cluster data routes
 
 router.get('/clusters', auth_verifier, function(req, res) {
+    console.log(req.user)
+
     // Check for any possible filter
     let cluster_status = req.query.status ? req.query.status : '%';
     let cluster_name = req.query.name ? req.query.name : '%';
 
     // Execute query
+    const q = 'select * from cluster';
+    query(q, (err, res) => {
+        console.log(err ? err.stack : res);
+    });
 });
 
 router.get('/cluster/:id', auth_verifier, function(req, res) {
@@ -39,12 +45,28 @@ router.get('/job/:id', auth_verifier, function(req, res) {
 
 // Authentication routes
 
-router.post('/login', function(req, res) {
-    // Check that username and password match the database
+router.post('/login', async function (req, res) {
+    const username = req.body.username;
+    const pwd = req.body.password;
 
-    // Generate and send JWT token
-    const token = jwt.sign({} /* payload */, secret);
-    res.send(token);
+    if (username == null || pwd == null) {
+        return res.sendStatus(400).json({
+            'reason': 'Bad request',
+            'msg': 'no "username" or "password" field specified'
+        });
+    }
+
+    // Check that username and password match the database
+    const q = 'select exists(select 1 from users where email=$1 and ' +
+        'password=crypt($2, gen_salt(\'bf\', 8)))';
+    const v = [username, pwd];
+    try {
+        let res = await query(q, v);
+        const token = jwt.sign({username: username}, secret);
+        return res.send(token);
+    } catch (err) {
+        return res.sendStatus(401)
+    }
 });
 
 // Export API router

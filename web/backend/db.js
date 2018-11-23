@@ -15,8 +15,11 @@ const client = new Client({
 client.connect();
 
 // Generic database query function
-function query(q, cb) {
-    client.query(q, cb)
+function query(q, values=null) {
+    // Return a query promise
+    return client.query(q, values)
+        .then(res => res)
+        .catch(e => console.error(e.stack))
 }
 
 module.exports = query;
