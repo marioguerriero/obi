@@ -1,6 +1,6 @@
 // Database connection parameters
-module.exports.PGHOST = '';
-module.exports.PGUSER = '';
-module.exports.PGDATABASE = '';
-module.exports.PGPASSWORD = '';
-module.exports.PGPORT = 5432;
+module.exports.PGHOST = process.env.PGHOST || 'localhost';
+module.exports.PGUSER = process.env.PGUSER || 'postgres';
+module.exports.PGDATABASE = process.env.PGDATABASE || 'postgres';
+module.exports.PGPASSWORD = process.env.PGPASSWORD || 'test';
+module.exports.PGPORT = process.env.PGPORT || 5432;
