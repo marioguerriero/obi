@@ -1,5 +1,5 @@
 const express = require('express');
-const { check, query, validationResult } = require('express-validator/check');
+const { check, validationResult } = require('express-validator/check');
 const { sanitize } = require('express-validator/filter');
 
 const secret = require('./secret');
@@ -34,15 +34,16 @@ router.get('/clusters', auth_verifier, [ sanitize(['status', 'name']) ], async f
     const requesting_user = req.user.username;
 
     // Check for any possible filter
-    let cluster_status = req.query.status ? req.query.status : '%';
-    let cluster_name = req.query.name ? req.query.name : '%';
+    let cluster_status = req.query.status ? req.query.status + '%' : '%';
+    let cluster_name = req.query.name ? req.query.name + '%' : '%';
 
     // Execute query
-    const q = 'select * from cluster';
+    const q = 'select * from cluster where status like $1 and name like $2';
+    const v = [cluster_status, cluster_name];
 
     try {
-        let qres = await db_query(q);
-        return sendList(qres.rows)
+        let qres = await db_query(q, v);
+        return sendList(res, qres.rows);
     } catch (err) {
         console.error(err);
         return res.sendStatus(401)
@@ -58,7 +59,7 @@ router.get('/cluster/:name', auth_verifier, [ sanitize(['name']) ], async functi
 
     try {
         let qres = await db_query(q, v);
-        return sendList(qres.rows)
+        return sendList(res, qres.rows);
     } catch (err) {
         console.error(err);
         return res.sendStatus(401)
@@ -71,15 +72,16 @@ router.get('/jobs', auth_verifier, [ sanitize(['status', 'cluster']) ], async fu
     const requesting_user = req.user.username;
 
     // Check for any possible filter
-    let job_status = req.query.status ? req.query.status : '%';
-    let job_cluster = req.query.cluster ? req.query.cluster : '%';
+    let job_status = req.query.status ? req.query.status + '%' : '%';
+    let job_cluster = req.query.cluster ? req.query.cluster + '%' : '%';
 
     // Execute query
-    const q = 'select * from job';
+    const q = 'select * from job where status like $1 and clustername like $2';
+    const v = [job_status, job_cluster];
 
     try {
-        let qres = await db_query(q);
-        return sendList(qres.rows)
+        let qres = await db_query(q, v);
+        return sendList(res, qres.rows);
     } catch (err) {
         console.error(err);
         return res.sendStatus(401)
@@ -91,11 +93,11 @@ router.get('/job/:id', auth_verifier, [ sanitize(['id']) ], async function(req, 
 
     // Execute query
     const q = 'select * from job where id=$1';
-    const v = [req.params.name];
+    const v = [req.params.id];
 
     try {
         let qres = await db_query(q, v);
-        return sendList(qres.rows)
+        return sendList(res, qres.rows);
     } catch (err) {
         console.error(err);
         return res.sendStatus(401)
