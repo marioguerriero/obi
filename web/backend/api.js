@@ -1,4 +1,6 @@
 const express = require('express');
+const { check, query, validationResult } = require('express-validator/check');
+const { sanitize } = require('express-validator/filter');
 
 const secret = require('./secret');
 const jwt = require('jsonwebtoken');
@@ -12,7 +14,7 @@ const jwt_options = {
     expiresIn: '7 days'
 };
 
-const query = require('./db');
+const db_query = require('./db');
 
 // Define API router
 const router = express.Router();
@@ -28,7 +30,7 @@ function sendList(res, list) {
 
 // Cluster data routes
 
-router.get('/clusters', auth_verifier, async function(req, res) {
+router.get('/clusters', auth_verifier, [ sanitize(['status', 'name']) ], async function(req, res) {
     const requesting_user = req.user.username;
 
     // Check for any possible filter
@@ -39,7 +41,7 @@ router.get('/clusters', auth_verifier, async function(req, res) {
     const q = 'select * from cluster';
 
     try {
-        let qres = await query(q);
+        let qres = await db_query(q);
         return sendList(qres.rows)
     } catch (err) {
         console.error(err);
@@ -47,7 +49,7 @@ router.get('/clusters', auth_verifier, async function(req, res) {
     }
 });
 
-router.get('/cluster/:name', auth_verifier, async function(req, res) {
+router.get('/cluster/:name', auth_verifier, [ sanitize(['name']) ], async function(req, res) {
     const requesting_user = req.user.username;
 
     // Execute query
@@ -55,7 +57,7 @@ router.get('/cluster/:name', auth_verifier, async function(req, res) {
     const v = [req.params.name];
 
     try {
-        let qres = await query(q, v);
+        let qres = await db_query(q, v);
         return sendList(qres.rows)
     } catch (err) {
         console.error(err);
@@ -65,7 +67,7 @@ router.get('/cluster/:name', auth_verifier, async function(req, res) {
 
 // Jobs data routes
 
-router.get('/jobs', auth_verifier, async function(req, res) {
+router.get('/jobs', auth_verifier, [ sanitize(['status', 'cluster']) ], async function(req, res) {
     const requesting_user = req.user.username;
 
     // Check for any possible filter
@@ -76,7 +78,7 @@ router.get('/jobs', auth_verifier, async function(req, res) {
     const q = 'select * from job';
 
     try {
-        let qres = await query(q);
+        let qres = await db_query(q);
         return sendList(qres.rows)
     } catch (err) {
         console.error(err);
@@ -84,7 +86,7 @@ router.get('/jobs', auth_verifier, async function(req, res) {
     }
 });
 
-router.get('/job/:id', auth_verifier, async function(req, res) {
+router.get('/job/:id', auth_verifier, [ sanitize(['id']) ], async function(req, res) {
     const requesting_user = req.user.username;
 
     // Execute query
@@ -92,7 +94,7 @@ router.get('/job/:id', auth_verifier, async function(req, res) {
     const v = [req.params.name];
 
     try {
-        let qres = await query(q, v);
+        let qres = await db_query(q, v);
         return sendList(qres.rows)
     } catch (err) {
         console.error(err);
@@ -102,7 +104,15 @@ router.get('/job/:id', auth_verifier, async function(req, res) {
 
 // Authentication routes
 
-router.post('/login', async function (req, res) {
+router.post('/login', [
+        check('username').isEmail()
+    ], async function (req, res) {
+    // Finds the validation errors in this request and wraps them in an object with handy functions
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(422).json({ errors: errors.array() });
+    }
+
     const username = req.body.username;
     const pwd = req.body.password;
 
@@ -119,7 +129,7 @@ router.post('/login', async function (req, res) {
     const v = [username, pwd];
 
     try {
-        let qres = await query(q, v);
+        let qres = await db_query(q, v);
         if(qres.rows[0].exists === true) {
             const token = jwt.sign({username: username}, secret, jwt_options);
             res.send(token);
