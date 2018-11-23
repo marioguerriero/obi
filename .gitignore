@@ -52,3 +52,5 @@ master/server.key
 client/autoscaler_test.py
 
 web/backend/secret.js
+
+*.swp
