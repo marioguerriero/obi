@@ -13,6 +13,15 @@ const query = require('./db');
 // Define API router
 const router = express.Router();
 
+// Utils functions
+
+function sendList(res, list) {
+    if(list.length <= 0) {
+        return res.sendStatus(404)
+    }
+    return res.json(list)
+}
+
 // Cluster data routes
 
 router.get('/clusters', auth_verifier, async function(req, res) {
@@ -24,21 +33,67 @@ router.get('/clusters', auth_verifier, async function(req, res) {
 
     // Execute query
     const q = 'select * from cluster';
-    const qres = await query(q)
+
+    try {
+        let qres = await query(q);
+        return sendList(qres.rows)
+    } catch (err) {
+        console.error(err);
+        return res.sendStatus(401)
+    }
 });
 
-router.get('/cluster/:id', auth_verifier, function(req, res) {
+router.get('/cluster/:name', auth_verifier, async function(req, res) {
+    const requesting_user = req.user.username;
 
+    // Execute query
+    const q = 'select * from cluster where name=$1';
+    const v = [req.params.name];
+
+    try {
+        let qres = await query(q, v);
+        return sendList(qres.rows)
+    } catch (err) {
+        console.error(err);
+        return res.sendStatus(401)
+    }
 });
 
 // Jobs data routes
 
-router.get('/jobs', auth_verifier, function(req, res) {
+router.get('/jobs', auth_verifier, async function(req, res) {
+    const requesting_user = req.user.username;
 
+    // Check for any possible filter
+    let job_status = req.query.status ? req.query.status : '%';
+    let job_cluster = req.query.cluster ? req.query.cluster : '%';
+
+    // Execute query
+    const q = 'select * from job';
+
+    try {
+        let qres = await query(q);
+        return sendList(qres.rows)
+    } catch (err) {
+        console.error(err);
+        return res.sendStatus(401)
+    }
 });
 
-router.get('/job/:id', auth_verifier, function(req, res) {
+router.get('/job/:id', auth_verifier, async function(req, res) {
+    const requesting_user = req.user.username;
 
+    // Execute query
+    const q = 'select * from job where id=$1';
+    const v = [req.params.name];
+
+    try {
+        let qres = await query(q, v);
+        return sendList(qres.rows)
+    } catch (err) {
+        console.error(err);
+        return res.sendStatus(401)
+    }
 });
 
 // Authentication routes
