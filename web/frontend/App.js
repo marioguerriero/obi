@@ -4,11 +4,13 @@ import './App.css';
 import LoginForm from './LoginForm'
 import ClustersList from './ClustersList'
 
+import config from './config'
+
 class App extends Component {
   constructor(props) {
     super(props);
       this.state = {
-        token: localStorage.getItem('obi-auth-token')
+        token: localStorage.getItem(config.OBI_TOKEN_KEY)
       }
   }
 

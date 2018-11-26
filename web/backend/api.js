@@ -119,10 +119,7 @@ router.post('/login', [
     const pwd = req.body.password;
 
     if (username == null || pwd == null) {
-        return res.sendStatus(400).json({
-            'reason': 'Bad request',
-            'msg': 'no "username" or "password" field specified'
-        });
+        return res.sendStatus(400)
     }
 
     // Check that username and password match the database
@@ -132,9 +129,10 @@ router.post('/login', [
 
     try {
         let qres = await db_query(q, v);
+
         if(qres.rows[0].exists === true) {
             const token = jwt.sign({username: username}, secret, jwt_options);
-            res.send(token);
+            return res.send(token);
         }
         return res.sendStatus(401);
     } catch (err) {
