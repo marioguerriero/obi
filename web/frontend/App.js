@@ -33,7 +33,7 @@ class App extends Component {
     }
     else {
       // Otherwise display clusters list
-      body = <ClustersList />
+      body = <ClustersList token={this.state.token} />
     }
 
     return (
