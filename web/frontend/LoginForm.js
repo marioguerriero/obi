@@ -75,7 +75,7 @@ export default class extends Component {
 
                 <FormGroup>
                     <Col smOffset={2} sm={10}>
-                        <Button type="submit">Sign in</Button>
+                        <Button type="submit" onClick={this.onLogin}>Sign in</Button>
                     </Col>
                 </FormGroup>
             </Form>
