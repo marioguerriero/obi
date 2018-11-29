@@ -32,9 +32,10 @@ export default class extends Component {
             // Store token in local storage
             const token = await response.text();
             localStorage.setItem(config.OBI_TOKEN_KEY, token)
+            this.props.onLoginSuccess()
         }
         catch(err) {
-            // TODO: display error message
+            this.props.onLoginFail()
         }
     }
 
@@ -68,13 +69,13 @@ export default class extends Component {
                 </FormGroup>
 
                 <FormGroup>
-                    <Col smOffset={2} sm={10}>
+                    <Col sm={10}>
                         <Checkbox>Remember me</Checkbox>
                     </Col>
                 </FormGroup>
 
                 <FormGroup>
-                    <Col smOffset={2} sm={10}>
+                    <Col sm={10}>
                         <Button type="submit" onClick={this.onLogin}>Sign in</Button>
                     </Col>
                 </FormGroup>

@@ -12,9 +12,9 @@ export default class extends Component {
                     </Navbar.Brand>
                 </Navbar.Header>
                 <Nav pullRight>
-                    <NavItem eventKey={1} href="#">
-                        Login
-                    </NavItem>
+                    {/*<NavItem eventKey={1} href="#">*/}
+                        {/*Login*/}
+                    {/*</NavItem>*/}
                 </Nav>
             </Navbar>
         );
