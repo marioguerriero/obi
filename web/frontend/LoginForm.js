@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import './App.css';
 
+import { Form, FormGroup, FormControl, Checkbox, Col, Button } from 'react-bootstrap';
+
 import config from './config'
 
 export default class extends Component {
@@ -44,13 +46,39 @@ export default class extends Component {
 
     render() {
         return (
-            <div className="LoginForm">
-                <input type="email" placeholder="Email" name="email" onChange={this.handleChange} value={this.state.email} required />
-                <input type="password" placeholder="Enter Password" name="password" onChange={this.handleChange} value={this.state.password} required />
+            <Form horizontal>
+                <FormGroup controlId="formHorizontalEmail">
+                    <Col sm={2}>
+                        Email
+                    </Col>
+                    <Col sm={10}>
+                        <FormControl type="email" placeholder="Email" name="email" required
+                                     onChange={this.handleChange} value={this.state.email} />
+                    </Col>
+                </FormGroup>
 
-                <button type="button" className="loginBtn" onClick={this.onLogin}>Login</button>
-                <span className="psw">Forgot <a className="App-link" href="https://www.google.com">password?</a></span>
-            </div>
+                <FormGroup controlId="formHorizontalPassword">
+                    <Col sm={2}>
+                        Password
+                    </Col>
+                    <Col sm={10}>
+                        <FormControl type="password" placeholder="Password" name="password" required
+                                     onChange={this.handleChange} value={this.state.password} />
+                    </Col>
+                </FormGroup>
+
+                <FormGroup>
+                    <Col smOffset={2} sm={10}>
+                        <Checkbox>Remember me</Checkbox>
+                    </Col>
+                </FormGroup>
+
+                <FormGroup>
+                    <Col smOffset={2} sm={10}>
+                        <Button type="submit">Sign in</Button>
+                    </Col>
+                </FormGroup>
+            </Form>
         );
     }
 }

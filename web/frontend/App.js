@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import './App.css';
 
+import Header from './Header'
 import LoginForm from './LoginForm'
 import ClustersList from './ClustersList'
 
@@ -40,16 +41,14 @@ class App extends Component {
 
     return (
       <div className="App">
-        <header className="App-header">
-          Header
-        </header>
+        <Header/>
 
         <div className="App-body">
           {body}
         </div>
 
         <footer className="App-footer">
-          Footer
+
         </footer>
       </div>
     );
