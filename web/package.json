@@ -59,13 +59,15 @@
     "webpack": "4.19.1",
     "webpack-dev-server": "3.1.9",
     "webpack-manifest-plugin": "2.0.4",
-    "workbox-webpack-plugin": "3.6.3"
+    "workbox-webpack-plugin": "3.6.3",
+    "body-parser": "latest"
   },
   "scripts": {
     "start": "node scripts/start.js",
     "build": "node scripts/build.js",
     "test": "node scripts/test.js",
-    "server": "nodemon backend/server.js"
+    "dev": "nodemon backend/server.js",
+    "prod": "node backend/server.js"
   },
   "eslintConfig": {
     "extends": "react-app"

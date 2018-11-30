@@ -4,7 +4,7 @@ FROM node:11.2.0
 ADD . /app/
 
 # Expose server's port
-ENV PORT 8080
+ENV PORT 8084
 EXPOSE $PORT
 
 # Build
@@ -13,4 +13,4 @@ RUN npm install
 RUN npm run build
 
 # Server resources
-ENTRYPOINT ["npm", "run", "server"]
+ENTRYPOINT ["npm", "run", "prod"]

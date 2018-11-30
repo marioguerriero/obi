@@ -38,5 +38,5 @@ app.get('/', function (req, res) {
 
 // Start listening
 const port = process.env.PORT || 8080;
-console.log('Start listening on port', port);
 app.listen(port);
+console.log('Start listening on port', port);
