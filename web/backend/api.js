@@ -28,6 +28,8 @@ function sendList(res, list) {
     if(list.length <= 0) {
         return res.sendStatus(404)
     }
+    if(list.length === 1)
+        return res.json(list[0]);
     return res.json(list)
 }
 
