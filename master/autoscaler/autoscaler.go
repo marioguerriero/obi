@@ -19,6 +19,7 @@ import (
 	"obi/master/model"
 	"obi/master/utils"
 	"time"
+	"math"
 )
 
 // Autoscaler module resizes the managed cluster according to the policy.
@@ -29,6 +30,7 @@ type Autoscaler struct {
 	quit chan struct{}
 	managedCluster model.Scalable
 	allowDownscale bool
+	maxAbsDelta int16
 }
 
 // Policy defines the primitive methods that must be implemented for any type of autoscaling policy
@@ -47,6 +49,7 @@ func New(
 	timeout int16,
 	cluster model.Scalable,
 	downscalePermitted bool,
+	maxAbsDelta int16,
 	) *Autoscaler {
 	return &Autoscaler{
 		policy,
@@ -54,6 +57,7 @@ func New(
 		make(chan struct{}),
 		cluster,
 		downscalePermitted,
+		maxAbsDelta,
 	}
 }
 
@@ -83,8 +87,9 @@ func autoscalerRoutine(as *Autoscaler) {
 			return
 		default:
 			delta = as.Policy.Apply(as.managedCluster.(model.ClusterBaseInterface).GetMetricsWindow())
+			bounded := math.Abs(float64(delta)) <= float64(as.maxAbsDelta)
 
-			if (delta < 0 && as.allowDownscale) || delta > 0 {
+			if (delta < 0 && as.allowDownscale) || delta > 0 && bounded == true {
 				as.managedCluster.Scale(delta)
 			}
 			time.Sleep(time.Duration(as.Timeout) * time.Second)

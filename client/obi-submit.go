@@ -39,6 +39,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"bytes"
 )
 
 // JobInfoResponse defines the response type for job information requests
@@ -52,8 +53,8 @@ type JobInfoResponse struct {
 }
 
 type obiCreds struct {
-	Username string
-	Password string
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 func md5FileContent(path string) string {
@@ -250,12 +251,33 @@ func main() {
 	jobID := submitJob(jobRequest, credentials, masterServiceAddress)
 	if *wait {
 		fmt.Println("Waiting for job completion...")
+
+		var token string
+		// get token
 		client := &http.Client{Timeout: 30 * time.Second}
-		apiJobs := "http://obi.dataops.deliveryhero.de/" + *infrastructure +"/api/jobs"
-		req, _ := http.NewRequest("GET", apiJobs, nil)
-		q := req.URL.Query()
-		q.Add("jobid", fmt.Sprint(jobID))
-		req.URL.RawQuery = q.Encode()
+		authEndpoint := "https://" + *infrastructure + ".dataops.deliveryhero.de/api/login"
+		creds, err := json.Marshal(&credentials)
+		if err != nil {
+			log.Fatal("An error occurring during authentication.")
+		}
+		req, _ := http.NewRequest("POST", authEndpoint, bytes.NewBuffer(creds))
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := client.Do(req)
+		if err != nil {
+			log.Fatal("An error occurring during parsing token.")
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode == http.StatusOK {
+			bodyBytes, _ := ioutil.ReadAll(resp.Body)
+			token = string(bodyBytes)
+		} else {
+			log.Fatal("An error occurring during parsing token.")
+		}
+
+		// build request
+		apiJobs := "https://" + *infrastructure + ".dataops.deliveryhero.de/api/job/" + fmt.Sprint(jobID)
+		req, _ = http.NewRequest("GET", apiJobs, nil)
+		req.Header.Add("Authorization", "Bearer " + token)
 		for {
 			resp, err := client.Do(req)
 			if err != nil {
@@ -266,7 +288,7 @@ func main() {
 			jobInfo := JobInfoResponse{}
 			err = json.NewDecoder(resp.Body).Decode(&jobInfo)
 			if err != nil {
-				log.Fatal("An error occurring during status request.")
+				log.Fatal("An error occurring during parsing job status.")
 				break
 			}
 			if jobInfo.Status == "completed" {

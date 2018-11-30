@@ -55,13 +55,14 @@ func newDataprocCluster(name string, highPerformance bool) (*platforms.DataprocC
 	// Instantiate a new autoscaler for the new cluster and start monitoring
 	var lambda float32 = 0.2
 	policy := policies.NewWorkload(lambda)
-	a := autoscaler.New(policy, 150, cluster, true)
+	a := autoscaler.New(policy, 60, cluster, false, 0)
 
 	// Add in the pool
 	GetPool().AddCluster(cluster, a)
 	logrus.WithFields(logrus.Fields{
 		"clusterName": name,
 		"scalingFactor": lambda,
+		"downscaling": true,
 	}).Info("Autoscaler binding.")
 
 	// Allocate cluster resources
