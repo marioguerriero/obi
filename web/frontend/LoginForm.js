@@ -31,12 +31,15 @@ export default class extends Component {
                 }
             });
             // Store token in local storage
+            if(response.status !== 200) {
+                throw "Invalid Credentials"
+            }
             const token = await response.text();
             localStorage.setItem(config.OBI_TOKEN_KEY, token);
             this.props.onLoginSuccess()
         }
         catch(err) {
-            alert(err.toString());
+            alert(err);
             this.props.onLoginFail()
         }
     }

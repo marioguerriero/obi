@@ -17,7 +17,7 @@ const logger = process.env.NODE_ENV === 'production' ?
     morgan('common') : morgan('dev');
 app.use(logger);
 
-// Static resources serving 
+// Static resources serving
 app.use(express.static(path.join(__dirname, '..', 'build')));
 
 // API routing
