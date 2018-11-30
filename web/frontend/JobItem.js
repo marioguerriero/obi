@@ -7,7 +7,7 @@ export default class extends Component {
 
         return (
             <div className="JobItem">
-                {job.status}
+                This job is {job.status}
             </div>
         );
     }

@@ -17,7 +17,9 @@ export default class extends Component {
 
     async fetchJobs() {
         try {
-            const response = await fetch('/clusters', {
+            const params = '?' +
+                'cluster=' + this.props.cluster.name;
+            const response = await fetch('/api/jobs' + params, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -43,14 +45,13 @@ export default class extends Component {
         const cluster = this.props.cluster;
 
         // Fetch cluster's jobs
-        this.fetchJobs();
         const jobs = this.state.jobs.map((job) =>
             <JobItem job={job}/>
         );
 
         return (
             <div className="ClusterItem">
-                <p>{cluster.name}</p>
+                <p><b>{cluster.name}</b> <span className="PriceLabel">{cluster.cost} $</span> </p>
                 {jobs}
             </div>
         );
