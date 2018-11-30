@@ -3,7 +3,8 @@ import './App.css';
 
 import ClusterItem from './ClusterItem'
 
-    import config from './config'
+import config from './config'
+import utils from './utils'
 
 export default class extends Component {
     constructor(props) {
@@ -24,9 +25,16 @@ export default class extends Component {
                     'Authorization': 'Bearer ' + localStorage.getItem(config.OBI_TOKEN_KEY)
                 }
             });
+            if(response.status !== 200) {
+                // Delete authentication token if error is 401
+                if(response.status === 401) {
+                    utils.clearToken()
+                }
+                throw Error("Could not load any resource")
+            }
             this.setState({
                 clusters: await response.json()
-            })
+            });
         }
         catch (err) {
             this.setState({
