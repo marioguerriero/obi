@@ -18,6 +18,8 @@ class App extends Component {
       this.loginSuccess = this.loginSuccess.bind(this);
       this.loginFail = this.loginFail.bind(this);
       this.watchLocalStorage = this.watchLocalStorage.bind(this);
+      this.loadToken = this.loadToken.bind(this);
+      this.handleLogout = this.handleLogout.bind(this);
   }
 
   componentWillMount() {
@@ -36,16 +38,25 @@ class App extends Component {
     }
   }
 
+  loadToken() {
+      this.setState({
+          token: localStorage.getItem(config.OBI_TOKEN_KEY)
+      })
+  }
+
   loginSuccess() {
     // Update user state to trigger re-rendering
-    this.setState({
-        token: localStorage.getItem(config.OBI_TOKEN_KEY)
-    })
+    this.loadToken()
   }
 
   loginFail(err) {
     utils.clearToken()
     // TODO: show error message
+  }
+
+  handleLogout() {
+    utils.clearToken();
+    this.loadToken()
   }
 
   render() {
@@ -65,7 +76,7 @@ class App extends Component {
 
     return (
       <div className="App">
-        <Header/>
+        <Header onLogout={this.handleLogout}/>
 
         <div className="App-body">
           {body}

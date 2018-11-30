@@ -30,7 +30,7 @@ export default class extends Component {
                 if(response.status === 401) {
                     utils.clearToken()
                 }
-                throw "Could not load any resource"
+                throw Error("Could not load any resource")
             }
             this.setState({
                 clusters: await response.json()
