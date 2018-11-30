@@ -44,12 +44,8 @@ import (
 
 // JobInfoResponse defines the response type for job information requests
 type JobInfoResponse struct {
-	Status string
-	User string
-	CreationTimeStamp string
-	ScriptPath string
-	Args string
-	DriverOutputURI string
+	Status string `json:"status"`
+	DriverOutputURI string `json:"driveroutputuri"`
 }
 
 type obiCreds struct {
@@ -250,7 +246,7 @@ func main() {
 	masterServiceAddress := getEndpoints(*infrastructure)
 	jobID := submitJob(jobRequest, credentials, masterServiceAddress)
 	if *wait {
-		fmt.Println("Waiting for job completion...")
+		fmt.Println("Authenticating...")
 
 		var token string
 		// get token
@@ -274,10 +270,11 @@ func main() {
 			log.Fatal("An error occurring during parsing token.")
 		}
 
-		// build request
+		// build api request
 		apiJobs := "https://" + *infrastructure + ".dataops.deliveryhero.de/api/job/" + fmt.Sprint(jobID)
 		req, _ = http.NewRequest("GET", apiJobs, nil)
 		req.Header.Add("Authorization", "Bearer " + token)
+		fmt.Println("Waiting for job completion...")
 		for {
 			resp, err := client.Do(req)
 			if err != nil {
@@ -288,6 +285,7 @@ func main() {
 			jobInfo := JobInfoResponse{}
 			err = json.NewDecoder(resp.Body).Decode(&jobInfo)
 			if err != nil {
+				fmt.Println(err)
 				log.Fatal("An error occurring during parsing job status.")
 				break
 			}
