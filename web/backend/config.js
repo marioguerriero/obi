@@ -8,12 +8,12 @@ module.exports.PGHOST = process.env.STOLON_PROXY_DNS_NAME || 'localhost';
 module.exports.PGPORT = process.env.STOLON_PROXY_PORT || 5432;
 module.exports.PGDATABASE = process.env.PGDATABASE || 'postgres';
 try {
-    module.exports.PGUSER = fs.readFileSync(path.join(credentials_base, 'username'));
+    module.exports.PGUSER = fs.readFileSync(path.join(credentials_base, 'username'), encoding='utf-8');
 } catch (err) {
     module.exports.PGUSER = 'postgres';
 }
 try {
-    module.exports.PGPASSWORD = fs.readFileSync(path.join(credentials_base, 'password')) || 'test';
+    module.exports.PGPASSWORD = fs.readFileSync(path.join(credentials_base, 'password'), encoding='utf-8') || 'test';
 } catch (err) {
     module.exports.PGPASSWORD = 'test';
 }

@@ -1,16 +1,14 @@
-FROM node:11.2.0
+FROM eu.gcr.io/dhg-data-intelligence-ops/obi-web-env
 
 # Copy all files
 ADD . /app/
 
-# Expose server's port
+# Open port
 ENV PORT 8084
 EXPOSE $PORT
 
 # Build
 WORKDIR /app
-RUN npm install
 RUN npm run build
 
-# Server resources
 ENTRYPOINT ["npm", "run", "prod"]

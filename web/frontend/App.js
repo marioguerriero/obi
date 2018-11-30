@@ -18,17 +18,6 @@ class App extends Component {
       this.loginFail = this.loginFail.bind(this)
   }
 
-  async componentDidMount() {
-    const response = await fetch('/ping', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
-    const body = await response.text();
-    console.log(body)
-  }
-
   loginSuccess() {
     // Update user state to trigger re-rendering
     this.setState({

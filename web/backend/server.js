@@ -26,10 +26,8 @@ app.use('/api', api);
 
 // Debug endpoint
 app.get('/ping', function (req, res) {
-    console.log('ping-pong');
     return res.send('pong');
 });
-
 
 // Serve main page while contacting root
 app.get('/', function (req, res) {

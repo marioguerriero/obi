@@ -12,7 +12,10 @@ const client = new Client({
 });
 
 // Connect to server's database
-client.connect();
+async function connect() {
+    await client.connect()
+        .catch(e => console.error(e.stack));
+}
 
 // Generic database query function
 function query(q, values=null) {
@@ -22,4 +25,5 @@ function query(q, values=null) {
         .catch(e => console.error(e.stack))
 }
 
-module.exports = query;
+module.exports.connect = connect;
+module.exports.query = query;

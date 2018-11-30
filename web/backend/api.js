@@ -14,7 +14,10 @@ const jwt_options = {
     expiresIn: '7 days'
 };
 
-const db_query = require('./db');
+const DB = require('./db');
+
+// Instantiate database connection
+DB.connect();
 
 // Define API router
 const router = express.Router();
@@ -42,7 +45,7 @@ router.get('/clusters', auth_verifier, [ sanitize(['status', 'name']) ], async f
     const v = [cluster_status, cluster_name];
 
     try {
-        let qres = await db_query(q, v);
+        let qres = await DB.query(q, v);
         return sendList(res, qres.rows);
     } catch (err) {
         console.error(err);
@@ -58,7 +61,7 @@ router.get('/cluster/:name', auth_verifier, [ sanitize(['name']) ], async functi
     const v = [req.params.name];
 
     try {
-        let qres = await db_query(q, v);
+        let qres = await DB.query(q, v);
         return sendList(res, qres.rows);
     } catch (err) {
         console.error(err);
@@ -80,7 +83,7 @@ router.get('/jobs', auth_verifier, [ sanitize(['status', 'cluster']) ], async fu
     const v = [job_status, job_cluster];
 
     try {
-        let qres = await db_query(q, v);
+        let qres = await DB.query(q, v);
         return sendList(res, qres.rows);
     } catch (err) {
         console.error(err);
@@ -96,7 +99,7 @@ router.get('/job/:id', auth_verifier, [ sanitize(['id']) ], async function(req, 
     const v = [req.params.id];
 
     try {
-        let qres = await db_query(q, v);
+        let qres = await DB.query(q, v);
         return sendList(res, qres.rows);
     } catch (err) {
         console.error(err);
@@ -128,7 +131,7 @@ router.post('/login', [
     const v = [username, pwd];
 
     try {
-        let qres = await db_query(q, v);
+        let qres = await DB.query(q, v);
 
         if(qres.rows[0].exists === true) {
             const token = jwt.sign({username: username}, secret, jwt_options);

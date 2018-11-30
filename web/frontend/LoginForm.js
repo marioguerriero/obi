@@ -18,6 +18,7 @@ export default class extends Component {
     }
 
     async onLogin() {
+        alert('try')
         try {
             const response = await fetch('/api/login', {
                 method: 'POST',
@@ -31,10 +32,12 @@ export default class extends Component {
             });
             // Store token in local storage
             const token = await response.text();
-            localStorage.setItem(config.OBI_TOKEN_KEY, token)
+            localStorage.setItem(config.OBI_TOKEN_KEY, token);
+            alert(token)
             this.props.onLoginSuccess()
         }
         catch(err) {
+            alert(err.toString())
             this.props.onLoginFail()
         }
     }
