@@ -26,8 +26,9 @@ export default class extends Component {
                     'Authorization': 'Bearer ' + localStorage.getItem(config.OBI_TOKEN_KEY)
                 }
             });
+            let jobs = await response.json();
             this.setState({
-                jobs: await response.json()
+                jobs: Array.isArray(jobs) ? jobs : [ jobs ]
             })
         }
         catch (err) {
@@ -45,6 +46,7 @@ export default class extends Component {
         const cluster = this.props.cluster;
 
         // Fetch cluster's jobs
+
         const jobs = this.state.jobs.map((job) =>
             <JobItem job={job}/>
         );
