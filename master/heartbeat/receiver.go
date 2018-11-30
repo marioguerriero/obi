@@ -117,8 +117,8 @@ func receiverRoutine(pool *pool.Pool) {
 			}
 
 			if clusterExists {
-				policy :=  policies.NewMLPolicy()
-				a := autoscaler.New(policy, 60, newCluster.(model.Scalable), false)
+				policy :=  policies.NewWorkload(0.2)
+				a := autoscaler.New(policy, 60, newCluster.(model.Scalable), false, 0)
 				pool.AddCluster(newCluster, a)
 
 				a.StartMonitoring()

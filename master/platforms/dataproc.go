@@ -174,11 +174,7 @@ func (c *DataprocCluster) Scale(delta int32) bool {
 	logrus.WithField("nodes", newSize).Info("After check")
 
 	ctx := context.Background()
-	//controller, err := dataproc.NewClusterControllerClient(ctx)
-	//if err != nil {
-	//	logrus.WithField("error", err).Error("'NewClusterControllerClient' method call failed")
-	//	return false
-	//}
+
 	gClient, err := google.DefaultClient(ctx, "https://www.googleapis.com/auth/cloud-platform")
 	if err != nil {
 		logrus.WithField("error", err).Error("New Default Client method call failed")
@@ -203,6 +199,12 @@ func (c *DataprocCluster) Scale(delta int32) bool {
 	call.GracefulDecommissionTimeout("300s")
 
 	_, err = call.Do()
+
+	//controller, err := dataproc.NewClusterControllerClient(ctx)
+	//if err != nil {
+	//	logrus.WithField("error", err).Error("'NewClusterControllerClient' method call failed")
+	//	return false
+	//}
 
 	//req := &dataprocpb.UpdateClusterRequest{
 	//	ProjectId:   c.ProjectID,
@@ -398,6 +400,12 @@ func (c *DataprocCluster) AllocateResources(highPerformance bool) error {
 						"spark:spark.blacklist.task.maxTaskAttemptsPerNode": "2",
 						"spark:spark.blacklist.stage.maxFailedExecutorsPerNode": "2",
 						"spark:spark.blacklist.application.maxFailedExecutorsPerNode": "2",
+						"dataproc:alpha.autoscaling.enabled": "true",
+						"dataproc:alpha.autoscaling.primary.max_workers": "2",
+						"dataproc:alpha.autoscaling.secondary.max_workers": "30",
+						"dataproc:alpha.autoscaling.cooldown_period": "10m",
+						"dataproc:alpha.autoscaling.scale_up.factor": "0.2",
+						"dataproc:alpha.autoscaling.graceful_decommission_timeout": "5m",
 					},
 				},
 			},
