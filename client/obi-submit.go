@@ -264,14 +264,14 @@ func main() {
 		req.Header.Set("Content-Type", "application/json")
 		resp, err := client.Do(req)
 		if err != nil {
-			log.Fatal("An error occurring during parsing token.")
+			log.Fatal("An error occurring during requesting for token.")
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode == http.StatusOK {
 			bodyBytes, _ := ioutil.ReadAll(resp.Body)
 			token = string(bodyBytes)
 		} else {
-			log.Fatal("An error occurring during parsing token.")
+			log.Fatal("An error occurring during getting token.")
 		}
 
 		// build request
