@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { PanelGroup } from 'react-bootstrap';
 import './App.css';
 
 import ClusterItem from './ClusterItem'
@@ -10,10 +11,12 @@ export default class extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            clusters: []
+            clusters: [],
+            activeKey: null
         };
 
         this.fetchClusters = this.fetchClusters.bind(this);
+        this.handleSelect = this.handleSelect.bind(this);
     }
 
     async fetchClusters() {
@@ -43,6 +46,10 @@ export default class extends Component {
         }
     }
 
+    handleSelect(activeKey) {
+        this.setState({ activeKey });
+    }
+
     async componentWillMount() {
         await this.fetchClusters()
     }
@@ -51,14 +58,22 @@ export default class extends Component {
         // Create clusters list
         let content = <p>No Clusters</p>;
         if(this.state.clusters.length) {
+            let i = 1;
             content = this.state.clusters.map(cluster =>
-                <ClusterItem cluster={cluster}/>
+                <ClusterItem eventKey={''+i++} cluster={cluster}/>
             );
         }
 
         return (
             <div className="ClustersList">
-                {content}
+                <PanelGroup
+                    accordion
+                    id="clusters-group"
+                    activeKey={this.state.activeKey}
+                    onSelect={this.handleSelect}
+                >
+                    {content}
+                </PanelGroup>
             </div>
         );
     }

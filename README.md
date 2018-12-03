@@ -97,8 +97,10 @@ Let's download the helm chart with:
 ```bash
 $ git clone https://gitlab.dataops.deliveryhero.de/obi/helm-chart
 ```
-Open `values.yaml` and fill in all the empty fields. Once the configuration is
-completed, just deploy on your Kubernetes cluster with"
+Open `values.yaml` and fill in all the empty fields. In the `secrets` folder you
+have to place two files named `dataproc-sa` and `storage-sa`: they are the service
+accounts to use these services inside your Google Cloud Project. Once the 
+configuration is completed, just deploy on your Kubernetes cluster with:
 
 ```bash
 $ helm install obi-chart
@@ -111,7 +113,7 @@ that you need to compile the OBI submitter client:
 ```bash
 $ cd client/
 $ go get .
-$ got build .
+$ go build .
 ```
 
 This process requires you to install Go lang compiler and will produce you a

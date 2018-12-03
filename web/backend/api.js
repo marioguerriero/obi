@@ -28,6 +28,8 @@ function sendList(res, list) {
     if(list.length <= 0) {
         return res.sendStatus(404)
     }
+    if(list.length === 1)
+        return res.json(list[0]);
     return res.json(list)
 }
 
@@ -96,6 +98,24 @@ router.get('/job/:id', auth_verifier, [ sanitize(['id']) ], async function(req, 
 
     // Execute query
     const q = 'select * from job where id=$1';
+    const v = [req.params.id];
+
+    try {
+        let qres = await DB.query(q, v);
+        return sendList(res, qres.rows);
+    } catch (err) {
+        console.error(err);
+        return res.sendStatus(401)
+    }
+});
+
+// User data routes
+
+router.get('/user/:id', auth_verifier, [ sanitize(['id']) ], async function(req, res) {
+    const requesting_user = req.user.username;
+
+    // Execute query
+    const q = 'select email from users where id=$1';
     const v = [req.params.id];
 
     try {

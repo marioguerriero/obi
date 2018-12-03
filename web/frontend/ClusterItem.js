@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { Panel } from 'react-bootstrap';
 import './App.css';
 
 import JobItem from './JobItem'
@@ -26,8 +27,9 @@ export default class extends Component {
                     'Authorization': 'Bearer ' + localStorage.getItem(config.OBI_TOKEN_KEY)
                 }
             });
+            let jobs = await response.json();
             this.setState({
-                jobs: await response.json()
+                jobs: Array.isArray(jobs) ? jobs : [ jobs ]
             })
         }
         catch (err) {
@@ -45,15 +47,18 @@ export default class extends Component {
         const cluster = this.props.cluster;
 
         // Fetch cluster's jobs
+
         const jobs = this.state.jobs.map((job) =>
             <JobItem job={job}/>
         );
 
         return (
-            <div className="ClusterItem">
-                <p><b>{cluster.name}</b> <span className="PriceLabel">{cluster.cost} $</span> </p>
-                {jobs}
-            </div>
+            <Panel eventKey={this.props.eventKey} className="ClusterItem">
+                <Panel.Heading>
+                    <Panel.Title toggle><b className="ClusterItem-name">{cluster.name}</b> <span className="ClusterItem-cost">{cluster.cost} $</span></Panel.Title>
+                </Panel.Heading>
+                <Panel.Body collapsible>{jobs}</Panel.Body>
+            </Panel>
         );
     }
 }

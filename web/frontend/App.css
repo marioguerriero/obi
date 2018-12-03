@@ -18,6 +18,38 @@
 
 }
 
-.PriceLabel {
+/* BEGIN ClusterItem */
+
+.ClusterItem-name {
 
 }
+
+.ClusterItem-cost {
+
+}
+
+/* END ClusterItem */
+
+/* BEGIN JobItem */
+
+.JobItem-id {
+
+}
+
+.JobItem-status {
+
+}
+
+.JobItem-user {
+
+}
+
+.JobItem-executablepath {
+
+}
+
+.JobItem-link {
+
+}
+
+/* END JobItem *?
