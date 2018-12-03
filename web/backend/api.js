@@ -109,6 +109,24 @@ router.get('/job/:id', auth_verifier, [ sanitize(['id']) ], async function(req, 
     }
 });
 
+// User data routes
+
+router.get('/user/:id', auth_verifier, [ sanitize(['id']) ], async function(req, res) {
+    const requesting_user = req.user.username;
+
+    // Execute query
+    const q = 'select email from users where id=$1';
+    const v = [req.params.id];
+
+    try {
+        let qres = await DB.query(q, v);
+        return sendList(res, qres.rows);
+    } catch (err) {
+        console.error(err);
+        return res.sendStatus(401)
+    }
+});
+
 // Authentication routes
 
 router.post('/login', [

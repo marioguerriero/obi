@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { Panel } from 'react-bootstrap';
 import './App.css';
 
 import JobItem from './JobItem'
@@ -52,10 +53,12 @@ export default class extends Component {
         );
 
         return (
-            <div className="ClusterItem">
-                <p><b>{cluster.name}</b> <span className="PriceLabel">{cluster.cost} $</span> </p>
-                {jobs}
-            </div>
+            <Panel eventKey={this.props.eventKey} className="ClusterItem">
+                <Panel.Heading>
+                    <Panel.Title toggle><b className="ClusterItem-name">{cluster.name}</b> <span className="ClusterItem-cost">{cluster.cost} $</span></Panel.Title>
+                </Panel.Heading>
+                <Panel.Body collapsible>{jobs}</Panel.Body>
+            </Panel>
         );
     }
 }
