@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import './App.css';
 import config from "./config";
+import Col from "react-bootstrap/es/Col";
 
 export default class extends Component {
     constructor(props) {
@@ -38,19 +39,28 @@ export default class extends Component {
     }
 
     render() {
+        alert(JSON.stringify(this.state.job))
         return (
             <div className="JobItem">
-                <ul>
-                    <il className="JobItem-id">{this.state.job.id}</il>
-                    <il className="JobItem-status">{this.state.job.status}</il>
-                    <il className="JobItem-user">{this.state.username}</il>
-                    <il className="JobItem-executablepath">{this.state.executablepath}</il>
-                    <il className="JobItem-link">
+                <Col md={4} sm={6}>
+                    <span className="JobItem-id">{this.state.job.id}</span>
+                </Col>
+                <Col md={4} sm={6}>
+                    <span className="JobItem-status">{this.state.job.status}</span>
+                </Col>
+                <Col md={4} sm={6}>
+                    <span className="JobItem-user">{this.state.username}</span>
+                </Col>
+                <Col md={6} sm={6}>
+                    <span className="JobItem-executablepath">{this.state.executablepath}</span>
+                </Col>
+                <Col md={6} sm={12}>
+                    <span className="JobItem-link">
                         <a href={"https://console.cloud.google.com/dataproc/jobs/" +
                                     this.state.job.platformdependentid + "?region=global"}
                            target="_blank" rel="noopener noreferrer">
-                            GCP Output</a></il>
-                </ul>
+                            Job Logs</a></span>
+                </Col>
             </div>
         );
     }

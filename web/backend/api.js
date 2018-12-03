@@ -24,11 +24,11 @@ const router = express.Router();
 
 // Utils functions
 
-function sendList(res, list) {
+function sendList(res, list, forceList=false) {
     if(list.length <= 0) {
         return res.sendStatus(404)
     }
-    if(list.length === 1)
+    if(list.length === 1 && !forceList)
         return res.json(list[0]);
     return res.json(list)
 }
@@ -48,7 +48,7 @@ router.get('/clusters', auth_verifier, [ sanitize(['status', 'name']) ], async f
 
     try {
         let qres = await DB.query(q, v);
-        return sendList(res, qres.rows);
+        return sendList(res, qres.rows, true);
     } catch (err) {
         console.error(err);
         return res.sendStatus(401)

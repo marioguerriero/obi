@@ -55,7 +55,10 @@ export default class extends Component {
         return (
             <Panel eventKey={this.props.eventKey} className="ClusterItem">
                 <Panel.Heading>
-                    <Panel.Title toggle><b className="ClusterItem-name">{cluster.name}</b> <span className="ClusterItem-cost">{cluster.cost} $</span></Panel.Title>
+                    <Panel.Title toggle>
+                        <b className="ClusterItem-name">{cluster.name}</b>
+                        <span className="ClusterItem-cost">{cluster.cost} $</span>
+                    </Panel.Title>
                 </Panel.Heading>
                 <Panel.Body collapsible>{jobs}</Panel.Body>
             </Panel>

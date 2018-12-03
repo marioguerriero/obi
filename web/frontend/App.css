@@ -18,6 +18,15 @@
 
 }
 
+.OBI-brand {
+  display: flex;
+  align-items: center;
+}
+
+.OBI-logo>img {
+  padding: 7px 14px;
+}
+
 /* BEGIN ClusterItem */
 
 .ClusterItem-name {
@@ -52,4 +61,4 @@
 
 }
 
-/* END JobItem *?
+/* END JobItem */

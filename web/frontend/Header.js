@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Navbar, Nav, NavItem } from 'react-bootstrap';
+import { Navbar, Nav, NavItem, Row } from 'react-bootstrap';
 import './App.css';
 
 import config from './config'
@@ -18,8 +18,13 @@ export default class extends Component {
         return (
             <Navbar>
                 <Navbar.Header>
-                    <Navbar.Brand>
-                        <a href="#home">OBI</a>
+                    <Navbar.Brand className="OBI-brand">
+                        {/*<Row>*/}
+                            {/*<a href="#home">*/}
+                                {/*<img src="/logo.jpg" alt={"OBI Logo"} className="OBI-logo" />*/}
+                                OBI
+                            {/*</a>*/}
+                        {/*</Row>*/}
                     </Navbar.Brand>
                 </Navbar.Header>
                 <Nav pullRight>

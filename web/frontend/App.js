@@ -7,6 +7,7 @@ import ClustersList from './ClustersList'
 
 import config from './config'
 import utils from './utils'
+import Col from "react-bootstrap/es/Col";
 
 class App extends Component {
   constructor(props) {
@@ -79,7 +80,9 @@ class App extends Component {
         <Header onLogout={this.handleLogout}/>
 
         <div className="App-body">
-          {body}
+          <Col md={8}>
+            {body}
+          </Col>
         </div>
 
         <footer className="App-footer">
