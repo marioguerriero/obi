@@ -12,9 +12,8 @@ operational costs.
 - [Helm chart](#helm-chart)
 - [Usage](#usage)
 - [Contributions](#contributions)
-    - [Integrate OBI in your infrastructure](#integrate-obi-in-your-infrastracture)
+    - [Integrate OBI in your cloud infrastructure](#integrate-obi-in-your-cloud-infrastracture)
     - [Building](#building)
-- [License](#license)
 
 ## Objectives
 
