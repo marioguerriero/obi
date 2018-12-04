@@ -17,7 +17,7 @@ and it can be used to submit a job using the following CLI syntax:
 ./client -f JOB_PATH -t (PySpark) -i OBI_INSTANCE_NAME -p PRIORITY_LEVEL [--localcreds] [-w] -- JOB_ARGS
 ```
 
-After first submission, the credentials could be saved in the system keychain (thanks to [zalando/go-keyring](https://github.com/zalando/go-keyring)). If the `--reset-creds` flag is passed, the local credentials will be deleted.
+After first submission, the credentials could be saved in the system keychain (thanks to [zalando/go-keyring](https://github.com/zalando/go-keyring)). . If the `--reset-creds` flag is passed, the local credentials will be deleted. In case the client is used in the context of a Kubernetes Pod, it is necessary to pass the flag `--k8s-secret`; in this last case, you need to mount the credentials in `/etc/obi/credentials/username` and `/etc/obi/credentials/password`.
 
 If the `-w` flag is passed, the client will enter in "wait" mode, not returning
 until the submitted job is maked by OBI as either "completed" of "failed".
