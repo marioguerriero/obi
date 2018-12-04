@@ -214,6 +214,7 @@ func main() {
 	priority := flag.Int32P("priority", "p", 0, "an int")
 	wait := flag.BoolP("wait", "w", false, "wait for job completion")
 	deleteCreds := flag.Bool("reset-creds", false, "delete local credentials")
+	useK8sSecret := flag.Bool("k8s-secret", false, "use kubernetes secret")
 
 	flag.Parse()
 
@@ -224,7 +225,22 @@ func main() {
 
 	jobRequest := prepareJobRequest(*jobType, *execPath, *infrastructure, *priority)
 
-	if username, err := keyring.Get("obi", "username"); err == nil {
+	if *useK8sSecret {
+
+		usernameFile, err := ioutil.ReadFile("/etc/obi/credentials/username")
+		if err != nil {
+			log.Fatal("Impossible to get username from secret.")
+		}
+		credentials.Username = string(usernameFile)
+
+		passwordFile, err := ioutil.ReadFile("/etc/obi/credentials/password")
+		if err != nil {
+			log.Fatal("Impossible to get username from secret.")
+		}
+		credentials.Password = string(passwordFile)
+
+	} else if username, err := keyring.Get("obi", "username"); err == nil {
+		
 		credentials.Username = username
 
 		if pw, err := keyring.Get("obi", "password"); err == nil {
@@ -235,6 +251,7 @@ func main() {
 		} else {
 			log.Fatal("Something went wrong loading local credentials.")
 		}
+
 	} else {
 		var username string
 		var save string
