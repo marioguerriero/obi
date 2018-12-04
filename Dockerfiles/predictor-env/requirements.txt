@@ -1,0 +1,11 @@
+googleapis-common-protos
+grpcio-tools
+pandas
+numpy==1.14.5
+sklearn
+tensorflow
+keras
+xgboost
+scipy
+google-cloud-storage
+
