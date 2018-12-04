@@ -74,7 +74,14 @@ export default class extends Component {
                         <span className="ClusterItem-cost pull-right">{cluster.cost} $</span>
                     </Panel.Title>
                 </Panel.Heading>
-                <Panel.Body collapsible>{jobs}</Panel.Body>
+                <Panel.Body collapsible>
+                    <Col xs={12} md={12}>
+                        <b>Jobs list</b>
+                    </Col>
+                    <Col xs={12} md={12}>
+                        {jobs}
+                    </Col>
+                </Panel.Body>
             </Panel>
         );
     }

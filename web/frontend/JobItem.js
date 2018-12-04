@@ -70,12 +70,15 @@ export default class extends Component {
                 <Col md={6} sm={6}>
                     <span className="JobItem-executablepath"><b>Arguments</b>: {this.state.job.arguments}</span>
                 </Col>
-                <Col md={6} sm={12}>
+                <Col md={12} sm={12}>
                     <span className="JobItem-link">
                         <a href={"https://console.cloud.google.com/dataproc/jobs/" +
                                     this.state.job.platformdependentid + "?region=global"}
                            target="_blank" rel="noopener noreferrer">
                             Job Logs</a></span>
+                </Col>
+                <Col md={12} sm={12}>
+                    <hr/>
                 </Col>
             </div>
         );

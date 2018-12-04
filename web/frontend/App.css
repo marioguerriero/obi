@@ -56,6 +56,10 @@
 
 /* BEGIN JobItem */
 
+.JobItem {
+  padding-top: 10px;
+}
+
 .JobItem-id {
 
 }
