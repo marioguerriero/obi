@@ -12,9 +12,8 @@ operational costs.
 - [Helm chart](#helm-chart)
 - [Usage](#usage)
 - [Contributions](#contributions)
-    - [Integrate OBI in your infrastructure](#integrate-obi-in-your-infrastracture)
+    - [Integrate OBI in your cloud infrastructure](#integrate-obi-in-your-cloud-infrastracture)
     - [Building](#building)
-- [License](#license)
 
 ## Objectives
 
@@ -30,8 +29,7 @@ operational costs.
 
 ## Code Structure
 
- - `api` web server exposing OBI's internal database for external usage e.g.
-   querying the status of a job while it's running
+ - `web` web server exposing jobs and clusters managed by OBI
  - `assets` generic assets e.g. images used in the code
  - `client` the CLI for the final user to allow him to submit his jobs to OBI
  - `examples` contains example YAML files to showcase how a system administrator

@@ -40,6 +40,8 @@ import (
 	"strings"
 	"time"
 	"bytes"
+    "github.com/zalando/go-keyring"
+	"regexp"
 )
 
 // JobInfoResponse defines the response type for job information requests
@@ -211,28 +213,49 @@ func main() {
 	jobType := flag.StringP("type", "t", "", "a string")
 	priority := flag.Int32P("priority", "p", 0, "an int")
 	wait := flag.BoolP("wait", "w", false, "wait for job completion")
-	useLocalCreds := flag.Bool("localcreds", false, "get local credentials")
+	deleteCreds := flag.Bool("reset-creds", false, "delete local credentials")
+	useK8sSecret := flag.Bool("k8s-secret", false, "use kubernetes secret")
 
 	flag.Parse()
 
+	if *deleteCreds {
+		keyring.Delete("obi", "username")
+		keyring.Delete("obi", "password")
+	}
+
 	jobRequest := prepareJobRequest(*jobType, *execPath, *infrastructure, *priority)
 
-	if *useLocalCreds == true {
-		credsFile, err := ioutil.ReadFile("/usr/local/airflow/dags/obi-exec/credentials")
+	if *useK8sSecret {
+
+		usernameFile, err := ioutil.ReadFile("/etc/obi/credentials/username")
 		if err != nil {
-			log.Fatal("Impossible to get local credentials.")
+			log.Fatal("Impossible to get username from secret.")
 		}
-		creds := string(credsFile)
-		credsArray := strings.Split(creds, ",")
+		credentials.Username = string(usernameFile)
 
-		if len(credsArray) != 2 {
-			log.Fatal("Credentials file wrong format.")
+		passwordFile, err := ioutil.ReadFile("/etc/obi/credentials/password")
+		if err != nil {
+			log.Fatal("Impossible to get username from secret.")
+		}
+		credentials.Password = string(passwordFile)
+
+	} else if username, err := keyring.Get("obi", "username"); err == nil {
+		
+		credentials.Username = username
+
+		if pw, err := keyring.Get("obi", "password"); err == nil {
+			credentials.Password = pw
+		} else if err == keyring.ErrNotFound {
+			keyring.Delete("obi", "username")
+			log.Fatal("Local password not found. Resetting credentials...")
+		} else {
+			log.Fatal("Something went wrong loading local credentials.")
 		}
 
-		credentials.Username = credsArray[0]
-		credentials.Password = credsArray[1]
 	} else {
 		var username string
+		var save string
+
 		// ask for credentials
 		fmt.Println("Username: ")
 		fmt.Scanf("%s\n", &username)
@@ -244,6 +267,20 @@ func main() {
 
 		credentials.Username = username
 		credentials.Password = string(password)
+
+		fmt.Println("Do you want to safely save these credentials for the next time? [Y/n]")
+		fmt.Scanf("%s\n", &save)
+		if yes, err := regexp.MatchString("^[Yy]$", save); yes {
+			err = keyring.Set("obi", "username", username)
+			if err != nil {
+				log.Fatal("Something went wrong saving credentials.")
+			}
+			err = keyring.Set("obi", "password", string(password))
+			if err != nil {
+				log.Fatal("Something went wrong saving credentials.")
+			}
+		}
+
 	}
 
 
