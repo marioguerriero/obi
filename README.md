@@ -29,7 +29,6 @@ operational costs.
 
 ## Code Structure
 
- - `web` web server exposing jobs and clusters managed by OBI
  - `assets` generic assets e.g. images used in the code
  - `client` the CLI for the final user to allow him to submit his jobs to OBI
  - `examples` contains example YAML files to showcase how a system administrator
@@ -40,6 +39,7 @@ operational costs.
    different from job duration
  - `proto` Google Proto Buffer files used to generate RPC communication
    interfaces between components
+ - `web` web server exposing an API and a frontend for accessing jobs and clusters managed by OBI
 
 ## Architecture
 
@@ -88,7 +88,7 @@ an Helm chart.
 Let's download the helm chart with:
 
 ```bash
-$ git clone https://gitlab.dataops.deliveryhero.de/obi/helm-chart
+$ git clone https://github.com/deliveryhero/obi-helm-chart
 ```
 Open `values.yaml` and fill in all the empty fields. In the `secrets` folder you
 have to place two files named `dataproc-sa` and `storage-sa`: they are the service
