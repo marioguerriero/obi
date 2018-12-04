@@ -14,7 +14,7 @@
  */
 
 .App {
-  text-align: center;
+
 }
 
 .App-header {
@@ -45,11 +45,11 @@
 /* BEGIN ClusterItem */
 
 .ClusterItem-name {
-
+  text-align: left;
 }
 
 .ClusterItem-cost {
-
+  text-align: right;
 }
 
 /* END ClusterItem */

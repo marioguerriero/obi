@@ -13,7 +13,7 @@
 //     limitations under the License.
 
 import React, { Component } from 'react';
-import { Panel } from 'react-bootstrap';
+import { Panel, Col } from 'react-bootstrap';
 import './App.css';
 
 import JobItem from './JobItem'
@@ -71,7 +71,7 @@ export default class extends Component {
                 <Panel.Heading>
                     <Panel.Title toggle>
                         <b className="ClusterItem-name">{cluster.name}</b>
-                        <span className="ClusterItem-cost">{cluster.cost} $</span>
+                        <span className="ClusterItem-cost pull-right">{cluster.cost} $</span>
                     </Panel.Title>
                 </Panel.Heading>
                 <Panel.Body collapsible>{jobs}</Panel.Body>

@@ -94,7 +94,8 @@ class App extends Component {
         <Header onLogout={this.handleLogout}/>
 
         <div className="App-body">
-          <Col md={8}>
+          <Col md={8} mdOffset={2}
+               sm={12}>
             {body}
           </Col>
         </div>

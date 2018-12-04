@@ -53,20 +53,22 @@ export default class extends Component {
     }
 
     render() {
-        alert(JSON.stringify(this.state.job))
         return (
             <div className="JobItem">
-                <Col md={4} sm={6}>
-                    <span className="JobItem-id">{this.state.job.id}</span>
+                <Col md={3} sm={12}>
+                    <span className="JobItem-id"><b>ID</b>: {this.state.job.id}</span>
                 </Col>
-                <Col md={4} sm={6}>
-                    <span className="JobItem-status">{this.state.job.status}</span>
-                </Col>
-                <Col md={4} sm={6}>
-                    <span className="JobItem-user">{this.state.username}</span>
+                <Col md={3} sm={6}>
+                    <span className="JobItem-status"><b>Status</b>: {this.state.job.status}</span>
                 </Col>
                 <Col md={6} sm={6}>
-                    <span className="JobItem-executablepath">{this.state.executablepath}</span>
+                    <span className="JobItem-user"><b>Submitted by</b>: {this.state.username}</span>
+                </Col>
+                <Col md={6} sm={6}>
+                    <span className="JobItem-executablepath"><b>Executable</b>: {this.state.job.executablepath}</span>
+                </Col>
+                <Col md={6} sm={6}>
+                    <span className="JobItem-executablepath"><b>Arguments</b>: {this.state.job.arguments}</span>
                 </Col>
                 <Col md={6} sm={12}>
                     <span className="JobItem-link">
