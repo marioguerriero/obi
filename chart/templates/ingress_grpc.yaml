@@ -1,0 +1,26 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    kubernetes.io/tls-acme: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+  name: {{ .Release.Name }}-ingress-grpc
+  namespace: obi
+spec:
+  rules:
+  - host: obi.dataops.deliveryhero.de
+    http:
+      paths:
+      - path: /{{ .Release.Name }}/grpc
+        backend:
+          serviceName: {{ .Release.Name }}-submit-jobs
+          servicePort: 8081
+  tls:
+  # This secret must exist beforehand
+  # The cert must also contain the subj-name fortune-teller.stack.build
+  # https://github.com/kubernetes/ingress-nginx/blob/master/docs/examples/PREREQUISITES.md#tls-certificates
+  - secretName: di
+    hosts:
+      - obi.dataops.deliveryhero.de

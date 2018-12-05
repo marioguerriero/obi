@@ -1,0 +1,54 @@
+# Default values for chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+stolon:
+  superuserPassword: 
+  replicationPassword:
+
+api:
+  image: eu.gcr.io/dhg-data-intelligence-ops/obi-api
+  replicaCount: 2
+
+predictor:
+  image: eu.gcr.io/dhg-data-intelligence-ops/obi-predictor
+  replicaCount: 2
+
+web:
+  image: eu.gcr.io/dhg-data-intelligence-ops/obi-web
+  replicaCount: 1
+
+freeNodePort: "31000"
+
+masterImage: eu.gcr.io/dhg-data-intelligence-ops/obi-master:production
+
+masterConfig:
+  # This file is used to demonstrate how to attach a Dataproc infrastructure
+  # to OBI. All the configuration fields specified in this field are strictly
+  # required unless specified.
+
+  # Google Cloud's project ID under which the Dataproc instance is registered
+  projectId: dhg-data-intelligence-ops
+
+  # Region for the Dataproc servers to be used
+  region: global
+
+  # Zone for the Dataproc servers to be used
+  zone: europe-west3-b
+
+  dataproc-image: projects/dhg-data-intelligence-ops/global/images/dhg-di-v3
+
+  # any IP Node of k8s cluster 
+  heartbeatHost: 10.156.0.24
+
+  schedulingLevels:
+  # level 0
+  - timeout: 300
+    policy: 1
+    binCapacity: 3
+  # level 1 is one job one cluster
+
+  priorityMap:
+  # Please look at project's README for more information
+
+  masterPort: 8081

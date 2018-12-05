@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: obi
+  name: {{ .Release.Name }}-master-config
+data:
+  master-config.yaml: |
+{{ toYaml .Values.masterConfig | indent 4 }}

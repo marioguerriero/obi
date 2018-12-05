@@ -1,0 +1,14 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ .Release.Name }}-predictor
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: {{ .Release.Name }}-predictor
+  type: ClusterIP
+

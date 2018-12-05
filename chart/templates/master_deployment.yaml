@@ -1,0 +1,64 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ .Release.Name }}-master
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}-master
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-master
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-master
+    spec:
+      volumes:
+      - name: master-service-account
+        secret:
+          secretName: {{ .Release.Name }}-dataproc-sa
+          defaultMode: 420
+      - name: master-config
+        configMap:
+          name: {{ .Release.Name }}-master-config
+          defaultMode: 420
+      - name: db-credentials
+        secret:
+          secretName: {{ .Release.Name }}-db-credentials
+          defaultMode: 420
+      initContainers:
+      - name: check-db-ready
+        image: postgres:9.6.5
+        command: ['sh', '-c', 
+          'until pg_isready -h {{ .Release.Name }}-stolon-proxy.{{ .Release.Namespace }} -p 5432; 
+          do echo waiting for database; sleep 2; done;']
+      containers:
+      - name: master
+        image: {{ .Values.masterImage }}
+        env:
+        - name: GOOGLE_CLOUD_PROJECT
+          value: dhg-data-intelligence-ops
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: "/etc/sa/dataproc-sa"
+        - name: CONFIG_PATH
+          value: "/etc/config/master-config.yaml"
+        - name: PREDICTOR_SERVICE_DNS_NAME
+          value: {{ .Release.Name }}-predictor.{{ .Release.Namespace }}
+        - name: HEARTBEAT_SERVICE_NODEPORT
+          value: {{ .Values.freeNodePort | quote }}
+        - name: STOLON_PROXY_DNS_NAME
+          value: {{ .Release.Name }}-stolon-proxy.{{ .Release.Namespace }}
+        - name: STOLON_PROXY_PORT
+          value: {{ .Values.stolon.ports.stolon.containerPort | quote }}
+        resources: {}
+        volumeMounts:
+        - name: db-credentials
+          mountPath: "/etc/db/credentials"
+        - name: master-service-account
+          mountPath: "/etc/sa"
+        - name: master-config
+          mountPath: "/etc/config"
+        imagePullPolicy: Always
+      restartPolicy: Always

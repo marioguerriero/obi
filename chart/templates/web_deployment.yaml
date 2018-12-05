@@ -1,0 +1,46 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ .Release.Name }}-web
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}-web
+spec:
+  replicas: {{ .Values.web.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-web
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-web
+    spec:
+      volumes:
+      - name: db-credentials
+        secret:
+          secretName: {{ .Release.Name }}-db-credentials
+          defaultMode: 420
+      initContainers:
+      - name: check-db-ready
+        image: postgres:9.6.5
+        command: ['sh', '-c', 
+          'until pg_isready -h {{ .Release.Name }}-stolon-proxy.{{ .Release.Namespace }} -p 5432; 
+          do echo waiting for database; sleep 2; done;']
+      containers:
+      - name: web
+        image: {{ .Values.web.image }}
+        env:
+        - name: STOLON_PROXY_DNS_NAME
+          value: {{ .Release.Name }}-stolon-proxy.{{ .Release.Namespace }}
+        - name: STOLON_PROXY_PORT
+          value: {{ .Values.stolon.ports.stolon.containerPort | quote }}
+        - name: CREDENTIALS_FS
+          value: "/etc/db/credentials"
+        - name: PGDATABASE
+          value: postgres
+        resources: {}
+        volumeMounts:
+        - name: db-credentials
+          mountPath: "/etc/db/credentials"
+        imagePullPolicy: Always
+      restartPolicy: Always

@@ -1,0 +1,12 @@
+kind: Service
+apiVersion: v1
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ .Release.Name }}-web
+spec:
+  selector:
+    app: {{ .Release.Name }}-web
+  ports:
+  - protocol: TCP
+    port: 8084
+  type: LoadBalancer

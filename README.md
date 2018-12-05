@@ -33,6 +33,7 @@ operational costs.
 ## Code Structure
 
  - `assets` generic assets e.g. images used in the code
+ - `chart` OBI's Helm chart for easier Kubernetes deployments
  - `client` the CLI for the final user to allow him to submit his jobs to OBI
  - `Dockerfiles` a collection of Docker images we used to speed-up our components building process
  - `examples` contains example YAML files to showcase how a system administrator

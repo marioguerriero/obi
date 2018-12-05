@@ -1,0 +1,58 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ .Release.Name }}-predictor
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}-predictor
+spec:
+  replicas: {{ .Values.predictor.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-predictor
+  template:
+    metadata:
+      creationTimestamp: 
+      labels:
+        app: {{ .Release.Name }}-predictor
+    spec:
+      volumes:
+      - name: storage-sa
+        secret:
+          secretName: {{ .Release.Name }}-storage-sa
+          defaultMode: 420
+      containers:
+      - name: predictor
+        image: {{ .Values.predictor.image }}
+        env:
+        - name: BUCKET_DIRECTORY
+          value: /mnt/dhg-obi/
+        - name: GOOGLE_CLOUD_PROJECT
+          value: dhg-data-intelligence-ops
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /etc/sa/storage-sa
+        volumeMounts:
+        - name: storage-sa
+          mountPath: /etc/sa
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - sh
+              - -c
+              - mkdir -p /mnt/dhg-obi/ && gcsfuse -o nonempty dhg-obi /mnt/dhg-obi/
+          preStop:
+            exec:
+              command:
+              - fusermount
+              - -u
+              - /mnt/dhg-obi/
+        imagePullPolicy: Always
+        securityContext:
+          capabilities:
+            add:
+            - SYS_ADMIN
+          privileged: true
+      restartPolicy: Always
+
+
