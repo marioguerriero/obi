@@ -17,4 +17,3 @@ matrix:
       node_js:
         - "node"
       before_install: cd web
-      before_script: cd web
