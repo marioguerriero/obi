@@ -1,4 +1,7 @@
 # OBI (Objectively Better Infrastructure)
+
+[![Build Status](https://travis-ci.com/deliveryhero/obi.svg?token=qEew79ijmfpcMwUpuvpL&branch=master)](https://travis-ci.com/deliveryhero/obi)
+
 ### Simplified batch data processing platform for Google Cloud Dataproc
 
 OBI is a project from Delivery Hero's Data Insight team which represents an
