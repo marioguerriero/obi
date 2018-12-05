@@ -15,6 +15,6 @@ matrix:
       script: bash pylama-checker.sh
     - language: node_js
       node_js:
-        - "11.x"
+        - "node"
       before_install: cd web
       before_script: cd web
