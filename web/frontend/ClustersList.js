@@ -21,7 +21,7 @@ import ClusterItem from './ClusterItem'
 import config from './config'
 import utils from './utils'
 
-export default class extends Component {
+export default class ClustersList extends Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -64,7 +64,7 @@ export default class extends Component {
         this.setState({ activeKey });
     }
 
-    async componentWillMount() {
+    async UNSAFE_componentWillMount() {
         await this.fetchClusters()
     }
 
@@ -74,7 +74,7 @@ export default class extends Component {
         if(this.state.clusters.length) {
             let i = 1;
             content = this.state.clusters.map(cluster =>
-                <ClusterItem eventKey={''+i++} cluster={cluster}/>
+                <ClusterItem key={''+i++} eventKey={''+i++} cluster={cluster}/>
             );
         }
 

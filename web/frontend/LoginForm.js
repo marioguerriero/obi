@@ -19,7 +19,7 @@ import { Form, FormGroup, FormControl, Checkbox, Col, Button } from 'react-boots
 
 import config from './config'
 
-export default class extends Component {
+export default class LoginForm extends Component {
     constructor(props) {
         super(props);
         this.state = {

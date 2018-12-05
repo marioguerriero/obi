@@ -15,9 +15,9 @@
 import React, { Component } from 'react';
 import './App.css';
 import config from "./config";
-import Col from "react-bootstrap/es/Col";
+import { Col } from "react-bootstrap";
 
-export default class extends Component {
+export default class JobItem extends Component {
     constructor(props) {
         super(props);
 
@@ -48,7 +48,7 @@ export default class extends Component {
         }
     }
 
-    async componentWillMount() {
+    async UNSAFE_componentWillMount() {
         await this.fetchUsername()
     }
 
