@@ -18,13 +18,11 @@
     "css-loader": "1.0.0",
     "dotenv": "6.0.0",
     "dotenv-expand": "4.2.0",
-    "eslint": "5.6.0",
     "eslint-config-react-app": "^3.0.5",
     "eslint-loader": "2.1.1",
     "eslint-plugin-flowtype": "2.50.1",
     "eslint-plugin-import": "2.14.0",
     "eslint-plugin-jsx-a11y": "6.1.2",
-    "eslint-plugin-react": "7.11.1",
     "express": "^4.16.4",
     "express-jwt": "^5.3.1",
     "express-validator": "^5.3.0",
@@ -65,7 +63,7 @@
   "scripts": {
     "start": "node scripts/start.js",
     "build": "node scripts/build.js",
-    "test": "node scripts/test.js",
+    "test": "eslint **/*.js && node scripts/test.js",
     "dev": "nodemon backend/server.js",
     "prod": "node backend/server.js"
   },
@@ -123,5 +121,9 @@
     "presets": [
       "react-app"
     ]
+  },
+  "devDependencies": {
+    "eslint": "^5.6.0",
+    "eslint-plugin-react": "^7.11.1"
   }
 }
