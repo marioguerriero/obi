@@ -240,7 +240,7 @@ func main() {
 		credentials.Password = string(passwordFile)
 
 	} else if username, err := keyring.Get("obi", "username"); err == nil {
-		
+
 		credentials.Username = username
 
 		if pw, err := keyring.Get("obi", "password"); err == nil {
