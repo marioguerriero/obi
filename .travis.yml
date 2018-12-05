@@ -11,26 +11,26 @@ matrix:
       install: go get -u golang.org/x/lint/golint
       script: bash golint-checker.sh
       after_success:
-        - cd master
-        - docker login -u _json_key -p "$(echo $REGISTRY_SA)" https://eu.gcr.io
-        - docker build -t eu.gcr.io/dhg-data-intelligence-ops/obi-master .
-        - docker push eu.gcr.io/dhg-data-intelligence-ops/obi-master
+      - cd master
+      - echo "$REGISTRY_SA" | docker login -u _json_key --password-stdin https://eu.gcr.io
+      - docker build -t eu.gcr.io/dhg-data-intelligence-ops/obi-master .
+      - docker push eu.gcr.io/dhg-data-intelligence-ops/obi-master
     - language: python
       python:
-        - "3.5"
-        - "3.6"
+      - "3.5"
+      - "3.6"
       install: pip install pylama
       script: bash pylama-checker.sh
       after_success:
-      - cd master
-      - docker login -u _json_key -p "$(echo $REGISTRY_SA)" https://eu.gcr.io
+      - cd predictor
+      - echo "$REGISTRY_SA" | docker login -u _json_key --password-stdin https://eu.gcr.io
       - docker build -t eu.gcr.io/dhg-data-intelligence-ops/obi-predictor .
       - docker push eu.gcr.io/dhg-data-intelligence-ops/obi-predictor
     - language: node_js
       node_js:
-        - "node"
+      - "node"
       before_install: cd web
       after_success:
-      - docker login -u _json_key -p "$(echo $REGISTRY_SA)" https://eu.gcr.io
+      - echo "$REGISTRY_SA" | docker login -u _json_key --password-stdin https://eu.gcr.io
       - docker build -t eu.gcr.io/dhg-data-intelligence-ops/obi-web .
       - docker push eu.gcr.io/dhg-data-intelligence-ops/obi-web
