@@ -1,44 +1,213 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# OBI Web
 
-## Available Scripts
+This component provides a web interface for real-time monitoring of OBI internal state.
+The source code is divided mainly into two parts:
 
-In the project directory, you can run:
+ - `backend` exposing OBI's internal state through an HTTP API
+ - `frontend` providing the actual web interface
 
-### `npm start`
+# API
 
-Runs the app in the development mode.<br>
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## Open Endpoints
 
-The page will reload if you make edits.<br>
-You will also see any lint errors in the console.
+Open endpoints require no Authentication.
 
-### `npm test`
+* [Login](#login) : `POST /api/login/`
 
-Launches the test runner in the interactive watch mode.<br>
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Endpoints that require Authentication
 
-### `npm run build`
+* [Clusters](#clusters) : `GET /api/clusters`
+* [Cluster](#cluster) : `GET /api/cluster/:name`
+* [Jobs](#jobs) : `GET /api/jobs`
+* [Job](#job) : `GET /api/job/:id`
+* [User](#user) : `GET /api/user/:id`
 
-Builds the app for production to the `build` folder.<br>
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Authentication is always done through using a Bearer token in the requests header. Specifically, the token to be used is the one returned by the `/api/login` endpoint on successful authentication.
 
-The build is minified and the filenames include the hashes.<br>
-Your app is ready to be deployed!
+### Login
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Used to collect a Token for a registered User.
 
-### `npm run eject`
+**URL** : `/api/login/`
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+**Method** : `POST`
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+**Auth required** : NO
 
-Instead, it will copy all the configuration files and the transitive dependencies (Webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+**Data constraints**
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+```json
+{
+    "username": "[valid email address]",
+    "password": "[password in plain text]"
+}
+```
 
-## Learn More
+**Data example**
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```json
+{
+    "username": "iloveauth@example.com",
+    "password": "abcd1234"
+}
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+#### Success Response
+
+**Code** : `200 OK`
+
+**Content example**
+
+```json
+TOKEN
+```
+
+
+
+### Clusters
+
+Used to collect a collection of clusters. If no query parameters are specified all the clusters will be returned.
+
+For more specific cluster data examples look below.
+
+**URL** : `/api/clusters[?status=STATUS&name=CLUSTER_NAME]`
+
+**Method** : `GET`
+
+**Auth required** : YES
+
+#### Success Response
+
+**Code** : `200 OK`
+
+**Content example**
+
+```json
+[
+  CLUSTER_1,
+  ...
+  CLUSTER_n
+]
+```
+
+
+
+
+### Cluster
+
+Used to collect a specific cluster details.
+
+**URL** : `/api/cluster/:name`
+
+**Method** : `GET`
+
+**Auth required** : YES
+
+#### Success Response
+
+**Code** : `200 OK`
+
+**Content example**
+
+```json
+{
+    "name": "abcdefghi",
+    "platform": "dataproc",
+    "status": "running",
+    "creationtimestamp": "2018-12-03 15:26:18.993021",
+    "cost": 1.23,
+    "lastupdatetimestamp": "2018-12-03 15:26:21.715841",
+    "assignedjobs": 12
+}
+```
+
+
+
+
+
+### Jobs
+
+Used to collect a collection of jobs. If no query parameters are specified all the jobs will be returned.
+
+For more specific job data examples look below.
+
+**URL** : `/api/jobs[?status=STATUS&cluster=CLUSTER_NAME]`
+
+**Method** : `GET`
+
+**Auth required** : YES
+
+#### Success Response
+
+**Code** : `200 OK`
+
+**Content example**
+
+```json
+[
+  JOB_1,
+  ...
+  JOB_n
+]
+```
+
+
+
+
+### Job
+
+Used to collect a specific job details.
+
+**URL** : `/api/job/:id`
+
+**Method** : `GET`
+
+**Auth required** : YES
+
+#### Success Response
+
+**Code** : `200 OK`
+
+**Content example**
+
+```json
+{
+    "id": 123,
+    "clustername": "abcdefghi",
+    "status": "running",
+    "author": 1,
+    "creationtimestamp": "2018-12-03 15:26:18.993021",
+    "lastupdatetimestamp": "2018-12-03 15:26:21.715841",
+    "executablepath": "gs://fancy-bucket/hello.py",
+    "type": "pyspark",
+    "priority": 2,
+    "predictedduration": 12345,
+    "failureprobability": 0.5,
+    "arguments": "--hello",
+    "platformdependentid": "1a2s3d4f5g"
+}
+```
+
+
+
+### User
+
+Used to obtain the email of a user given his ID.
+
+**URL** : `/api/user/:id`
+
+**Method** : `GET`
+
+**Auth required** : YES
+
+#### Success Response
+
+**Code** : `200 OK`
+
+**Content example**
+
+```json
+{
+    "email": "iloveauth@example.com",
+}
+```
