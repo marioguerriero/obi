@@ -6,6 +6,6 @@ go:
   - "1.10.x"
   - master
 
-install: go get golint
+install: go get -u golang.org/x/lint/golint
 
 script: bash golint-checker.sh
