@@ -12,6 +12,7 @@ matrix:
       script: bash golint-checker.sh
       after_success:
         - cd master
+        - docker login -u _json_key -p "$(echo $REGISTRY_SA)" https://eu.gcr.io
         - docker build -t eu.gcr.io/dhg-data-intelligence-ops/obi-master .
         - docker push eu.gcr.io/dhg-data-intelligence-ops/obi-master
     - language: python
@@ -22,6 +23,7 @@ matrix:
       script: bash pylama-checker.sh
       after_success:
       - cd master
+      - docker login -u _json_key -p "$(echo $REGISTRY_SA)" https://eu.gcr.io
       - docker build -t eu.gcr.io/dhg-data-intelligence-ops/obi-predictor .
       - docker push eu.gcr.io/dhg-data-intelligence-ops/obi-predictor
     - language: node_js
@@ -29,5 +31,6 @@ matrix:
         - "node"
       before_install: cd web
       after_success:
+      - docker login -u _json_key -p "$(echo $REGISTRY_SA)" https://eu.gcr.io
       - docker build -t eu.gcr.io/dhg-data-intelligence-ops/obi-web .
       - docker push eu.gcr.io/dhg-data-intelligence-ops/obi-web
