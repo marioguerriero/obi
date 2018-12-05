@@ -5,3 +5,7 @@ go:
   - "1.8"
   - "1.10.x"
   - master
+
+install: go get golint
+
+script: bash golint-checker.sh
