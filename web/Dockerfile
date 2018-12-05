@@ -1,5 +1,7 @@
 FROM eu.gcr.io/dhg-data-intelligence-ops/obi-web-env
 
+LABEL maintainer="mario.guerriero@deliveryhero.com, luca.lombardo@deliveryhero.com"
+
 # Copy all files
 ADD . /app/
 

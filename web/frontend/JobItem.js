@@ -1,4 +1,4 @@
-// Copyright 2018 
+// Copyright 2018 Delivery Hero Germany
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -53,27 +53,32 @@ export default class extends Component {
     }
 
     render() {
-        alert(JSON.stringify(this.state.job))
         return (
             <div className="JobItem">
-                <Col md={4} sm={6}>
-                    <span className="JobItem-id">{this.state.job.id}</span>
+                <Col md={3} sm={12}>
+                    <span className="JobItem-id"><b>ID</b>: {this.state.job.id}</span>
                 </Col>
-                <Col md={4} sm={6}>
-                    <span className="JobItem-status">{this.state.job.status}</span>
-                </Col>
-                <Col md={4} sm={6}>
-                    <span className="JobItem-user">{this.state.username}</span>
+                <Col md={3} sm={6}>
+                    <span className="JobItem-status"><b>Status</b>: {this.state.job.status}</span>
                 </Col>
                 <Col md={6} sm={6}>
-                    <span className="JobItem-executablepath">{this.state.executablepath}</span>
+                    <span className="JobItem-user"><b>Submitted by</b>: {this.state.username}</span>
                 </Col>
-                <Col md={6} sm={12}>
+                <Col md={6} sm={6}>
+                    <span className="JobItem-executablepath"><b>Executable</b>: {this.state.job.executablepath}</span>
+                </Col>
+                <Col md={6} sm={6}>
+                    <span className="JobItem-executablepath"><b>Arguments</b>: {this.state.job.arguments}</span>
+                </Col>
+                <Col md={12} sm={12}>
                     <span className="JobItem-link">
                         <a href={"https://console.cloud.google.com/dataproc/jobs/" +
                                     this.state.job.platformdependentid + "?region=global"}
                            target="_blank" rel="noopener noreferrer">
                             Job Logs</a></span>
+                </Col>
+                <Col md={12} sm={12}>
+                    <hr/>
                 </Col>
             </div>
         );

@@ -1,4 +1,4 @@
-// Copyright 2018 
+// Copyright 2018 Delivery Hero Germany
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ router.get('/clusters', auth_verifier, [ sanitize(['status', 'name']) ], async f
     let cluster_name = req.query.name ? req.query.name + '%' : '%';
 
     // Execute query
-    const q = 'select * from cluster where status like $1 and name like $2';
+    const q = 'select * from cluster where status like $1 and name like $2 order by creationtimestamp desc';
     const v = [cluster_status, cluster_name];
 
     try {

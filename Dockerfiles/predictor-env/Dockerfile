@@ -1,6 +1,8 @@
 # This Dockerfile is just the dependency for the Go master image
 FROM python:3.5
 
+LABEL maintainer="mario.guerriero@deliveryhero.com, luca.lombardo@deliveryhero.com"
+
 # Install gcsfuse
 RUN apt-get update && apt-get install --yes --no-install-recommends \
     ca-certificates \

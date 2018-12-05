@@ -1,4 +1,4 @@
-// Copyright 2018 
+// Copyright 2018 Delivery Hero Germany
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 //     limitations under the License.
 
 import React, { Component } from 'react';
-import { Panel } from 'react-bootstrap';
+import { Panel, Col } from 'react-bootstrap';
 import './App.css';
 
 import JobItem from './JobItem'
@@ -71,10 +71,17 @@ export default class extends Component {
                 <Panel.Heading>
                     <Panel.Title toggle>
                         <b className="ClusterItem-name">{cluster.name}</b>
-                        <span className="ClusterItem-cost">{cluster.cost} $</span>
+                        <span className="ClusterItem-cost pull-right">{cluster.cost} $</span>
                     </Panel.Title>
                 </Panel.Heading>
-                <Panel.Body collapsible>{jobs}</Panel.Body>
+                <Panel.Body collapsible>
+                    <Col xs={12} md={12}>
+                        <b>Jobs list</b>
+                    </Col>
+                    <Col xs={12} md={12}>
+                        {jobs}
+                    </Col>
+                </Panel.Body>
             </Panel>
         );
     }

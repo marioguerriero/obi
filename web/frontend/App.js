@@ -1,4 +1,4 @@
-// Copyright 2018 
+// Copyright 2018 Delivery Hero Germany
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -94,7 +94,8 @@ class App extends Component {
         <Header onLogout={this.handleLogout}/>
 
         <div className="App-body">
-          <Col md={8}>
+          <Col md={8} mdOffset={2}
+               sm={12}>
             {body}
           </Col>
         </div>

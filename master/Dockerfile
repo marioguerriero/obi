@@ -14,6 +14,8 @@
 
 FROM eu.gcr.io/dhg-data-intelligence-ops/obi-master-env
 
+LABEL maintainer="mario.guerriero@deliveryhero.com, luca.lombardo@deliveryhero.com"
+
 # Set some configuration environment variables
 ENV SRC_DIR /go/src/obi/master
 
