@@ -1,6 +1,6 @@
 # OBI (Objectively Better Infrastructure)
 
-[![Build Status](https://travis-ci.com/deliveryhero/obi.svg?token=qEew79ijmfpcMwUpuvpL&branch=master)](https://travis-ci.com/deliveryhero/obi)
+[![Build Status](https://travis-ci.com/deliveryhero/obi.svg?token=qEew79ijmfpcMwUpuvpL&branch=master)](https://travis-ci.com/deliveryhero/obi) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ### Simplified batch data processing platform for Google Cloud Dataproc
 
