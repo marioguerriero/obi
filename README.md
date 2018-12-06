@@ -180,3 +180,11 @@ $ docker push -t <registry-name>:<tag>
 
 At this point you should simply specify the new image in the 'values.yaml' file 
 for the Helm chart and install again.
+
+Before building the master image, however, you will need to generate SSL/TLS certificates
+to be used by the gRPC server side communication encryption. In particular, you need
+to generate a a private RSA key to sign and authenticate the public key and a
+self-signed X.509 public keys for distribution. Those two keys have to be named
+`server.key` and `server.crt` respectivevly and they have to be placed under the
+`master/` folder. For more details on how to generate those two keys you can have a
+look [here](https://bbengfort.github.io/programmer/2017/03/03/secure-grpc.html).
