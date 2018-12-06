@@ -48,6 +48,8 @@ type Scheduler struct {
 	levels []levelScheduler
 	quit chan struct{}
 	submitter *pool.Submitter
+	autoscalingFactorOneJobOneCluster float32
+	autoscalingFactorOneJobOneClusterHP float32
 }
 
 // New is the constructor for the scheduler struct
@@ -56,6 +58,8 @@ func New(submitter *pool.Submitter) *Scheduler {
 		make([]levelScheduler, 0),
 		make(chan struct{}),
 		submitter,
+		0,
+		0,
 	}
 	return s
 }
@@ -66,6 +70,9 @@ func (s *Scheduler) SetupConfig() {
 	if err != nil {
 		logrus.WithField("err", err).Fatalln("Unable to configure the scheduler")
 	}
+
+	s.autoscalingFactorOneJobOneCluster = float32(viper.GetFloat64("autoscalingFactorOneJobOneCluster"))
+	s.autoscalingFactorOneJobOneClusterHP = float32(viper.GetFloat64("autoscalingFactorOneJobOneClusterHP"))
 }
 
 // Start function starts the scheduling routine
@@ -86,9 +93,9 @@ func (s *Scheduler) Stop() {
 // ScheduleJob if for adding a new job in the bins
 func (s *Scheduler) ScheduleJob(job *model.Job) {
 	if job.Priority == int32(len(s.levels)) {
-		go s.submitter.DeployJobs([]*model.Job{job}, false, 0.25)
+		go s.submitter.DeployJobs([]*model.Job{job}, false, s.autoscalingFactorOneJobOneCluster)
 	} else if job.Priority > int32(len(s.levels)) {
-		go s.submitter.DeployJobs([]*model.Job{job}, true, 0.3)
+		go s.submitter.DeployJobs([]*model.Job{job}, true, s.autoscalingFactorOneJobOneClusterHP)
 	} else {
 		schedulerLevel := &s.levels[job.Priority]
 		switch schedulerLevel.Policy {

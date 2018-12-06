@@ -46,7 +46,13 @@ masterConfig:
   - timeout: 300
     policy: 1
     binCapacity: 3
-  # level 1 is one job one cluster
+    autoscalingFactor: 0.2
+  # YOU DON'T NEED TO SPECIFY ANYTHING FOR THE FOLLOWING LEVELS
+  # level 1 is one job one cluster YOU DON'T NEED TO SPECIFY ANYTHING
+  # level 2 is one job one cluster High Performance configuration
+
+  autoscalingFactorOneJobOneCluster: 0.25
+  autoscalingFactorOneJobOneClusterHP: 0.3
 
   priorityMap:
   # Please look at project's README for more information
