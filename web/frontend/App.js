@@ -21,7 +21,7 @@ import ClustersList from './ClustersList'
 
 import config from './config'
 import utils from './utils'
-import Col from "react-bootstrap/es/Col";
+import { Col } from "react-bootstrap";
 
 class App extends Component {
   constructor(props) {
@@ -37,7 +37,7 @@ class App extends Component {
       this.handleLogout = this.handleLogout.bind(this);
   }
 
-  componentWillMount() {
+    UNSAFE_componentWillMount() {
     window.addEventListener("storage", this.watchLocalStorage, false);
   }
 
@@ -65,8 +65,8 @@ class App extends Component {
   }
 
   loginFail(err) {
-    utils.clearToken()
-    // TODO: show error message
+    utils.clearToken();
+    alert(err)
   }
 
   handleLogout() {

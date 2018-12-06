@@ -1,4 +1,7 @@
 # OBI (Objectively Better Infrastructure)
+
+[![Build Status](https://travis-ci.com/deliveryhero/obi.svg?token=qEew79ijmfpcMwUpuvpL&branch=master)](https://travis-ci.com/deliveryhero/obi)
+
 ### Simplified batch data processing platform for Google Cloud Dataproc
 
 OBI is a project from Delivery Hero's Data Insight team which represents an
@@ -30,7 +33,9 @@ operational costs.
 ## Code Structure
 
  - `assets` generic assets e.g. images used in the code
+ - `chart` OBI's Helm chart for easier Kubernetes deployments
  - `client` the CLI for the final user to allow him to submit his jobs to OBI
+ - `Dockerfiles` a collection of Docker images we used to speed-up our components building process
  - `examples` contains example YAML files to showcase how a system administrator
    can attach a cloud computing platform with an OBI deployment
  - `master` the main component which cares about scheduling and autoscaling
@@ -83,20 +88,15 @@ according to the needs of the running jobs.
 ## Helm Chart
 
 In order to make the Kubernetes deployment process easier, we have also provided
-an Helm chart.
+an Helm chart available in the `chart` folder.
 
-Let's download the helm chart with:
-
-```bash
-$ git clone https://github.com/deliveryhero/obi-helm-chart
-```
-Open `values.yaml` and fill in all the empty fields. In the `secrets` folder you
+Open `chart/values.yaml` and fill in all the empty fields. In the `secrets` folder you
 have to place two files named `dataproc-sa` and `storage-sa`: they are the service
 accounts to use these services inside your Google Cloud Project. Once the 
 configuration is completed, just deploy on your Kubernetes cluster with:
 
 ```bash
-$ helm install obi-chart
+$ helm install chart
 ```
 
 ## Usage

@@ -1,0 +1,15 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ .Release.Name }}-submit-jobs
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+  - protocol: TCP
+    port: 8081
+    targetPort: 8081
+  selector:
+    app: {{ .Release.Name }}-master
+  type: LoadBalancer
+
+

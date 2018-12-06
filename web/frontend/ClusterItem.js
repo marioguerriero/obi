@@ -20,7 +20,7 @@ import JobItem from './JobItem'
 
 import config from './config'
 
-export default class extends Component {
+export default class ClusterItem extends Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -53,7 +53,7 @@ export default class extends Component {
         }
     }
 
-    async componentWillMount() {
+    async UNSAFE_componentWillMount() {
         await this.fetchJobs()
     }
 
@@ -62,8 +62,9 @@ export default class extends Component {
 
         // Fetch cluster's jobs
 
+        let i = 0;
         const jobs = this.state.jobs.map((job) =>
-            <JobItem job={job}/>
+            <JobItem key={''+i++} job={job}/>
         );
 
         return (

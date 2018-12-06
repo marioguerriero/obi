@@ -1,0 +1,25 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    kubernetes.io/tls-acme: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  name: {{ .Release.Name }}-ingress-http
+  namespace: obi
+spec:
+  rules:
+  - host: {{ .Release.Name }}.dataops.deliveryhero.de
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: {{ .Release.Name }}-web
+          servicePort: 8084
+  tls:
+  # This secret must exist beforehand
+  # The cert must also contain the subj-name fortune-teller.stack.build
+  # https://github.com/kubernetes/ingress-nginx/blob/master/docs/examples/PREREQUISITES.md#tls-certificates
+  - secretName: di
+    hosts:
+      - {{ .Release.Name }}.dataops.deliveryhero.de

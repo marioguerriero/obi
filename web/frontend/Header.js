@@ -18,7 +18,7 @@ import './App.css';
 
 import config from './config'
 
-export default class extends Component {
+export default class Header extends Component {
     render() {
         // Check if the user is already logged in
         const isLoggedIn = localStorage.getItem(config.OBI_TOKEN_KEY) != null;

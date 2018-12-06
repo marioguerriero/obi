@@ -50,8 +50,6 @@ function sendList(res, list, forceList=false) {
 // Cluster data routes
 
 router.get('/clusters', auth_verifier, [ sanitize(['status', 'name']) ], async function(req, res) {
-    const requesting_user = req.user.username;
-
     // Check for any possible filter
     let cluster_status = req.query.status ? req.query.status + '%' : '%';
     let cluster_name = req.query.name ? req.query.name + '%' : '%';
@@ -70,8 +68,6 @@ router.get('/clusters', auth_verifier, [ sanitize(['status', 'name']) ], async f
 });
 
 router.get('/cluster/:name', auth_verifier, [ sanitize(['name']) ], async function(req, res) {
-    const requesting_user = req.user.username;
-
     // Execute query
     const q = 'select * from cluster where name=$1';
     const v = [req.params.name];
@@ -88,8 +84,6 @@ router.get('/cluster/:name', auth_verifier, [ sanitize(['name']) ], async functi
 // Jobs data routes
 
 router.get('/jobs', auth_verifier, [ sanitize(['status', 'cluster']) ], async function(req, res) {
-    const requesting_user = req.user.username;
-
     // Check for any possible filter
     let job_status = req.query.status ? req.query.status + '%' : '%';
     let job_cluster = req.query.cluster ? req.query.cluster + '%' : '%';
@@ -108,8 +102,6 @@ router.get('/jobs', auth_verifier, [ sanitize(['status', 'cluster']) ], async fu
 });
 
 router.get('/job/:id', auth_verifier, [ sanitize(['id']) ], async function(req, res) {
-    const requesting_user = req.user.username;
-
     // Execute query
     const q = 'select * from job where id=$1';
     const v = [req.params.id];
@@ -126,8 +118,6 @@ router.get('/job/:id', auth_verifier, [ sanitize(['id']) ], async function(req, 
 // User data routes
 
 router.get('/user/:id', auth_verifier, [ sanitize(['id']) ], async function(req, res) {
-    const requesting_user = req.user.username;
-
     // Execute query
     const q = 'select email from users where id=$1';
     const v = [req.params.id];
