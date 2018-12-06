@@ -57,7 +57,7 @@ through Google's `protobuf` schemas. All the communication between components
 happens trhough RPC while the API component can be accessed through HTTP
 requests.
 
-![alt text](assets/obi-architecture.jpg "OBI Architecture")
+![alt text](assets/obi-architecture.png "OBI Architecture")
 
 ### OBI Workflow
 
