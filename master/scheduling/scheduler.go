@@ -39,6 +39,7 @@ type levelScheduler struct {
 	Policy packingPolicy
 	Timeout int32
 	BinCapacity int32
+	AutoscalingFactor float32
 	sync.RWMutex
 }
 
@@ -85,9 +86,9 @@ func (s *Scheduler) Stop() {
 // ScheduleJob if for adding a new job in the bins
 func (s *Scheduler) ScheduleJob(job *model.Job) {
 	if job.Priority == int32(len(s.levels)) {
-		go s.submitter.DeployJobs([]*model.Job{job}, false)
+		go s.submitter.DeployJobs([]*model.Job{job}, false, 0.25)
 	} else if job.Priority > int32(len(s.levels)) {
-		go s.submitter.DeployJobs([]*model.Job{job}, true)
+		go s.submitter.DeployJobs([]*model.Job{job}, true, 0.3)
 	} else {
 		schedulerLevel := &s.levels[job.Priority]
 		switch schedulerLevel.Policy {
@@ -136,7 +137,7 @@ func flush(ls *levelScheduler, s *pool.Submitter) {
 	ls.Lock()
 	defer ls.Unlock()
 	for i := range ls.bins {
-		go s.DeployJobs(ls.bins[i].jobs, false)
+		go s.DeployJobs(ls.bins[i].jobs, false, ls.AutoscalingFactor)
 	}
 	ls.bins = nil
 }

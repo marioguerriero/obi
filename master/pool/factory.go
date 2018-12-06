@@ -26,7 +26,7 @@ import (
 	"strconv"
 )
 
-func newCluster(name, platform string, highPerformance bool) (model.ClusterBaseInterface, error) {
+func newCluster(name, platform string, highPerformance bool, autoscalingFactor float32) (model.ClusterBaseInterface, error) {
 	var cluster model.ClusterBaseInterface
 	var err error
 
@@ -34,7 +34,7 @@ func newCluster(name, platform string, highPerformance bool) (model.ClusterBaseI
 
 	switch platform {
 	case "dataproc":
-		cluster, err = newDataprocCluster(name, highPerformance)
+		cluster, err = newDataprocCluster(name, highPerformance, autoscalingFactor)
 	default:
 		logrus.WithField("platform-type", platform).Error("Invalid platform type")
 		return nil, errors.New("invalid platform type")
@@ -49,7 +49,7 @@ func newCluster(name, platform string, highPerformance bool) (model.ClusterBaseI
 	return cluster, err
 }
 
-func newDataprocCluster(name string, highPerformance bool) (*platforms.DataprocCluster, error) {
+func newDataprocCluster(name string, highPerformance bool, lambda float32) (*platforms.DataprocCluster, error) {
 	var minPreemptiveSize int32
 
 	nodePort, _ := strconv.Atoi(os.Getenv("HEARTBEAT_SERVICE_NODEPORT"))
@@ -67,7 +67,6 @@ func newDataprocCluster(name string, highPerformance bool) (*platforms.DataprocC
 		viper.GetString("region"), minPreemptiveSize)
 
 	// Instantiate a new autoscaler for the new cluster and start monitoring
-	var lambda float32 = 0.2
 	policy := policies.NewWorkload(lambda)
 	a := autoscaler.New(policy, 60, cluster, false, 0)
 
