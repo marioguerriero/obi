@@ -188,3 +188,6 @@ self-signed X.509 public keys for distribution. Those two keys have to be named
 `server.key` and `server.crt` respectivevly and they have to be placed under the
 `master/` folder. For more details on how to generate those two keys you can have a
 look [here](https://bbengfort.github.io/programmer/2017/03/03/secure-grpc.html).
+
+**IMPORTANT**: because of the fact that we do not have a certificate signed by a trusted certificate authority, at the moment
+the client skips the verification of the certificate's trustworthy ([here](https://github.com/deliveryhero/obi/blob/master/client/obi-submit.go#L94)). However, if the user can provide a certificate coming from a trusted certificate authority he can also drop the skip performed by the client [here](https://github.com/deliveryhero/obi/blob/master/client/obi-submit.go#L94).
