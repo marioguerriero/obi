@@ -69,10 +69,13 @@ schedulingLevels:
 - timeout: 180
   policy: 0
   binCapacity: 3600
+  autoscalingFactor: 0.2
 # level 1
 - timeout: 300
   policy: 1
   binCapacity: 3
+  autoscalingFactor: 0.25
+# YOU DON'T NEED TO SPECIFY ANYTHING FOR THE FOLLOWING LEVELS
 # level 2 is one job one cluster
 # level 3 is one job one High Performance cluster
 ```
@@ -80,4 +83,6 @@ schedulingLevels:
 In every case, the two highest levels are the "one job one cluster", with high-performance
 or not. All the lower level can be fully customizable. The policy `0` is the
 `time-based`, policy `1` is the `count-based`.
+
+The `autoscalingFactor` is the factor to tune the autoscaler behaviour. For example, a scaling factor equal to 0.25 means that only 25% of the estimated needed nodes will be created in the cluster. Tuning this parameter you can make the autoscaler less/more conservative. In the configuration file you could configure `autoscalingFactorOneJobOneCluster` and `autoscalingFactorOneJobOneClusterHP`, the autoscaling factor for the two highest levels in the scheduler. 
 
